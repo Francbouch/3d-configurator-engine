@@ -1,12 +1,13 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { MASTER_MATERIAL_LIBRARY_URL } from '../engine/materials/MasterMaterialLibrary'
 
 const cache = new Map()
 let sourcePromise
 function sourceScene() {
   if (!sourcePromise) sourcePromise = new Promise((resolve, reject) => {
-    new GLTFLoader().load(`${import.meta.env.BASE_URL}CUBES%20TEXTURES%20TEST.glb`, (g) => resolve(g.scene), undefined, reject)
+    new GLTFLoader().load(MASTER_MATERIAL_LIBRARY_URL, (g) => resolve(g.scene), undefined, reject)
   })
   return sourcePromise
 }
