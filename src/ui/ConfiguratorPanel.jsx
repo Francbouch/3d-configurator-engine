@@ -1,17 +1,18 @@
 import { useState } from 'react'
 import materials from '../data/materials/materials.json'
+import product from '../data/products/product.example.json'
+import { getAllowedMaterials } from '../configurator/rules/RulesEngine'
 import { useConfiguratorStore } from '../configurator/state/configuratorStore'
-
-const sections = [
-  { id: 'facade', label: 'Façade' },
-  { id: 'caisson', label: 'Caisson' },
-  { id: 'interieur', label: 'Intérieur' },
-]
 
 export default function ConfiguratorPanel() {
   const [openSection, setOpenSection] = useState(null)
   const selectedMaterials = useConfiguratorStore((state) => state.selectedMaterials)
   const setMaterial = useConfiguratorStore((state) => state.setMaterial)
+
+  const sections = Object.entries(product.materialGroups).map(([id, group]) => ({
+    id,
+    label: group.label,
+  }))
 
   return (
     <aside className="panel">
@@ -22,6 +23,13 @@ export default function ConfiguratorPanel() {
       <div className="panel__sections">
         {sections.map((section) => {
           const isOpen = openSection === section.id
+          const allowedMaterials = getAllowedMaterials({
+            groupId: section.id,
+            selected: selectedMaterials,
+            materials,
+            rules: product.rules,
+          })
+
           return (
             <div className="panel__group" key={section.id}>
               <button
@@ -33,9 +41,10 @@ export default function ConfiguratorPanel() {
                 <span className="panel__value">{selectedMaterials[section.id]}</span>
                 <span aria-hidden="true">{isOpen ? '−' : '+'}</span>
               </button>
+
               {isOpen && (
                 <div className="material-grid">
-                  {materials.map((material) => (
+                  {allowedMaterials.map((material) => (
                     <button
                       className={selectedMaterials[section.id] === material.id ? 'material-chip is-selected' : 'material-chip'}
                       type="button"
