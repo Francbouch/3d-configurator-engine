@@ -2,40 +2,23 @@ import { Bounds, Center, useGLTF } from '@react-three/drei'
 import { useEffect, useMemo } from 'react'
 import { useConfiguratorStore } from '../../configurator/state/configuratorStore'
 import product from '../../data/products/product.example.json'
-import materials from '../../data/materials/materials.json'
 import { applyMaterialToParts, buildMaterialLibrary } from '../materials/MaterialEngine'
-
-// Version the master material library URL so a replaced GLB cannot be hidden by
-// browser/CDN/useGLTF caches when the filename stays intentionally stable.
-const MATERIAL_LIBRARY_VERSION = '92268e654ea8dedb8d010144ad9713599311df5e'
-const MATERIAL_LIBRARY_URL = `${import.meta.env.BASE_URL}CUBES%20TEXTURES%20TEST.glb?v=${MATERIAL_LIBRARY_VERSION}`
+import { MASTER_MATERIAL_LIBRARY_URL } from '../materials/MasterMaterialLibrary'
 
 function LoadedProduct({ url }) {
   const productGltf = useGLTF(url)
-  const materialGltf = useGLTF(MATERIAL_LIBRARY_URL)
+  const materialGltf = useGLTF(MASTER_MATERIAL_LIBRARY_URL)
   const selectedMaterials = useConfiguratorStore((state) => state.selectedMaterials)
 
   const model = useMemo(() => productGltf.scene.clone(true), [productGltf.scene])
-  const materialProfiles = useMemo(
-    () => Object.fromEntries(
-      materials.map((material) => [
-        material.source?.materialName ?? material.id,
-        material.finish ?? {},
-      ]),
-    ),
-    []
-  )
-
   const materialLibrary = useMemo(
-    () => buildMaterialLibrary(materialGltf.scene, materialProfiles),
-    [materialGltf.scene, materialProfiles]
+    () => buildMaterialLibrary(materialGltf.scene),
+    [materialGltf.scene]
   )
 
   useEffect(() => {
     Object.entries(selectedMaterials).forEach(([groupId, materialId]) => {
-      const materialRecord = materials.find((item) => item.id === materialId)
-      const libraryKey = materialRecord?.source?.materialName ?? materialId
-      const material = materialLibrary.get(libraryKey)
+      const material = materialLibrary.get(materialId)
       const mappedParts = (product.model?.parts ?? [])
         .filter((part) => part.group === groupId && part.materialEditable)
 
