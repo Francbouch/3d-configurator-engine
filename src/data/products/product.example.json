@@ -118,6 +118,7 @@
   "pricing": {
     "currency": "CAD",
     "basePrice": 0,
-    "adjustments": []
+    "adjustments": [],
+    "displayPrice": false
   }
 }
