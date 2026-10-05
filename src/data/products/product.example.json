@@ -37,7 +37,44 @@
     }
   },
   "materialCollections": [],
-  "rules": [],
+  "rules": [
+    {
+      "id": "caisson-non-neutral",
+      "enabled": true,
+      "targetGroup": "caisson",
+      "when": {
+        "group": "facade",
+        "operator": "notIn",
+        "values": [
+          "Blanc",
+          "noir"
+        ]
+      },
+      "allow": {
+        "materialIds": [
+          "Blanc",
+          "noir"
+        ],
+        "selectedFromGroups": [
+          "facade"
+        ]
+      }
+    },
+    {
+      "id": "interieur-match-caisson",
+      "enabled": true,
+      "targetGroup": "interieur",
+      "allow": {
+        "materialIds": [
+          "Blanc",
+          "noir"
+        ],
+        "selectedFromGroups": [
+          "caisson"
+        ]
+      }
+    }
+  ],
   "animations": {
     "open": {
       "enabled": false,
