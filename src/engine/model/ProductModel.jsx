@@ -30,13 +30,14 @@ function LoadedProduct({ url }) {
 
   useEffect(() => {
     Object.entries(selectedMaterials).forEach(([groupId, materialId]) => {
-      const material = materialLibrary.get(materialId)
-      const partNames = product.model.parts
+      const materialRecord = materials.find((item) => item.id === materialId)
+      const libraryKey = materialRecord?.source?.materialName ?? materialId
+      const material = materialLibrary.get(libraryKey)
+      const mappedParts = (product.model?.parts ?? [])
         .filter((part) => part.group === groupId && part.materialEditable)
-        .map((part) => part.node)
 
-      if (material && partNames.length) {
-        applyMaterialToParts(model, partNames, material)
+      if (material && mappedParts.length) {
+        applyMaterialToParts(model, mappedParts, material)
       }
     })
   }, [materialLibrary, model, selectedMaterials])
