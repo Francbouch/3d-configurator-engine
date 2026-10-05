@@ -169,3 +169,17 @@ button { font: inherit; }
 .admin__status-card h1,.app-error__card h1{margin:8px 0 10px;font-size:28px;letter-spacing:-.03em}
 .admin__status-card p,.app-error__card p{margin:0 0 20px;color:#6f6f6a;line-height:1.55}
 .app-error__card button{border:0;border-radius:12px;padding:11px 15px;background:#171717;color:#fff;font:inherit;font-weight:650;cursor:pointer}
+
+.admin__draftbar{max-width:1100px;margin:0 auto 18px;padding:16px 18px;border:1px solid #e1e1dd;border-radius:18px;background:#fbfbf9;display:flex;align-items:center;justify-content:space-between;gap:18px}
+.admin__draftbar>div:first-child{display:flex;flex-direction:column;gap:4px}
+.admin__draftbar strong{font-size:14px}
+.admin__draftbar small{color:#7c7c76;font-size:12px;line-height:1.45}
+.admin__save-status{margin-top:3px;color:#555;font-size:12px;font-weight:650}
+.admin__draft-actions{display:flex;gap:8px;flex-shrink:0}
+.admin__draft-actions button{border:0;border-radius:10px;padding:10px 14px;background:#171717;color:#fff;font:inherit;font-size:13px;font-weight:650;cursor:pointer}
+.admin__draft-actions button:disabled{opacity:.35;cursor:not-allowed}
+.admin__draft-actions .admin__secondary{background:#ecece8;color:#30302d}
+.admin__validation{max-width:1100px;margin:0 auto 18px;padding:12px 16px;border:1px solid #e6e1d6;border-radius:14px;background:#fffdf7}
+.admin__validation p{margin:3px 0;color:#756846;font-size:12px;line-height:1.45}
+.admin__validation p.is-error{color:#9a3d35}
+@media(max-width:760px){.admin__draftbar{align-items:stretch;flex-direction:column}.admin__draft-actions{justify-content:flex-end}}
