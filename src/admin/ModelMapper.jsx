@@ -1,7 +1,6 @@
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { useEffect, useMemo, useState } from 'react'
 import product from '../data/products/product.example.json'
-import initialMaterials from '../data/materials/materials.json'
 import {
   buildProductMappingDraft,
   toProductParts,
@@ -10,6 +9,7 @@ import {
 import { formatPrice } from '../configurator/pricing/PricingUtils'
 import { resolveAssetUrl } from '../engine/assets/resolveAssetUrl'
 import { clearAdminDraft, loadAdminDraft, saveAdminDraft } from './AdminDraftStore'
+import { MASTER_MATERIAL_LIBRARY_URL, materialRecordsFromScene } from '../engine/materials/MasterMaterialLibrary'
 
 const MODEL_URL = resolveAssetUrl(product.model?.url)
 
@@ -23,7 +23,7 @@ export default function ModelMapper() {
   const [saveStatus, setSaveStatus] = useState('')
   const [modelName, setModelName] = useState(product.name)
   const [uploadedModelName, setUploadedModelName] = useState('')
-  const [materials, setMaterials] = useState(initialMaterials)
+  const [materials, setMaterials] = useState([])
   const [activeSection, setActiveSection] = useState('model')
   const [rules, setRules] = useState(product.rules ?? [])
   const [modules, setModules] = useState(product.modules ?? [])
@@ -112,7 +112,19 @@ export default function ModelMapper() {
             : product.pricing?.adjustments ?? [],
         )
         setModelName(typeof saved?.name === 'string' ? saved.name : product.name)
-        setMaterials(Array.isArray(saved?.materials) ? saved.materials : initialMaterials)
+        const materialLoader = new GLTFLoader()
+        materialLoader.load(
+          MASTER_MATERIAL_LIBRARY_URL,
+          (materialGltf) => {
+            if (cancelled) return
+            setMaterials(materialRecordsFromScene(materialGltf.scene, Array.isArray(saved?.materials) ? saved.materials : []))
+          },
+          undefined,
+          (error) => {
+            console.error('Unable to load master material GLB in back-office', error)
+            setLoadError('Impossible de charger cubes textures test.glb.')
+          },
+        )
         setRules(Array.isArray(saved?.rules) ? saved.rules : product.rules ?? [])
         setModules(Array.isArray(saved?.modules) ? saved.modules : product.modules ?? [])
         setDisplayPrice(saved?.pricing?.displayPrice ?? (product.pricing?.displayPrice === true))
@@ -321,7 +333,7 @@ export default function ModelMapper() {
     setUploadedModelName('')
     setBasePrice(product.pricing?.basePrice ?? 0)
     setAdjustments(product.pricing?.adjustments ?? [])
-    setMaterials(initialMaterials)
+    setMaterials(materials)
     setRules(product.rules ?? [])
     setModules(product.modules ?? [])
     setDisplayPrice(product.pricing?.displayPrice === true)
