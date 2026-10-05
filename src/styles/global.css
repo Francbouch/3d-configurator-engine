@@ -137,3 +137,12 @@ button { font: inherit; }
 .admin select,.admin input { width:100%; padding:10px 12px; border:1px solid #deded9; border-radius:10px; background:#fff; color:#171717; font:inherit; font-size:13px; outline:none; }
 .admin input:disabled { background:#f4f4f1; color:#aaa; }
 @media(max-width:760px){.admin{padding:28px 18px}.admin__header{display:block}.admin__link{display:inline-block;margin-top:18px}.admin__table-head{display:none}.admin__row{grid-template-columns:1fr;gap:10px}}
+
+.admin__pricing { max-width:1100px; margin:0 auto 18px; padding:18px 20px; display:flex; align-items:center; justify-content:space-between; gap:24px; border:1px solid #e1e1dd; border-radius:18px; background:#fff; }
+.admin__pricing>div { display:flex; flex-direction:column; gap:4px; }
+.admin__pricing strong { font-size:14px; }
+.admin__pricing small { color:#888; font-size:12px; }
+.admin__pricing label { display:flex; align-items:center; gap:8px; }
+.admin__pricing input { width:130px; text-align:right; font-size:16px; font-weight:650; }
+.admin__pricing label span { color:#777; font-size:12px; font-weight:650; }
+@media(max-width:760px){.admin__pricing{align-items:flex-start;flex-direction:column}.admin__pricing label{width:100%}.admin__pricing input{width:100%}}
