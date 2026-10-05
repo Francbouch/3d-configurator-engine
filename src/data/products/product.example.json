@@ -25,15 +25,18 @@
   "materialGroups": {
     "facade": {
       "label": "Façade",
-      "allowedCollectionIds": []
+      "allowedCollectionIds": [],
+      "defaultMaterialId": "Blanc"
     },
     "caisson": {
       "label": "Caisson",
-      "allowedCollectionIds": []
+      "allowedCollectionIds": [],
+      "defaultMaterialId": "Blanc"
     },
     "interieur": {
       "label": "Intérieur",
-      "allowedCollectionIds": []
+      "allowedCollectionIds": [],
+      "defaultMaterialId": "Blanc"
     }
   },
   "materialCollections": [],
@@ -84,5 +87,10 @@
       "labelOpen": "Ouvrir le lit",
       "labelClose": "Fermer le lit"
     }
-  }
+  },
+  "configurationFlow": [
+    "facade",
+    "caisson",
+    "interieur"
+  ]
 }
