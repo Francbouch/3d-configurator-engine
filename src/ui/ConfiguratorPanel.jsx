@@ -70,9 +70,6 @@ export default function ConfiguratorPanel() {
                       </span>
                       <span className="material-chip__meta">
                         <span className="material-chip__name">{material.name}</span>
-                        {material.code && material.code !== material.name && (
-                          <span className="material-chip__code">{material.code}</span>
-                        )}
                       </span>
                     </button>
                   ))}
