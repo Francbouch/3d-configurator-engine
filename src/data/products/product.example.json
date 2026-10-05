@@ -1,12 +1,13 @@
 {
-  "id": "example-product",
-  "name": "Example product",
+  "id": "lit-cabinet-development",
+  "name": "Lit Cabinet — modèle de développement",
   "model": {
-    "url": "/models/product.glb",
+    "url": "/models/cabinet-test.glb",
+    "status": "temporary",
     "parts": {
-      "facade": "facade",
-      "caisson": "caisson",
-      "interieur": "interieur"
+      "facade": "FACADE",
+      "caisson": "CAISSON",
+      "interieur": "INTERIEUR"
     }
   },
   "materialCollections": [],
@@ -15,8 +16,10 @@
     "open": {
       "enabled": false,
       "clip": "Open",
-      "labelOpen": "Ouvrir",
-      "labelClose": "Fermer"
+      "closedFrame": 0,
+      "openFrame": 80,
+      "labelOpen": "Ouvrir le lit",
+      "labelClose": "Fermer le lit"
     }
   }
 }
