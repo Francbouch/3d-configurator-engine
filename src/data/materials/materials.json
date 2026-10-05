@@ -1,11 +1,227 @@
 [
-  { "id": "580", "name": "580", "sourceMaterial": "580" },
-  { "id": "581", "name": "581", "sourceMaterial": "581" },
-  { "id": "582", "name": "582", "sourceMaterial": "582" },
-  { "id": "588", "name": "588", "sourceMaterial": "588" },
-  { "id": "Blanc", "name": "Blanc", "sourceMaterial": "Blanc" },
-  { "id": "832", "name": "832", "sourceMaterial": "832" },
-  { "id": "831", "name": "831", "sourceMaterial": "831" },
-  { "id": "592", "name": "592", "sourceMaterial": "592" },
-  { "id": "noir", "name": "Noir", "sourceMaterial": "noir" }
+  {
+    "id": "580",
+    "name": "580",
+    "code": "580",
+    "manufacturer": null,
+    "category": "decor",
+    "active": true,
+    "source": {
+      "type": "glb-material",
+      "materialName": "580"
+    },
+    "thumbnail": null,
+    "maps": {
+      "baseColor": null,
+      "normal": null,
+      "roughness": null,
+      "metalness": null
+    },
+    "finish": {
+      "minRoughness": 0.62,
+      "envMapIntensity": 0.72,
+      "metalness": 0,
+      "clearcoatMax": 0.08
+    }
+  },
+  {
+    "id": "581",
+    "name": "581",
+    "code": "581",
+    "manufacturer": null,
+    "category": "decor",
+    "active": true,
+    "source": {
+      "type": "glb-material",
+      "materialName": "581"
+    },
+    "thumbnail": null,
+    "maps": {
+      "baseColor": null,
+      "normal": null,
+      "roughness": null,
+      "metalness": null
+    },
+    "finish": {
+      "minRoughness": 0.62,
+      "envMapIntensity": 0.72,
+      "metalness": 0,
+      "clearcoatMax": 0.08
+    }
+  },
+  {
+    "id": "582",
+    "name": "582",
+    "code": "582",
+    "manufacturer": null,
+    "category": "decor",
+    "active": true,
+    "source": {
+      "type": "glb-material",
+      "materialName": "582"
+    },
+    "thumbnail": null,
+    "maps": {
+      "baseColor": null,
+      "normal": null,
+      "roughness": null,
+      "metalness": null
+    },
+    "finish": {
+      "minRoughness": 0.62,
+      "envMapIntensity": 0.72,
+      "metalness": 0,
+      "clearcoatMax": 0.08
+    }
+  },
+  {
+    "id": "588",
+    "name": "588",
+    "code": "588",
+    "manufacturer": null,
+    "category": "decor",
+    "active": true,
+    "source": {
+      "type": "glb-material",
+      "materialName": "588"
+    },
+    "thumbnail": null,
+    "maps": {
+      "baseColor": null,
+      "normal": null,
+      "roughness": null,
+      "metalness": null
+    },
+    "finish": {
+      "minRoughness": 0.62,
+      "envMapIntensity": 0.72,
+      "metalness": 0,
+      "clearcoatMax": 0.08
+    }
+  },
+  {
+    "id": "Blanc",
+    "name": "Blanc",
+    "code": "Blanc",
+    "manufacturer": null,
+    "category": "solid",
+    "active": true,
+    "source": {
+      "type": "glb-material",
+      "materialName": "Blanc"
+    },
+    "thumbnail": null,
+    "maps": {
+      "baseColor": null,
+      "normal": null,
+      "roughness": null,
+      "metalness": null
+    },
+    "finish": {
+      "minRoughness": 0.62,
+      "envMapIntensity": 0.72,
+      "metalness": 0,
+      "clearcoatMax": 0.08
+    }
+  },
+  {
+    "id": "832",
+    "name": "832",
+    "code": "832",
+    "manufacturer": null,
+    "category": "decor",
+    "active": true,
+    "source": {
+      "type": "glb-material",
+      "materialName": "832"
+    },
+    "thumbnail": null,
+    "maps": {
+      "baseColor": null,
+      "normal": null,
+      "roughness": null,
+      "metalness": null
+    },
+    "finish": {
+      "minRoughness": 0.62,
+      "envMapIntensity": 0.72,
+      "metalness": 0,
+      "clearcoatMax": 0.08
+    }
+  },
+  {
+    "id": "831",
+    "name": "831",
+    "code": "831",
+    "manufacturer": null,
+    "category": "decor",
+    "active": true,
+    "source": {
+      "type": "glb-material",
+      "materialName": "831"
+    },
+    "thumbnail": null,
+    "maps": {
+      "baseColor": null,
+      "normal": null,
+      "roughness": null,
+      "metalness": null
+    },
+    "finish": {
+      "minRoughness": 0.62,
+      "envMapIntensity": 0.72,
+      "metalness": 0,
+      "clearcoatMax": 0.08
+    }
+  },
+  {
+    "id": "592",
+    "name": "592",
+    "code": "592",
+    "manufacturer": null,
+    "category": "decor",
+    "active": true,
+    "source": {
+      "type": "glb-material",
+      "materialName": "592"
+    },
+    "thumbnail": null,
+    "maps": {
+      "baseColor": null,
+      "normal": null,
+      "roughness": null,
+      "metalness": null
+    },
+    "finish": {
+      "minRoughness": 0.62,
+      "envMapIntensity": 0.72,
+      "metalness": 0,
+      "clearcoatMax": 0.08
+    }
+  },
+  {
+    "id": "noir",
+    "name": "Noir",
+    "code": "noir",
+    "manufacturer": null,
+    "category": "solid",
+    "active": true,
+    "source": {
+      "type": "glb-material",
+      "materialName": "noir"
+    },
+    "thumbnail": null,
+    "maps": {
+      "baseColor": null,
+      "normal": null,
+      "roughness": null,
+      "metalness": null
+    },
+    "finish": {
+      "minRoughness": 0.62,
+      "envMapIntensity": 0.72,
+      "metalness": 0,
+      "clearcoatMax": 0.08
+    }
+  }
 ]
