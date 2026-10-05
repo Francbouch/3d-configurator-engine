@@ -89,6 +89,10 @@ export default function ModelMapper() {
             ? saved.pricing.adjustments
             : product.pricing?.adjustments ?? [],
         )
+        setModelName(typeof saved?.name === 'string' ? saved.name : product.name)
+        setMaterials(Array.isArray(saved?.materials) ? saved.materials : initialMaterials)
+        setRules(Array.isArray(saved?.rules) ? saved.rules : product.rules ?? [])
+        setModules(Array.isArray(saved?.modules) ? saved.modules : product.modules ?? [])
         if (saved) setSaveStatus('Brouillon local restauré')
       },
       undefined,
@@ -533,7 +537,7 @@ export default function ModelMapper() {
 
       {activeSection === 'model' && <section className="admin__card">
         <div className="admin__table-head">
-          <span>Pièce GLB</span>
+          <span>Pièce du meuble</span>
           <span>Rôle</span>
           <span>Groupe</span>
         </div>
