@@ -61,12 +61,31 @@ export function buildMaterialLibrary(root, materialProfiles = {}) {
   return library
 }
 
-export function applyMaterialToParts(root, partNames, material) {
-  const names = Array.isArray(partNames) ? partNames : [partNames]
+function findByPath(root, path) {
+  if (!path) return null
+  const segments = path.split('/').filter(Boolean)
+  let current = root
+
+  for (const segment of segments) {
+    current = current.children.find((child) => (child.name || child.type) === segment)
+    if (!current) return null
+  }
+
+  return current
+}
+
+function resolvePart(root, part) {
+  if (typeof part === 'string') return root.getObjectByName(part)
+  if (!part) return null
+  return findByPath(root, part.nodePath) ?? root.getObjectByName(part.node)
+}
+
+export function applyMaterialToParts(root, parts, material) {
+  const targets = Array.isArray(parts) ? parts : [parts]
   let applied = false
 
-  names.forEach((partName) => {
-    const target = root.getObjectByName(partName)
+  targets.forEach((part) => {
+    const target = resolvePart(root, part)
     if (!target) return
 
     target.traverse((object) => {
