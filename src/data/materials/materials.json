@@ -1,0 +1,26 @@
+[
+  {
+    "id": "white",
+    "name": "Blanc",
+    "manufacturer": null,
+    "code": null,
+    "type": "color",
+    "color": "#f3f2ed",
+    "roughness": 0.55,
+    "physicalSizeMm": null,
+    "rotation": 0,
+    "maps": {}
+  },
+  {
+    "id": "black",
+    "name": "Noir",
+    "manufacturer": null,
+    "code": null,
+    "type": "color",
+    "color": "#171717",
+    "roughness": 0.5,
+    "physicalSizeMm": null,
+    "rotation": 0,
+    "maps": {}
+  }
+]
