@@ -24,6 +24,7 @@ export default function ModelMapper() {
   const [uploadedModelName, setUploadedModelName] = useState('')
   const [materials, setMaterials] = useState(initialMaterials)
   const [activeSection, setActiveSection] = useState('model')
+  const [rules, setRules] = useState(product.rules ?? [])
 
   const groupIds = product.configurationFlow ?? Object.keys(product.materialGroups ?? {})
   const validation = useMemo(
@@ -185,6 +186,21 @@ export default function ModelMapper() {
     setSaveStatus('')
   }
 
+  function updateRule(index, patch) {
+    setRules((current) => current.map((rule, i) => (i === index ? { ...rule, ...patch } : rule)))
+    setSaveStatus('')
+  }
+
+  function toggleRuleMaterial(index, materialId) {
+    setRules((current) => current.map((rule, i) => {
+      if (i !== index) return rule
+      const ids = rule.allow?.materialIds ?? []
+      const nextIds = ids.includes(materialId) ? ids.filter((id) => id !== materialId) : [...ids, materialId]
+      return { ...rule, allow: { ...(rule.allow ?? {}), materialIds: nextIds } }
+    }))
+    setSaveStatus('')
+  }
+
   function addAdjustment() {
     setAdjustments((current) => [
       ...current,
@@ -217,6 +233,7 @@ export default function ModelMapper() {
       parts: toProductParts({ parts }),
       name: modelName.trim(),
       materials,
+      rules,
       pricing: {
         currency: product.pricing?.currency ?? 'CAD',
         basePrice,
@@ -275,6 +292,7 @@ export default function ModelMapper() {
         {[
           ['model', 'Meuble & pièces'],
           ['materials', 'Matériaux'],
+          ['rules', 'Règles'],
           ['pricing', 'Prix'],
         ].map(([id, label]) => (
           <button
@@ -357,6 +375,27 @@ export default function ModelMapper() {
               <input placeholder="Nom dans le GLB" value={material.source?.materialName ?? ''} onChange={(e) => updateMaterial(index, { source: { ...(material.source ?? {}), type: 'glb-material', materialName: e.target.value } })} />
               <label className="admin__toggle"><input type="checkbox" checked={material.active !== false} onChange={(e) => updateMaterial(index, { active: e.target.checked })} /><span>{material.active !== false ? 'Oui' : 'Non'}</span></label>
               <div className="admin__material-actions"><button type="button" className="admin__icon-button" onClick={() => duplicateMaterial(index)} aria-label="Dupliquer le matériau">＋</button><button type="button" className="admin__remove" onClick={() => removeMaterial(index)} aria-label="Supprimer le matériau">×</button></div>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {activeSection === 'rules' && (
+        <section className="admin__rules">
+          <div className="admin__pricing-title"><div><strong>Règles de compatibilité</strong><small>Contrôlez les combinaisons proposées au client sans toucher au code.</small></div></div>
+          {rules.map((rule, index) => (
+            <div className="admin__rule-card" key={rule.id ?? index}>
+              <div className="admin__rule-top">
+                <div><strong>{rule.id}</strong><small>Cible : {product.materialGroups?.[rule.targetGroup]?.label ?? rule.targetGroup}</small></div>
+                <label className="admin__toggle"><input type="checkbox" checked={rule.enabled !== false} onChange={(e) => updateRule(index, { enabled: e.target.checked })} /><span>{rule.enabled !== false ? 'Active' : 'Inactive'}</span></label>
+              </div>
+              <div className="admin__rule-materials">
+                {materials.map((material) => {
+                  const checked = (rule.allow?.materialIds ?? []).includes(material.id)
+                  return <label key={material.id} className={checked ? 'is-selected' : ''}><input type="checkbox" checked={checked} onChange={() => toggleRuleMaterial(index, material.id)} /><span>{material.name}<small>{material.code}</small></span></label>
+                })}
+              </div>
+              {(rule.allow?.selectedFromGroups ?? []).length > 0 && <p className="admin__rule-note">Autorise aussi le matériau choisi dans : {rule.allow.selectedFromGroups.map((id) => product.materialGroups?.[id]?.label ?? id).join(', ')}</p>}
             </div>
           ))}
         </section>
