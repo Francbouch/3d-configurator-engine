@@ -26,6 +26,7 @@ export default function ModelMapper() {
   const [activeSection, setActiveSection] = useState('model')
   const [rules, setRules] = useState(product.rules ?? [])
   const [modules, setModules] = useState(product.modules ?? [])
+  const [displayPrice, setDisplayPrice] = useState(product.pricing?.displayPrice === true)
 
   const groupIds = product.configurationFlow ?? Object.keys(product.materialGroups ?? {})
   const validation = useMemo(
@@ -94,6 +95,7 @@ export default function ModelMapper() {
         setMaterials(Array.isArray(saved?.materials) ? saved.materials : initialMaterials)
         setRules(Array.isArray(saved?.rules) ? saved.rules : product.rules ?? [])
         setModules(Array.isArray(saved?.modules) ? saved.modules : product.modules ?? [])
+        setDisplayPrice(saved?.pricing?.displayPrice ?? (product.pricing?.displayPrice === true))
         if (saved) setSaveStatus('Brouillon local restauré')
       },
       undefined,
@@ -281,6 +283,7 @@ export default function ModelMapper() {
         currency: product.pricing?.currency ?? 'CAD',
         basePrice,
         adjustments,
+        displayPrice,
       },
     })
 
@@ -295,6 +298,7 @@ export default function ModelMapper() {
     setMaterials(initialMaterials)
     setRules(product.rules ?? [])
     setModules(product.modules ?? [])
+    setDisplayPrice(product.pricing?.displayPrice === true)
     setSaveStatus('Brouillon local réinitialisé')
   }
 
@@ -488,6 +492,10 @@ export default function ModelMapper() {
           <strong>Prix de base</strong>
           <small>Le moteur ajoutera ensuite les suppléments selon la configuration.</small>
         </div>
+        <label className="admin__toggle">
+          <input type="checkbox" checked={displayPrice} onChange={(event) => { setDisplayPrice(event.target.checked); setSaveStatus('') }} />
+          <span>{displayPrice ? 'Prix visible sur le site' : 'Prix masqué sur le site'}</span>
+        </label>
         <label>
           <input
             type="number"
