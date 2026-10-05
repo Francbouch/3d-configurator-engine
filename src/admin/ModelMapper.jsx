@@ -56,6 +56,22 @@ export default function ModelMapper() {
   const canSave = adminErrors.length === 0
   const publishReady = canSave && !uploadedModelName && modules.every((module) => !module.glbFileName)
 
+  function buildDraftPayload() {
+    return {
+      parts: toProductParts({ parts }),
+      name: modelName.trim(),
+      materials,
+      modules,
+      rules,
+      pricing: {
+        currency: product.pricing?.currency ?? 'CAD',
+        basePrice,
+        adjustments,
+        displayPrice,
+      },
+    }
+  }
+
   useEffect(() => {
     let cancelled = false
 
@@ -404,7 +420,11 @@ export default function ModelMapper() {
             className="admin__publish"
             disabled={!publishReady}
             title={publishReady ? 'Configuration prête à être publiée' : 'Enregistrez les nouveaux fichiers 3D avant publication'}
-            onClick={() => setSaveStatus('Configuration validée. Connexion de la publication au site en cours.')}
+            onClick={() => {
+              const payload = buildDraftPayload()
+              saveAdminDraft(product.id, payload)
+              setSaveStatus('Configuration prête à publier. Publication serveur non encore connectée.')
+            }}
           >
             Publier
           </button>
