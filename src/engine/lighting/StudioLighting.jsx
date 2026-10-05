@@ -4,11 +4,11 @@ export const DEFAULT_STUDIO_LIGHTING = Object.freeze({
   hemisphere: {
     skyColor: '#ffffff',
     groundColor: '#e7e7e4',
-    intensity: 0.72,
+    intensity: 0.52,
   },
   key: {
-    position: [8.5, 5.2, 7],
-    intensity: 1.35,
+    position: [9, 4.2, 7.5],
+    intensity: 1.15,
   },
   fill: {
     position: [-5.5, 3.2, 4],
