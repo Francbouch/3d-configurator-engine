@@ -3,22 +3,22 @@ import { Environment } from '@react-three/drei'
 export const DEFAULT_STUDIO_LIGHTING = Object.freeze({
   hemisphere: {
     skyColor: '#ffffff',
-    groundColor: '#eeeeec',
-    intensity: 0.95,
+    groundColor: '#e7e7e4',
+    intensity: 0.72,
   },
   key: {
-    position: [6.5, 11, 8],
-    intensity: 0.9,
+    position: [8.5, 5.2, 7],
+    intensity: 1.35,
   },
   fill: {
-    position: [-4, 4, 3],
-    intensity: 0.9,
+    position: [-5.5, 3.2, 4],
+    intensity: 1.0,
   },
   rim: {
-    position: [1, 3, -4],
-    intensity: 0.45,
+    position: [2.5, 4, -6],
+    intensity: 0.85,
   },
-  environmentIntensity: 0.62,
+  environmentIntensity: 0.78,
 })
 
 export default function StudioLighting({ preset = DEFAULT_STUDIO_LIGHTING }) {
