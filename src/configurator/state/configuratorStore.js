@@ -58,6 +58,7 @@ export const useConfiguratorStore = create((set) => ({
   productId: product.id,
   selectedMaterials: initialMaterials,
   animationProgress: 0,
+  selectedModules: {},
 
   setMaterial: (groupId, materialId) =>
     set((state) => {
@@ -82,11 +83,28 @@ export const useConfiguratorStore = create((set) => ({
       }
     }),
 
+  setModuleEnabled: (moduleId, enabled) =>
+    set((state) => ({
+      selectedModules: {
+        ...state.selectedModules,
+        [moduleId]: Boolean(enabled),
+      },
+    })),
+
+  toggleModule: (moduleId) =>
+    set((state) => ({
+      selectedModules: {
+        ...state.selectedModules,
+        [moduleId]: !state.selectedModules[moduleId],
+      },
+    })),
+
   setAnimationProgress: (animationProgress) => set({ animationProgress }),
 
   reset: () =>
     set({
       selectedMaterials: { ...initialMaterials },
       animationProgress: 0,
+      selectedModules: {},
     }),
 }))
