@@ -67,3 +67,51 @@ button { font: inherit; }
   .configurator__viewer { height: 58dvh; }
   .panel { padding: 28px 24px 36px; border-left: 0; border-top: 1px solid rgba(0,0,0,.07); }
 }
+
+
+.material-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px 0 20px;
+}
+
+.material-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #e3e3df;
+  border-radius: 12px;
+  background: rgba(255,255,255,.72);
+  color: #171717;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.material-chip:hover { transform: translateY(-1px); border-color: #c8c8c3; }
+.material-chip.is-selected { border-color: #222; box-shadow: 0 0 0 1px #222 inset; }
+
+.material-chip__preview {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #efefec;
+}
+
+.material-chip__preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.material-chip__fallback {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #f3f3f0, #dfdfdb);
+}
+
+.material-chip__meta { display: flex; flex-direction: column; min-width: 0; }
+.material-chip__name { font-size: 13px; font-weight: 650; line-height: 1.2; }
+.material-chip__code { margin-top: 2px; color: #777; font-size: 11px; }
