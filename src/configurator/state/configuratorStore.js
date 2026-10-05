@@ -1,11 +1,10 @@
 import { create } from 'zustand'
-import materials from '../../data/materials/materials.json'
 import product from '../../data/products/product.example.json'
 import { getGroupMaterials } from '../materials/MaterialAvailability'
 
 const groupOrder = product.configurationFlow ?? Object.keys(product.materialGroups ?? {})
 
-function buildInitialMaterials() {
+function buildInitialMaterials(materials = []) {
   const selected = {}
 
   groupOrder.forEach((groupId) => {
@@ -23,9 +22,9 @@ function buildInitialMaterials() {
   return selected
 }
 
-const initialMaterials = buildInitialMaterials()
+const initialMaterials = {}
 
-function repairDownstreamSelections(selected, changedGroupId) {
+function repairDownstreamSelections(selected, changedGroupId, materials = []) {
   const repaired = { ...selected }
   const changedIndex = groupOrder.indexOf(changedGroupId)
 
@@ -59,9 +58,13 @@ export const useConfiguratorStore = create((set) => ({
   selectedMaterials: initialMaterials,
   animationProgress: 0,
   selectedModules: {},
+  materialCatalog: [],
+
+  initializeMaterialCatalog: (materials) => set((state) => ({ materialCatalog: materials, selectedMaterials: Object.keys(state.selectedMaterials).length ? state.selectedMaterials : buildInitialMaterials(materials) })),
 
   setMaterial: (groupId, materialId) =>
     set((state) => {
+      const materials = state.materialCatalog
       const allowed = getGroupMaterials({
         product,
         groupId,
@@ -79,7 +82,7 @@ export const useConfiguratorStore = create((set) => ({
       }
 
       return {
-        selectedMaterials: repairDownstreamSelections(selected, groupId),
+        selectedMaterials: repairDownstreamSelections(selected, groupId, materials),
       }
     }),
 
@@ -103,7 +106,7 @@ export const useConfiguratorStore = create((set) => ({
 
   reset: () =>
     set({
-      selectedMaterials: { ...initialMaterials },
+      selectedMaterials: buildInitialMaterials(useConfiguratorStore.getState().materialCatalog),
       animationProgress: 0,
       selectedModules: {},
     }),
