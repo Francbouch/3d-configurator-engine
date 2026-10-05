@@ -15,7 +15,6 @@ const MODEL_URL = resolveAssetUrl(product.model?.url)
 
 export default function ModelMapper() {
   const [draft, setDraft] = useState(null)
-  const [publishedDraft, setPublishedDraft] = useState(null)
   const [loadError, setLoadError] = useState('')
   const [parts, setParts] = useState([])
   const [basePrice, setBasePrice] = useState(product.pricing?.basePrice ?? 0)
@@ -324,7 +323,7 @@ export default function ModelMapper() {
 
   function resetDraft() {
     clearAdminDraft(product.id)
-    const source = publishedDraft ?? draft
+    const source = draft
     if (source) {
       setDraft(source)
       setParts(source.parts ?? [])
