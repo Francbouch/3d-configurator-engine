@@ -26,10 +26,20 @@ export default function ConfiguratorPanel() {
       <div className="panel__sections">
         {sections.map((section) => {
           const isOpen = openSection === section.id
+          const collectionIds = product.materialGroups[section.id]?.allowedCollectionIds ?? []
+          const collectionMaterialIds = new Set(
+            product.materialCollections
+              .filter((collection) => collectionIds.includes(collection.id))
+              .flatMap((collection) => collection.materialIds),
+          )
+          const groupMaterials = collectionIds.length
+            ? materials.filter((material) => collectionMaterialIds.has(material.id))
+            : materials
+
           const allowedMaterials = getAllowedMaterials({
             groupId: section.id,
             selected: selectedMaterials,
-            materials,
+            materials: groupMaterials,
             rules: product.rules,
           })
 
