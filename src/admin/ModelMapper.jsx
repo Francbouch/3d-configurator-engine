@@ -48,7 +48,10 @@ export default function ModelMapper() {
         const saved = loadAdminDraft(product.id)
 
         setDraft(nextDraft)
-        setParts(Array.isArray(saved?.parts) ? saved.parts : nextDraft.parts)
+        const restoredDraft = Array.isArray(saved?.parts)
+          ? buildProductMappingDraft(gltf.scene, saved.parts)
+          : nextDraft
+        setParts(restoredDraft.parts)
         setBasePrice(
           Number.isFinite(saved?.pricing?.basePrice)
             ? saved.pricing.basePrice
