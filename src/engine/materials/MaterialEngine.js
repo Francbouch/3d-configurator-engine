@@ -1,3 +1,16 @@
+const FURNITURE_MIN_ROUGHNESS = 0.62
+
+function prepareFurnitureMaterial(source) {
+  const material = source.clone()
+
+  if ('roughness' in material && (material.metalness ?? 0) < 0.5) {
+    material.roughness = Math.max(material.roughness ?? 0.5, FURNITURE_MIN_ROUGHNESS)
+  }
+
+  material.needsUpdate = true
+  return material
+}
+
 export function buildMaterialLibrary(root) {
   const library = new Map()
 
@@ -6,7 +19,7 @@ export function buildMaterialLibrary(root) {
     const materials = Array.isArray(object.material) ? object.material : [object.material]
     materials.forEach((material) => {
       if (material?.name && !library.has(material.name)) {
-        library.set(material.name, material.clone())
+        library.set(material.name, prepareFurnitureMaterial(material))
       }
     })
   })
