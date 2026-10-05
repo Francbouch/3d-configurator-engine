@@ -28,6 +28,8 @@ jobs:
           node-version: 20
       - name: Install
         run: npm install
+      - name: Validate configuration
+        run: npm run validate-config
       - name: Build
         run: npm run build
       - name: Copy 3D assets
