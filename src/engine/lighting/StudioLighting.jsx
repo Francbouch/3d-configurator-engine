@@ -8,17 +8,17 @@ export const DEFAULT_STUDIO_LIGHTING = Object.freeze({
   },
   key: {
     position: [9.5, 3.4, 7.5],
-    intensity: 1.0,
+    intensity: 1.2,
   },
   fill: {
     position: [-5.5, 3.2, 4],
-    intensity: 1.0,
+    intensity: 1.1,
   },
   rim: {
     position: [2.5, 4, -6],
-    intensity: 0.85,
+    intensity: 0.95,
   },
-  environmentIntensity: 0.78,
+  environmentIntensity: 0.32,
 })
 
 export default function StudioLighting({ preset = DEFAULT_STUDIO_LIGHTING }) {
