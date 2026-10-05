@@ -4,10 +4,36 @@
   "model": {
     "url": "/CABINET%20TEST.glb",
     "status": "temporary",
-    "parts": {
-      "facade": "FACADE",
-      "caisson": "CAISSON",
-      "interieur": "INTERIEUR"
+    "parts": [
+      {
+        "node": "FACADE",
+        "group": "facade",
+        "materialEditable": true
+      },
+      {
+        "node": "CAISSON",
+        "group": "caisson",
+        "materialEditable": true
+      },
+      {
+        "node": "INTERIEUR",
+        "group": "interieur",
+        "materialEditable": true
+      }
+    ]
+  },
+  "materialGroups": {
+    "facade": {
+      "label": "Façade",
+      "allowedCollectionIds": []
+    },
+    "caisson": {
+      "label": "Caisson",
+      "allowedCollectionIds": []
+    },
+    "interieur": {
+      "label": "Intérieur",
+      "allowedCollectionIds": []
     }
   },
   "materialCollections": [],
