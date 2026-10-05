@@ -11,8 +11,11 @@ export default function ConfiguratorPanel() {
   const [openSection, setOpenSection] = useState(null)
   const selectedMaterials = useConfiguratorStore((state) => state.selectedMaterials)
   const setMaterial = useConfiguratorStore((state) => state.setMaterial)
+  const selectedModules = useConfiguratorStore((state) => state.selectedModules)
+  const toggleModule = useConfiguratorStore((state) => state.toggleModule)
 
-  const price = calculatePrice(product.pricing, selectedMaterials)
+  const modules = (product.modules ?? []).filter((module) => module.enabled !== false && module.model?.url)
+  const price = calculatePrice(product.pricing, selectedMaterials, modules, selectedModules)
   const showPrice = product.pricing?.displayPrice === true
 
   const groupOrder = product.configurationFlow ?? Object.keys(product.materialGroups)
@@ -74,6 +77,33 @@ export default function ConfiguratorPanel() {
           )
         })}
       </div>
+
+      {modules.length > 0 && (
+        <div className="panel__sections">
+          <div className="panel__group">
+            <div className="panel__section">
+              <span>Options</span>
+            </div>
+            <div className="material-grid">
+              {modules.map((module) => (
+                <button
+                  className={selectedModules[module.id] ? 'material-chip is-selected' : 'material-chip'}
+                  type="button"
+                  key={module.id}
+                  onClick={() => toggleModule(module.id)}
+                >
+                  <span className="material-chip__meta">
+                    <span className="material-chip__name">{module.name}</span>
+                    {Number(module.price ?? 0) > 0 && (
+                      <span>+ {formatPrice(Number(module.price), product.pricing?.currency ?? 'CAD')}</span>
+                    )}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {showPrice && (
         <div className="panel__price">
