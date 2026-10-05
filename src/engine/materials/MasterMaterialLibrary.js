@@ -1,4 +1,4 @@
-export const MASTER_MATERIAL_LIBRARY_VERSION = '92268e654ea8dedb8d010144ad9713599311df5e'
+export const MASTER_MATERIAL_LIBRARY_VERSION = 'c7e3bdf81610a82c230f4c6bf5258ddb588ac870'
 export const MASTER_MATERIAL_LIBRARY_URL = `${import.meta.env.BASE_URL}CUBES%20TEXTURES%20TEST.glb?v=${MASTER_MATERIAL_LIBRARY_VERSION}`
 
 export function materialRecordsFromScene(root, savedMaterials = []) {
