@@ -3,12 +3,17 @@ import materials from '../data/materials/materials.json'
 import product from '../data/products/product.example.json'
 import { getAllowedMaterials } from '../configurator/rules/RulesEngine'
 import { useConfiguratorStore } from '../configurator/state/configuratorStore'
+import { calculatePrice } from '../configurator/pricing/PriceEngine'
+import { formatPrice } from '../configurator/pricing/PricingUtils'
 import MaterialPreview from './MaterialPreview'
 
 export default function ConfiguratorPanel() {
   const [openSection, setOpenSection] = useState(null)
   const selectedMaterials = useConfiguratorStore((state) => state.selectedMaterials)
   const setMaterial = useConfiguratorStore((state) => state.setMaterial)
+
+  const price = calculatePrice(product.pricing, selectedMaterials)
+  const showPrice = product.pricing?.displayPrice === true
 
   const groupOrder = product.configurationFlow ?? Object.keys(product.materialGroups)
   const sections = groupOrder
@@ -79,6 +84,13 @@ export default function ConfiguratorPanel() {
           )
         })}
       </div>
+
+      {showPrice && (
+        <div className="panel__price">
+          <span>Prix</span>
+          <strong>{formatPrice(price.total, price.currency)}</strong>
+        </div>
+      )}
     </aside>
   )
 }
