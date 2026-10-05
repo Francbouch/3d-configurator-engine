@@ -2,6 +2,7 @@ import { useGLTF } from '@react-three/drei'
 import { useMemo, useState } from 'react'
 import product from '../data/products/product.example.json'
 import { buildProductMappingDraft } from '../configurator/model/ProductMapping'
+import { formatPrice } from '../configurator/pricing/PricingUtils'
 
 const MODEL_URL = `${import.meta.env.BASE_URL}CABINET%20TEST.glb`
 
@@ -10,6 +11,19 @@ export default function ModelMapper() {
   const draft = useMemo(() => buildProductMappingDraft(gltf.scene), [gltf.scene])
   const [parts, setParts] = useState(draft.parts)
   const [basePrice, setBasePrice] = useState(product.pricing?.basePrice ?? 0)
+  const [adjustments, setAdjustments] = useState(product.pricing?.adjustments ?? [])
+
+  function addAdjustment() {
+    setAdjustments((current) => [...current, { id: `adjustment-${Date.now()}`, label: '', amount: 0, enabled: true }])
+  }
+
+  function updateAdjustment(index, patch) {
+    setAdjustments((current) => current.map((item, i) => i === index ? { ...item, ...patch } : item))
+  }
+
+  function removeAdjustment(index) {
+    setAdjustments((current) => current.filter((_, i) => i !== index))
+  }
 
   function updatePart(index, patch) {
     setParts((current) => current.map((part, i) => i === index ? { ...part, ...patch } : part))
@@ -35,6 +49,22 @@ export default function ModelMapper() {
           <input type="number" min="0" step="1" value={basePrice} onChange={(event) => setBasePrice(Number(event.target.value))} />
           <span>$ CAD</span>
         </label>
+      </section>
+
+      <section className="admin__pricing-list">
+        <div className="admin__pricing-title">
+          <div><strong>Suppléments</strong><small>Options, matériaux ou dimensions pourront utiliser ces ajustements.</small></div>
+          <button type="button" onClick={addAdjustment}>+ Ajouter</button>
+        </div>
+        {adjustments.length === 0 && <div className="admin__empty">Aucun supplément configuré.</div>}
+        {adjustments.map((item, index) => (
+          <div className="admin__price-row" key={item.id}>
+            <input placeholder="Nom du supplément" value={item.label} onChange={(event) => updateAdjustment(index, { label: event.target.value })} />
+            <input type="number" step="1" value={item.amount} onChange={(event) => updateAdjustment(index, { amount: Number(event.target.value) })} />
+            <span>{formatPrice(item.amount, product.pricing?.currency)}</span>
+            <button type="button" className="admin__remove" onClick={() => removeAdjustment(index)}>×</button>
+          </div>
+        ))}
       </section>
 
       <section className="admin__card">
