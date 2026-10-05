@@ -15,6 +15,7 @@ const MODEL_URL = resolveAssetUrl(product.model?.url)
 
 export default function ModelMapper() {
   const [draft, setDraft] = useState(null)
+  const [publishedDraft, setPublishedDraft] = useState(null)
   const [loadError, setLoadError] = useState('')
   const [parts, setParts] = useState([])
   const [basePrice, setBasePrice] = useState(product.pricing?.basePrice ?? 0)
@@ -292,14 +293,20 @@ export default function ModelMapper() {
 
   function resetDraft() {
     clearAdminDraft(product.id)
-    setParts(draft.parts)
+    const source = publishedDraft ?? draft
+    if (source) {
+      setDraft(source)
+      setParts(source.parts ?? [])
+    }
+    setModelName(product.name)
+    setUploadedModelName('')
     setBasePrice(product.pricing?.basePrice ?? 0)
     setAdjustments(product.pricing?.adjustments ?? [])
     setMaterials(initialMaterials)
     setRules(product.rules ?? [])
     setModules(product.modules ?? [])
     setDisplayPrice(product.pricing?.displayPrice === true)
-    setSaveStatus('Brouillon local réinitialisé')
+    setSaveStatus('Brouillon local réinitialisé à la version publiée')
   }
 
   if (loadError) {
