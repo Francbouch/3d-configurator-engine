@@ -4,10 +4,10 @@ export const DEFAULT_STUDIO_LIGHTING = Object.freeze({
   hemisphere: {
     skyColor: '#ffffff',
     groundColor: '#e7e7e4',
-    intensity: 0.16,
+    intensity: 0.34,
   },
   key: {
-    position: [9.5, 3.4, 7.5],
+    position: [10.5, 2.6, 4.5],
     intensity: 1.2,
   },
   fill: {
@@ -18,7 +18,7 @@ export const DEFAULT_STUDIO_LIGHTING = Object.freeze({
     position: [2.5, 4, -6],
     intensity: 0.95,
   },
-  environmentIntensity: 0.18,
+  environmentIntensity: 0.32,
 })
 
 export default function StudioLighting({ preset = DEFAULT_STUDIO_LIGHTING }) {
