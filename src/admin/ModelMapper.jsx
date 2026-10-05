@@ -404,7 +404,7 @@ export default function ModelMapper() {
             <button type="button" onClick={addMaterial}>+ Ajouter un matériau</button>
           </div>
           <div className="admin__materials-head">
-            <span>Nom</span><span>Code</span><span>Fabricant</span><span>Source GLB</span><span>Actif</span><span>Actions</span>
+            <span>Nom</span><span>Code</span><span>Fabricant</span><span>Matériau 3D source</span><span>Actif</span><span>Actions</span>
           </div>
           {materials.map((material, index) => (
             <div className="admin__material-row" key={material.id}>
@@ -434,8 +434,8 @@ export default function ModelMapper() {
                 <button type="button" className="admin__remove" onClick={() => removeModule(index)} aria-label="Supprimer l'option">×</button>
               </div>
               <div className="admin__module-grid">
-                <label><span>GLB du module</span><div className="admin__module-file"><strong>{module.glbFileName || 'Aucun fichier'}</strong><label className="admin__upload"><input type="file" accept=".glb,model/gltf-binary" onChange={(e) => handleModuleGlb(index, e)} /><span>Choisir</span></label></div></label>
-                <label><span>Point d’ancrage</span><input placeholder="ANCHOR_STORAGE_RIGHT" value={module.anchor} onChange={(e) => updateModule(index, { anchor: e.target.value })} /></label>
+                <label><span>Fichier 3D du module</span><div className="admin__module-file"><strong>{module.glbFileName || 'Aucun fichier'}</strong><label className="admin__upload"><input type="file" accept=".glb,model/gltf-binary" onChange={(e) => handleModuleGlb(index, e)} /><span>Choisir</span></label></div></label>
+                <label><span>Position d’assemblage</span><input placeholder="Ex. rangement_droite" value={module.anchor} onChange={(e) => updateModule(index, { anchor: e.target.value })} /></label>
                 <label><span>Supplément</span><div className="admin__money"><input type="number" min="0" step="1" value={module.price} onChange={(e) => updateModule(index, { price: Number(e.target.value) })} /><span>$ CAD</span></div></label>
                 <label><span>Matériaux</span><select value={module.materialGroup} onChange={(e) => updateModule(index, { materialGroup: e.target.value })}><option value="">Fixe / aucun</option>{groupIds.map((id) => <option key={id} value={id}>{product.materialGroups?.[id]?.label ?? id}</option>)}</select></label>
               </div>
