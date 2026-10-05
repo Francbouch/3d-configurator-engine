@@ -1,24 +1,63 @@
 import { create } from 'zustand'
+import materials from '../../data/materials/materials.json'
+import product from '../../data/products/product.example.json'
+import { getAllowedMaterials } from '../rules/RulesEngine'
+
+const groupOrder = Object.keys(product.materialGroups)
+const initialMaterials = Object.fromEntries(
+  groupOrder.map((groupId) => [groupId, 'Blanc']),
+)
+
+function repairDownstreamSelections(selected, changedGroupId) {
+  const repaired = { ...selected }
+  const changedIndex = groupOrder.indexOf(changedGroupId)
+
+  if (changedIndex < 0) return repaired
+
+  for (let index = changedIndex + 1; index < groupOrder.length; index += 1) {
+    const groupId = groupOrder[index]
+    const allowed = getAllowedMaterials({
+      groupId,
+      selected: repaired,
+      materials,
+      rules: product.rules,
+    })
+
+    const currentIsValid = allowed.some(
+      (material) => material.id === repaired[groupId],
+    )
+
+    if (!currentIsValid) {
+      const preferredDefault = allowed.find((material) => material.id === 'Blanc')
+      repaired[groupId] = preferredDefault?.id ?? allowed[0]?.id ?? null
+    }
+  }
+
+  return repaired
+}
 
 export const useConfiguratorStore = create((set) => ({
-  productId: 'lit-cabinet-development',
-  selectedMaterials: {
-    facade: 'Blanc',
-    caisson: 'Blanc',
-    interieur: 'Blanc',
-  },
+  productId: product.id,
+  selectedMaterials: initialMaterials,
   animationProgress: 0,
-  setMaterial: (part, materialId) =>
-    set((state) => ({
-      selectedMaterials: {
+
+  setMaterial: (groupId, materialId) =>
+    set((state) => {
+      const selected = {
         ...state.selectedMaterials,
-        [part]: materialId,
-      },
-    })),
+        [groupId]: materialId,
+      }
+
+      return {
+        selectedMaterials: repairDownstreamSelections(selected, groupId),
+      }
+    }),
+
   setAnimationProgress: (animationProgress) => set({ animationProgress }),
+
   reset: () =>
     set({
-      selectedMaterials: { facade: 'Blanc', caisson: 'Blanc', interieur: 'Blanc' },
+      selectedMaterials: { ...initialMaterials },
       animationProgress: 0,
     }),
 }))
