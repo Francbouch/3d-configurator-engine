@@ -1,4 +1,4 @@
-import { Bounds, Center, Clone, useGLTF } from '@react-three/drei'
+import { Bounds, Center, useGLTF } from '@react-three/drei'
 import { useEffect, useMemo } from 'react'
 import { useConfiguratorStore } from '../../configurator/state/configuratorStore'
 import product from '../../data/products/product.example.json'
@@ -44,7 +44,7 @@ function LoadedProduct({ url }) {
   return (
     <Bounds fit clip observe margin={1.18}>
       <Center bottom>
-        <Clone object={model} castShadow receiveShadow />
+        <primitive object={model} />
       </Center>
     </Bounds>
   )
