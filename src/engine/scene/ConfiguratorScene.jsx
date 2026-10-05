@@ -4,7 +4,7 @@ import ProductCamera from '../camera/ProductCamera'
 import StudioLighting from '../lighting/StudioLighting'
 import ProductModel from '../model/ProductModel'
 
-const DEVELOPMENT_MODEL_URL = '/models/cabinet-test.glb'
+const DEVELOPMENT_MODEL_URL = '/CABINET%20TEST.glb'
 
 export default function ConfiguratorScene() {
   return (
