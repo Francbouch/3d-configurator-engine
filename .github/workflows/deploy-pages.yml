@@ -1,5 +1,5 @@
 name: Deploy configurator to GitHub Pages
-# deployment refresh: material commercial names
+# deployment refresh: back-office model mapper
 
 on:
   push:
