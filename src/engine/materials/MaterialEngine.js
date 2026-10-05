@@ -7,6 +7,12 @@ const DEFAULT_FURNITURE_PROFILE = Object.freeze({
 
 function normalizeFurnitureMaterial(source, profile = DEFAULT_FURNITURE_PROFILE) {
   const material = source.clone()
+  // The master GLB is the source of truth for all texture/UV data.
+  // Never replace, rescale, repeat, rotate, offset or regenerate its maps.
+  const sourceMaps = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap']
+  sourceMaps.forEach((key) => {
+    if (source[key]) material[key] = source[key]
+  })
 
   // Furniture finishes are treated as dielectric surfaces by default.
   if ('metalness' in material && (material.metalness ?? 0) < 0.5) {
@@ -57,7 +63,13 @@ export function buildMaterialLibrary(root, materialProfiles = {}) {
         ...(materialProfiles[material.name] ?? {}),
       }
 
-      library.set(material.name, normalizeFurnitureMaterial(material, profile))
+      const masterMaterial = normalizeFurnitureMaterial(material, profile)
+      masterMaterial.userData = {
+        ...masterMaterial.userData,
+        masterGlbMaterial: true,
+        masterGlbMaterialName: material.name,
+      }
+      library.set(material.name, masterMaterial)
     })
   })
 
