@@ -19,6 +19,8 @@ export default function ModelMapper() {
   const [basePrice, setBasePrice] = useState(product.pricing?.basePrice ?? 0)
   const [adjustments, setAdjustments] = useState(product.pricing?.adjustments ?? [])
   const [saveStatus, setSaveStatus] = useState('')
+  const [modelName, setModelName] = useState(product.name)
+  const [uploadedModelName, setUploadedModelName] = useState('')
 
   const groupIds = product.configurationFlow ?? Object.keys(product.materialGroups ?? {})
   const validation = useMemo(
@@ -78,6 +80,48 @@ export default function ModelMapper() {
       cancelled = true
     }
   }, [])
+
+  function scanScene(scene, existingParts = []) {
+    const nextDraft = buildProductMappingDraft(scene, existingParts)
+    setDraft(nextDraft)
+    setParts(nextDraft.parts)
+    setLoadError('')
+    return nextDraft
+  }
+
+  function handleModelUpload(event) {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (!file.name.toLowerCase().endsWith('.glb')) {
+      setSaveStatus('Le fichier doit être un GLB.')
+      event.target.value = ''
+      return
+    }
+
+    const url = URL.createObjectURL(file)
+    const loader = new GLTFLoader()
+    setSaveStatus('Analyse du GLB…')
+
+    loader.load(
+      url,
+      (gltf) => {
+        const nextDraft = scanScene(gltf.scene)
+        setUploadedModelName(file.name)
+        setModelName(file.name.replace(/\.glb$/i, ''))
+        setSaveStatus(`${nextDraft.scan.meshCount} pièces détectées dans ${file.name}`)
+        URL.revokeObjectURL(url)
+      },
+      undefined,
+      (error) => {
+        console.error('Unable to scan uploaded GLB', error)
+        setSaveStatus('Impossible d’analyser ce GLB.')
+        URL.revokeObjectURL(url)
+      },
+    )
+
+    event.target.value = ''
+  }
 
   function addAdjustment() {
     setAdjustments((current) => [
@@ -162,6 +206,26 @@ export default function ModelMapper() {
         </div>
         <a className="admin__link" href="./">Retour au configurateur</a>
       </header>
+
+      <section className="admin__model-import">
+        <div>
+          <strong>Ajouter un meuble</strong>
+          <small>Déposez un fichier GLB : les pièces sont détectées automatiquement, sans modifier le configurateur publié.</small>
+        </div>
+        <div className="admin__model-import-fields">
+          <input
+            aria-label="Nom du meuble"
+            placeholder="Nom du meuble"
+            value={modelName}
+            onChange={(event) => setModelName(event.target.value)}
+          />
+          <label className="admin__upload">
+            <input type="file" accept=".glb,model/gltf-binary" onChange={handleModelUpload} />
+            <span>{uploadedModelName ? 'Changer le GLB' : '+ Choisir un GLB'}</span>
+          </label>
+        </div>
+        {uploadedModelName && <span className="admin__model-file">{uploadedModelName}</span>}
+      </section>
 
       <section className="admin__draftbar">
         <div>
