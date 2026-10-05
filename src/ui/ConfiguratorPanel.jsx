@@ -3,6 +3,7 @@ import materials from '../data/materials/materials.json'
 import product from '../data/products/product.example.json'
 import { getAllowedMaterials } from '../configurator/rules/RulesEngine'
 import { useConfiguratorStore } from '../configurator/state/configuratorStore'
+import MaterialPreview from './MaterialPreview'
 
 export default function ConfiguratorPanel() {
   const [openSection, setOpenSection] = useState(null)
@@ -65,11 +66,7 @@ export default function ConfiguratorPanel() {
                       onClick={() => setMaterial(section.id, material.id)}
                     >
                       <span className="material-chip__preview">
-                        {material.thumbnail ? (
-                          <img src={material.thumbnail} alt="" />
-                        ) : (
-                          <span className="material-chip__fallback" aria-hidden="true" />
-                        )}
+                        <MaterialPreview material={material} />
                       </span>
                       <span className="material-chip__meta">
                         <span className="material-chip__name">{material.name}</span>
