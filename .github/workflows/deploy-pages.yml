@@ -1,4 +1,5 @@
 name: Deploy configurator to GitHub Pages
+# deployment refresh: material commercial names
 
 on:
   push:
