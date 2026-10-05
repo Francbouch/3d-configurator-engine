@@ -1,0 +1,22 @@
+{
+  "id": "example-product",
+  "name": "Example product",
+  "model": {
+    "url": "/models/product.glb",
+    "parts": {
+      "facade": "facade",
+      "caisson": "caisson",
+      "interieur": "interieur"
+    }
+  },
+  "materialCollections": [],
+  "rules": [],
+  "animations": {
+    "open": {
+      "enabled": false,
+      "clip": "Open",
+      "labelOpen": "Ouvrir",
+      "labelClose": "Fermer"
+    }
+  }
+}
