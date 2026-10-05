@@ -120,5 +120,6 @@
     "basePrice": 0,
     "adjustments": [],
     "displayPrice": false
-  }
+  },
+  "modules": []
 }
