@@ -25,21 +25,43 @@
   "materialGroups": {
     "facade": {
       "label": "Façade",
-      "allowedCollectionIds": [],
+      "allowedCollectionIds": [
+        "standard-finishes"
+      ],
       "defaultMaterialId": "Blanc"
     },
     "caisson": {
       "label": "Caisson",
-      "allowedCollectionIds": [],
+      "allowedCollectionIds": [
+        "standard-finishes"
+      ],
       "defaultMaterialId": "Blanc"
     },
     "interieur": {
       "label": "Intérieur",
-      "allowedCollectionIds": [],
+      "allowedCollectionIds": [
+        "standard-finishes"
+      ],
       "defaultMaterialId": "Blanc"
     }
   },
-  "materialCollections": [],
+  "materialCollections": [
+    {
+      "id": "standard-finishes",
+      "label": "Finitions standard",
+      "materialIds": [
+        "580",
+        "581",
+        "582",
+        "588",
+        "Blanc",
+        "832",
+        "831",
+        "592",
+        "noir"
+      ]
+    }
+  ],
   "rules": [
     {
       "id": "caisson-non-neutral",
