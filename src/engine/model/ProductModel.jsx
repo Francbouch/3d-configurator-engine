@@ -2,6 +2,7 @@ import { Bounds, Center, Clone, useGLTF } from '@react-three/drei'
 import { useEffect, useMemo } from 'react'
 import { useConfiguratorStore } from '../../configurator/state/configuratorStore'
 import product from '../../data/products/product.example.json'
+import materials from '../../data/materials/materials.json'
 import { applyMaterialToParts, buildMaterialLibrary } from '../materials/MaterialEngine'
 
 const MATERIAL_LIBRARY_URL = `${import.meta.env.BASE_URL}CUBES%20TEXTURES%20TEST.glb`
@@ -12,9 +13,19 @@ function LoadedProduct({ url }) {
   const selectedMaterials = useConfiguratorStore((state) => state.selectedMaterials)
 
   const model = useMemo(() => productGltf.scene.clone(true), [productGltf.scene])
+  const materialProfiles = useMemo(
+    () => Object.fromEntries(
+      materials.map((material) => [
+        material.source?.materialName ?? material.id,
+        material.finish ?? {},
+      ]),
+    ),
+    []
+  )
+
   const materialLibrary = useMemo(
-    () => buildMaterialLibrary(materialGltf.scene),
-    [materialGltf.scene]
+    () => buildMaterialLibrary(materialGltf.scene, materialProfiles),
+    [materialGltf.scene, materialProfiles]
   )
 
   useEffect(() => {
