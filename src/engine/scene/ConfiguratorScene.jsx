@@ -4,8 +4,10 @@ import * as THREE from 'three'
 import ProductCamera from '../camera/ProductCamera'
 import StudioLighting from '../lighting/StudioLighting'
 import ProductModel from '../model/ProductModel'
+import product from '../../data/products/product.example.json'
+import { resolveAssetUrl } from '../assets/resolveAssetUrl'
 
-const DEVELOPMENT_MODEL_URL = `${import.meta.env.BASE_URL}CABINET%20TEST.glb`
+const MODEL_URL = resolveAssetUrl(product.model?.url)
 
 export default function ConfiguratorScene() {
   return (
@@ -23,7 +25,7 @@ export default function ConfiguratorScene() {
       <color attach="background" args={['#f7f7f5']} />
       <Suspense fallback={null}>
         <StudioLighting />
-        <ProductModel url={DEVELOPMENT_MODEL_URL} />
+        <ProductModel url={MODEL_URL} />
       </Suspense>
       <ProductCamera />
     </Canvas>
