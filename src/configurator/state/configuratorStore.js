@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import materials from '../../data/materials/materials.json'
 import product from '../../data/products/product.example.json'
-import { getAllowedMaterials } from '../rules/RulesEngine'
+import { getGroupMaterials } from '../materials/MaterialAvailability'
 
 const groupOrder = product.configurationFlow ?? Object.keys(product.materialGroups)
 const initialMaterials = Object.fromEntries(
@@ -19,11 +19,11 @@ function repairDownstreamSelections(selected, changedGroupId) {
 
   for (let index = changedIndex + 1; index < groupOrder.length; index += 1) {
     const groupId = groupOrder[index]
-    const allowed = getAllowedMaterials({
+    const allowed = getGroupMaterials({
+      product,
       groupId,
       selected: repaired,
       materials,
-      rules: product.rules,
     })
 
     const currentIsValid = allowed.some(
