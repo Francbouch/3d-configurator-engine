@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import materials from '../data/materials/materials.json'
 import product from '../data/products/product.example.json'
-import { getAllowedMaterials } from '../configurator/rules/RulesEngine'
+import { getGroupMaterials } from '../configurator/materials/MaterialAvailability'
 import { useConfiguratorStore } from '../configurator/state/configuratorStore'
 import { calculatePrice } from '../configurator/pricing/PriceEngine'
 import { formatPrice } from '../configurator/pricing/PricingUtils'
@@ -32,21 +32,11 @@ export default function ConfiguratorPanel() {
       <div className="panel__sections">
         {sections.map((section) => {
           const isOpen = openSection === section.id
-          const collectionIds = product.materialGroups[section.id]?.allowedCollectionIds ?? []
-          const collectionMaterialIds = new Set(
-            product.materialCollections
-              .filter((collection) => collectionIds.includes(collection.id))
-              .flatMap((collection) => collection.materialIds),
-          )
-          const groupMaterials = collectionIds.length
-            ? materials.filter((material) => material.active !== false && collectionMaterialIds.has(material.id))
-            : materials.filter((material) => material.active !== false)
-
-          const allowedMaterials = getAllowedMaterials({
+          const allowedMaterials = getGroupMaterials({
+            product,
             groupId: section.id,
             selected: selectedMaterials,
-            materials: groupMaterials,
-            rules: product.rules,
+            materials,
           })
 
           return (
