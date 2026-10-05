@@ -7,7 +7,7 @@ export const DEFAULT_STUDIO_LIGHTING = Object.freeze({
     intensity: 0.34,
   },
   key: {
-    position: [10.5, 2.6, 4.5],
+    position: [7.5, 2.6, -9.5],
     intensity: 1.2,
   },
   fill: {
