@@ -2,7 +2,9 @@ import { Canvas } from '@react-three/fiber'
 import { Suspense } from 'react'
 import ProductCamera from '../camera/ProductCamera'
 import StudioLighting from '../lighting/StudioLighting'
-import ProductPlaceholder from '../model/ProductPlaceholder'
+import ProductModel from '../model/ProductModel'
+
+const DEVELOPMENT_MODEL_URL = '/models/cabinet-test.glb'
 
 export default function ConfiguratorScene() {
   return (
@@ -15,7 +17,7 @@ export default function ConfiguratorScene() {
       <color attach="background" args={['#f5f5f3']} />
       <Suspense fallback={null}>
         <StudioLighting />
-        <ProductPlaceholder />
+        <ProductModel url={DEVELOPMENT_MODEL_URL} />
       </Suspense>
       <ProductCamera />
     </Canvas>
