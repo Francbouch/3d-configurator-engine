@@ -50,6 +50,9 @@ export default function ModelMapper() {
       if (material.active !== false && !material.source?.materialName?.trim()) {
         errors.push(`Le matériau "${material.name || material.id}" n’a pas de matériau source GLB.`)
       }
+      if (!Number.isFinite(Number(material.priceAdjustment ?? 0))) {
+        errors.push(`Le prix du matériau "${material.name || material.id}" doit être un nombre.`)
+      }
     })
     return [...new Set(errors)]
   }, [validation.errors, modelName, basePrice, duplicateMaterialIds, materials])
@@ -452,7 +455,7 @@ export default function ModelMapper() {
             <button type="button" onClick={addMaterial}>+ Ajouter un matériau</button>
           </div>
           <div className="admin__materials-head">
-            <span>Nom</span><span>Code</span><span>Fabricant</span><span>Matériau 3D source</span><span>Actif</span><span>Actions</span>
+            <span>Nom</span><span>Code</span><span>Fabricant</span><span>Matériau 3D source</span><span>Prix</span><span>Actif</span><span>Actions</span>
           </div>
           {materials.map((material, index) => (
             <div className="admin__material-row" key={material.id}>
@@ -460,6 +463,7 @@ export default function ModelMapper() {
               <input placeholder="L000K" value={material.code ?? ''} onChange={(e) => updateMaterial(index, { code: e.target.value })} />
               <input placeholder="Fabricant" value={material.manufacturer ?? ''} onChange={(e) => updateMaterial(index, { manufacturer: e.target.value })} />
               <input placeholder="Nom dans le GLB" value={material.source?.materialName ?? ''} onChange={(e) => updateMaterial(index, { source: { ...(material.source ?? {}), type: 'glb-material', materialName: e.target.value } })} />
+              <div className="admin__money"><input aria-label={`Prix du matériau ${material.name}`} type="number" step="1" value={material.priceAdjustment ?? 0} onChange={(e) => updateMaterial(index, { priceAdjustment: Number(e.target.value) })} /><span>$ CAD</span></div>
               <label className="admin__toggle"><input type="checkbox" checked={material.active !== false} onChange={(e) => updateMaterial(index, { active: e.target.checked })} /><span>{material.active !== false ? 'Oui' : 'Non'}</span></label>
               <div className="admin__material-actions"><button type="button" className="admin__icon-button" onClick={() => duplicateMaterial(index)} aria-label="Dupliquer le matériau">＋</button><button type="button" className="admin__remove" onClick={() => removeMaterial(index)} aria-label="Supprimer le matériau">×</button></div>
             </div>
