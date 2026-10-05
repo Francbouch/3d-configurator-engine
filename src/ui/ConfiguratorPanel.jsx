@@ -9,10 +9,13 @@ export default function ConfiguratorPanel() {
   const selectedMaterials = useConfiguratorStore((state) => state.selectedMaterials)
   const setMaterial = useConfiguratorStore((state) => state.setMaterial)
 
-  const sections = Object.entries(product.materialGroups).map(([id, group]) => ({
-    id,
-    label: group.label,
-  }))
+  const groupOrder = product.configurationFlow ?? Object.keys(product.materialGroups)
+  const sections = groupOrder
+    .filter((id) => product.materialGroups[id])
+    .map((id) => ({
+      id,
+      label: product.materialGroups[id].label,
+    }))
 
   return (
     <aside className="panel">
