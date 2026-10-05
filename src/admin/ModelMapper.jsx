@@ -25,7 +25,7 @@ export default function ModelMapper() {
   const [materials, setMaterials] = useState(initialMaterials)
   const [activeSection, setActiveSection] = useState('model')
   const [rules, setRules] = useState(product.rules ?? [])
-  const [modules, setModules] = useState([])
+  const [modules, setModules] = useState(product.modules ?? [])
 
   const groupIds = product.configurationFlow ?? Object.keys(product.materialGroups ?? {})
   const validation = useMemo(
@@ -287,6 +287,9 @@ export default function ModelMapper() {
     setParts(draft.parts)
     setBasePrice(product.pricing?.basePrice ?? 0)
     setAdjustments(product.pricing?.adjustments ?? [])
+    setMaterials(initialMaterials)
+    setRules(product.rules ?? [])
+    setModules(product.modules ?? [])
     setSaveStatus('Brouillon local réinitialisé')
   }
 
