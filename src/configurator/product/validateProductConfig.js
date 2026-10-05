@@ -98,9 +98,50 @@ export function validateProductConfig(product, materials = []) {
     errors.push('Le prix de base doit être numérique.')
   }
 
-  ;(product?.pricing?.adjustments ?? []).forEach((adjustment) => {
+  const adjustments = product?.pricing?.adjustments ?? []
+  const duplicateAdjustmentIds = adjustments
+    .map((adjustment) => adjustment.id)
+    .filter(Boolean)
+    .filter((id, index, ids) => ids.indexOf(id) !== index)
+
+  if (duplicateAdjustmentIds.length) {
+    errors.push(
+      `IDs de suppléments dupliqués: ${[...new Set(duplicateAdjustmentIds)].join(', ')}.`,
+    )
+  }
+
+  adjustments.forEach((adjustment) => {
+    const label = adjustment.id ?? adjustment.label ?? 'sans id'
+
     if (!Number.isFinite(Number(adjustment.amount ?? 0))) {
-      errors.push(`Le supplément "${adjustment.id ?? adjustment.label ?? 'sans id'}" a un montant invalide.`)
+      errors.push(`Le supplément "${label}" a un montant invalide.`)
+    }
+
+    if (adjustment.when?.group && !groupIds.has(adjustment.when.group)) {
+      errors.push(
+        `Le supplément "${label}" dépend du groupe inexistant "${adjustment.when.group}".`,
+      )
+    }
+
+    if (
+      adjustment.when?.operator === 'equals' ||
+      adjustment.when?.operator === 'notEquals'
+    ) {
+      if (adjustment.when.value && !materialIds.has(adjustment.when.value)) {
+        errors.push(
+          `Le supplément "${label}" référence le matériau inexistant "${adjustment.when.value}".`,
+        )
+      }
+    }
+
+    if (adjustment.when?.operator === 'in' || adjustment.when?.operator === 'notIn') {
+      ;(adjustment.when.values ?? []).forEach((materialId) => {
+        if (!materialIds.has(materialId)) {
+          errors.push(
+            `Le supplément "${label}" référence le matériau inexistant "${materialId}".`,
+          )
+        }
+      })
     }
   })
 
