@@ -3,13 +3,27 @@ import materials from '../../data/materials/materials.json'
 import product from '../../data/products/product.example.json'
 import { getGroupMaterials } from '../materials/MaterialAvailability'
 
-const groupOrder = product.configurationFlow ?? Object.keys(product.materialGroups)
-const initialMaterials = Object.fromEntries(
-  groupOrder.map((groupId) => [
-    groupId,
-    product.materialGroups[groupId]?.defaultMaterialId ?? materials[0]?.id ?? null,
-  ]),
-)
+const groupOrder = product.configurationFlow ?? Object.keys(product.materialGroups ?? {})
+
+function buildInitialMaterials() {
+  const selected = {}
+
+  groupOrder.forEach((groupId) => {
+    const allowed = getGroupMaterials({
+      product,
+      groupId,
+      selected,
+      materials,
+    })
+    const defaultId = product.materialGroups?.[groupId]?.defaultMaterialId
+    const preferredDefault = allowed.find((material) => material.id === defaultId)
+    selected[groupId] = preferredDefault?.id ?? allowed[0]?.id ?? null
+  })
+
+  return selected
+}
+
+const initialMaterials = buildInitialMaterials()
 
 function repairDownstreamSelections(selected, changedGroupId) {
   const repaired = { ...selected }
@@ -31,7 +45,7 @@ function repairDownstreamSelections(selected, changedGroupId) {
     )
 
     if (!currentIsValid) {
-      const defaultId = product.materialGroups[groupId]?.defaultMaterialId
+      const defaultId = product.materialGroups?.[groupId]?.defaultMaterialId
       const preferredDefault = allowed.find((material) => material.id === defaultId)
       repaired[groupId] = preferredDefault?.id ?? allowed[0]?.id ?? null
     }
@@ -47,6 +61,17 @@ export const useConfiguratorStore = create((set) => ({
 
   setMaterial: (groupId, materialId) =>
     set((state) => {
+      const allowed = getGroupMaterials({
+        product,
+        groupId,
+        selected: state.selectedMaterials,
+        materials,
+      })
+
+      if (!allowed.some((material) => material.id === materialId)) {
+        return state
+      }
+
       const selected = {
         ...state.selectedMaterials,
         [groupId]: materialId,
