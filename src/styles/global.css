@@ -146,3 +146,16 @@ button { font: inherit; }
 .admin__pricing input { width:130px; text-align:right; font-size:16px; font-weight:650; }
 .admin__pricing label span { color:#777; font-size:12px; font-weight:650; }
 @media(max-width:760px){.admin__pricing{align-items:flex-start;flex-direction:column}.admin__pricing label{width:100%}.admin__pricing input{width:100%}}
+
+.admin__pricing-list { max-width:1100px; margin:0 auto 18px; padding:18px 20px; border:1px solid #e1e1dd; border-radius:18px; background:#fff; }
+.admin__pricing-title { display:flex; align-items:center; justify-content:space-between; gap:20px; }
+.admin__pricing-title>div { display:flex; flex-direction:column; gap:4px; }
+.admin__pricing-title strong { font-size:14px; }
+.admin__pricing-title small,.admin__empty { color:#888; font-size:12px; }
+.admin__pricing-title button { padding:9px 13px; border:0; border-radius:10px; background:#171717; color:#fff; cursor:pointer; font-weight:650; }
+.admin__empty { padding-top:14px; }
+.admin__price-row { display:grid; grid-template-columns:minmax(180px,1fr) 120px 110px 34px; gap:10px; align-items:center; margin-top:12px; }
+.admin__price-row input { width:100%; padding:10px 12px; border:1px solid #deded9; border-radius:10px; background:#fff; font:inherit; font-size:13px; }
+.admin__price-row>span { color:#555; font-size:13px; font-weight:650; text-align:right; }
+.admin__remove { width:34px; height:34px; border:0; border-radius:50%; background:#f1f1ee; cursor:pointer; font-size:20px; line-height:1; }
+@media(max-width:760px){.admin__price-row{grid-template-columns:1fr 100px 34px}.admin__price-row>span{display:none}}
