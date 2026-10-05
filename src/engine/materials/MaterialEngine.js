@@ -2,6 +2,7 @@ const DEFAULT_FURNITURE_PROFILE = Object.freeze({
   minRoughness: 0.62,
   envMapIntensity: 0.72,
   metalness: 0,
+  clearcoatMax: 0.08,
 })
 
 function normalizeFurnitureMaterial(source, profile = DEFAULT_FURNITURE_PROFILE) {
@@ -26,7 +27,9 @@ function normalizeFurnitureMaterial(source, profile = DEFAULT_FURNITURE_PROFILE)
   }
 
   // Normalize optional physical lobes when a GLB exports MeshPhysicalMaterial.
-  if ('clearcoat' in material) material.clearcoat = Math.min(material.clearcoat ?? 0, 0.08)
+  if ('clearcoat' in material) {
+    material.clearcoat = Math.min(material.clearcoat ?? 0, profile.clearcoatMax)
+  }
   if ('clearcoatRoughness' in material) {
     material.clearcoatRoughness = Math.max(material.clearcoatRoughness ?? 0.6, 0.6)
   }
