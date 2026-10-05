@@ -5,7 +5,10 @@ import product from '../../data/products/product.example.json'
 import materials from '../../data/materials/materials.json'
 import { applyMaterialToParts, buildMaterialLibrary } from '../materials/MaterialEngine'
 
-const MATERIAL_LIBRARY_URL = `${import.meta.env.BASE_URL}CUBES%20TEXTURES%20TEST.glb`
+// Version the master material library URL so a replaced GLB cannot be hidden by
+// browser/CDN/useGLTF caches when the filename stays intentionally stable.
+const MATERIAL_LIBRARY_VERSION = '92268e654ea8dedb8d010144ad9713599311df5e'
+const MATERIAL_LIBRARY_URL = `${import.meta.env.BASE_URL}CUBES%20TEXTURES%20TEST.glb?v=${MATERIAL_LIBRARY_VERSION}`
 
 function LoadedProduct({ url }) {
   const productGltf = useGLTF(url)
