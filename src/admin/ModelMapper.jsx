@@ -1,5 +1,6 @@
 import { useGLTF } from '@react-three/drei'
 import { useMemo, useState } from 'react'
+import product from '../data/products/product.example.json'
 import { buildProductMappingDraft } from '../configurator/model/ProductMapping'
 
 const MODEL_URL = `${import.meta.env.BASE_URL}CABINET%20TEST.glb`
@@ -8,6 +9,7 @@ export default function ModelMapper() {
   const gltf = useGLTF(MODEL_URL)
   const draft = useMemo(() => buildProductMappingDraft(gltf.scene), [gltf.scene])
   const [parts, setParts] = useState(draft.parts)
+  const [basePrice, setBasePrice] = useState(product.pricing?.basePrice ?? 0)
 
   function updatePart(index, patch) {
     setParts((current) => current.map((part, i) => i === index ? { ...part, ...patch } : part))
@@ -23,6 +25,17 @@ export default function ModelMapper() {
         </div>
         <a className="admin__link" href="./">Retour au configurateur</a>
       </header>
+
+      <section className="admin__pricing">
+        <div>
+          <strong>Prix de base</strong>
+          <small>Le moteur ajoutera ensuite les suppléments selon la configuration.</small>
+        </div>
+        <label>
+          <input type="number" min="0" step="1" value={basePrice} onChange={(event) => setBasePrice(Number(event.target.value))} />
+          <span>$ CAD</span>
+        </label>
+      </section>
 
       <section className="admin__card">
         <div className="admin__table-head">
