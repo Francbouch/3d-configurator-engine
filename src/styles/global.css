@@ -206,3 +206,6 @@ button { font: inherit; }
 .admin__toggle{display:flex;align-items:center;gap:6px;color:#666;font-size:12px}
 .admin__toggle input{width:auto}
 @media(max-width:760px){.admin__tabs{overflow-x:auto}.admin__tabs button{min-width:130px}.admin__materials-head{display:none}.admin__material-row{grid-template-columns:1fr 1fr}.admin__material-row .admin__remove{justify-self:end}}
+
+.admin__material-actions{display:flex;align-items:center;justify-content:flex-end;gap:5px}
+.admin__icon-button{width:34px;height:34px;border:0;border-radius:50%;background:#f1f1ee;color:#333;cursor:pointer;font-size:17px;line-height:1}
