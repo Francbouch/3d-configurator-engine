@@ -1,30 +1,61 @@
 import { scanModel, getEditableCandidates } from '../../engine/model/ModelScanner'
 
-export function buildProductMappingDraft(root) {
+function findExistingPart(node, existingParts = []) {
+  return existingParts.find((part) =>
+    (part.nodePath && part.nodePath === node.path) ||
+    (part.node && part.node === node.name)
+  )
+}
+
+export function buildProductMappingDraft(root, existingParts = []) {
   const scan = scanModel(root)
 
   return {
     scan,
-    parts: getEditableCandidates(scan).map((node) => ({
-      node: node.name,
-      nodePath: node.path,
-      group: null,
-      materialEditable: false,
-      sourceMaterials: node.materialNames,
-    })),
+    parts: getEditableCandidates(scan).map((node) => {
+      const existing = findExistingPart(node, existingParts)
+
+      return {
+        node: node.name,
+        nodePath: node.path,
+        group: existing?.group ?? null,
+        materialEditable: existing?.materialEditable === true,
+        sourceMaterials: node.materialNames,
+      }
+    }),
   }
 }
 
-export function validateProductMapping(mapping) {
+export function validateProductMapping(mapping, materialGroups = {}) {
   const errors = []
-  const editable = mapping.parts.filter((part) => part.materialEditable)
+  const warnings = []
+  const editable = (mapping.parts ?? []).filter((part) => part.materialEditable)
 
   editable.forEach((part) => {
-    if (!part.group) errors.push(`Editable part "${part.node || part.nodePath}" has no semantic group.`)
+    const label = part.node || part.nodePath || 'Sans nom'
+
+    if (!part.group) {
+      errors.push(`La pièce modifiable "${label}" n’a aucun groupe sémantique.`)
+      return
+    }
+
+    if (!materialGroups[part.group]) {
+      warnings.push(`Le groupe "${part.group}" de la pièce "${label}" n’existe pas encore dans le produit.`)
+    }
   })
 
   return {
     valid: errors.length === 0,
     errors,
+    warnings,
   }
+}
+
+export function toProductParts(mapping) {
+  return (mapping.parts ?? []).map(({ node, nodePath, group, materialEditable }) => ({
+    node,
+    ...(nodePath ? { nodePath } : {}),
+    group: group || null,
+    materialEditable: materialEditable === true,
+  }))
 }
