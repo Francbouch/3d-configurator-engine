@@ -5,9 +5,9 @@ function conditionMatches(condition, selected) {
 
   switch (condition.operator) {
     case 'in':
-      return condition.values.includes(value)
+      return (condition.values ?? []).includes(value)
     case 'notIn':
-      return !condition.values.includes(value)
+      return !(condition.values ?? []).includes(value)
     case 'equals':
       return value === condition.value
     case 'notEquals':
