@@ -1,6 +1,7 @@
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { useEffect, useMemo, useState } from 'react'
 import product from '../data/products/product.example.json'
+import initialMaterials from '../data/materials/materials.json'
 import {
   buildProductMappingDraft,
   toProductParts,
@@ -21,6 +22,8 @@ export default function ModelMapper() {
   const [saveStatus, setSaveStatus] = useState('')
   const [modelName, setModelName] = useState(product.name)
   const [uploadedModelName, setUploadedModelName] = useState('')
+  const [materials, setMaterials] = useState(initialMaterials)
+  const [activeSection, setActiveSection] = useState('model')
 
   const groupIds = product.configurationFlow ?? Object.keys(product.materialGroups ?? {})
   const validation = useMemo(
@@ -123,6 +126,35 @@ export default function ModelMapper() {
     event.target.value = ''
   }
 
+  function addMaterial() {
+    const id = `material-${Date.now()}`
+    setMaterials((current) => [
+      ...current,
+      {
+        id,
+        name: 'Nouveau matériau',
+        code: '',
+        manufacturer: '',
+        category: 'decor',
+        active: true,
+        source: { type: 'glb-material', materialName: id },
+      },
+    ])
+    setSaveStatus('')
+  }
+
+  function updateMaterial(index, patch) {
+    setMaterials((current) =>
+      current.map((material, i) => (i === index ? { ...material, ...patch } : material)),
+    )
+    setSaveStatus('')
+  }
+
+  function removeMaterial(index) {
+    setMaterials((current) => current.filter((_, i) => i !== index))
+    setSaveStatus('')
+  }
+
   function addAdjustment() {
     setAdjustments((current) => [
       ...current,
@@ -153,6 +185,7 @@ export default function ModelMapper() {
   function saveDraft() {
     const ok = saveAdminDraft(product.id, {
       parts: toProductParts({ parts }),
+      materials,
       pricing: {
         currency: product.pricing?.currency ?? 'CAD',
         basePrice,
@@ -207,7 +240,24 @@ export default function ModelMapper() {
         <a className="admin__link" href="./">Retour au configurateur</a>
       </header>
 
-      <section className="admin__model-import">
+      <nav className="admin__tabs" aria-label="Sections du back-office">
+        {[
+          ['model', 'Meuble & pièces'],
+          ['materials', 'Matériaux'],
+          ['pricing', 'Prix'],
+        ].map(([id, label]) => (
+          <button
+            type="button"
+            key={id}
+            className={activeSection === id ? 'is-active' : ''}
+            onClick={() => setActiveSection(id)}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      {activeSection === 'model' && <section className="admin__model-import">
         <div>
           <strong>Ajouter un meuble</strong>
           <small>Déposez un fichier GLB : les pièces sont détectées automatiquement, sans modifier le configurateur publié.</small>
@@ -225,7 +275,7 @@ export default function ModelMapper() {
           </label>
         </div>
         {uploadedModelName && <span className="admin__model-file">{uploadedModelName}</span>}
-      </section>
+      </section>}
 
       <section className="admin__draftbar">
         <div>
@@ -256,7 +306,33 @@ export default function ModelMapper() {
         </section>
       )}
 
-      <section className="admin__pricing">
+      {activeSection === 'materials' && (
+        <section className="admin__materials">
+          <div className="admin__pricing-title">
+            <div>
+              <strong>Bibliothèque de matériaux</strong>
+              <small>Matériaux disponibles pour les groupes du configurateur.</small>
+            </div>
+            <button type="button" onClick={addMaterial}>+ Ajouter un matériau</button>
+          </div>
+          <div className="admin__materials-head">
+            <span>Nom</span><span>Code</span><span>Fabricant</span><span>Source GLB</span><span>Actif</span><span />
+          </div>
+          {materials.map((material, index) => (
+            <div className="admin__material-row" key={material.id}>
+              <input value={material.name ?? ''} onChange={(e) => updateMaterial(index, { name: e.target.value })} />
+              <input placeholder="L000K" value={material.code ?? ''} onChange={(e) => updateMaterial(index, { code: e.target.value })} />
+              <input placeholder="Fabricant" value={material.manufacturer ?? ''} onChange={(e) => updateMaterial(index, { manufacturer: e.target.value })} />
+              <input placeholder="Nom dans le GLB" value={material.source?.materialName ?? ''} onChange={(e) => updateMaterial(index, { source: { ...(material.source ?? {}), type: 'glb-material', materialName: e.target.value } })} />
+              <label className="admin__toggle"><input type="checkbox" checked={material.active !== false} onChange={(e) => updateMaterial(index, { active: e.target.checked })} /><span>{material.active !== false ? 'Oui' : 'Non'}</span></label>
+              <button type="button" className="admin__remove" onClick={() => removeMaterial(index)} aria-label="Supprimer le matériau">×</button>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {activeSection === 'pricing' && <>
+<section className="admin__pricing">
         <div>
           <strong>Prix de base</strong>
           <small>Le moteur ajoutera ensuite les suppléments selon la configuration.</small>
@@ -316,8 +392,9 @@ export default function ModelMapper() {
           </div>
         ))}
       </section>
+      </>}
 
-      <section className="admin__card">
+      {activeSection === 'model' && <section className="admin__card">
         <div className="admin__table-head">
           <span>Pièce GLB</span>
           <span>Rôle</span>
@@ -360,7 +437,7 @@ export default function ModelMapper() {
             </select>
           </div>
         ))}
-      </section>
+      </section>}
     </main>
   )
 }
