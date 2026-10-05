@@ -1,26 +1,11 @@
 [
-  {
-    "id": "white",
-    "name": "Blanc",
-    "manufacturer": null,
-    "code": null,
-    "type": "color",
-    "color": "#f3f2ed",
-    "roughness": 0.55,
-    "physicalSizeMm": null,
-    "rotation": 0,
-    "maps": {}
-  },
-  {
-    "id": "black",
-    "name": "Noir",
-    "manufacturer": null,
-    "code": null,
-    "type": "color",
-    "color": "#171717",
-    "roughness": 0.5,
-    "physicalSizeMm": null,
-    "rotation": 0,
-    "maps": {}
-  }
+  { "id": "580", "name": "580", "sourceMaterial": "580" },
+  { "id": "581", "name": "581", "sourceMaterial": "581" },
+  { "id": "582", "name": "582", "sourceMaterial": "582" },
+  { "id": "588", "name": "588", "sourceMaterial": "588" },
+  { "id": "Blanc", "name": "Blanc", "sourceMaterial": "Blanc" },
+  { "id": "832", "name": "832", "sourceMaterial": "832" },
+  { "id": "831", "name": "831", "sourceMaterial": "831" },
+  { "id": "592", "name": "592", "sourceMaterial": "592" },
+  { "id": "noir", "name": "Noir", "sourceMaterial": "noir" }
 ]
