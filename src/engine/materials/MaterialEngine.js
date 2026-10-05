@@ -1,54 +1,4 @@
-const DEFAULT_FURNITURE_PROFILE = Object.freeze({
-  minRoughness: 0.62,
-  envMapIntensity: 0.72,
-  metalness: 0,
-  clearcoatMax: 0.08,
-})
-
-function normalizeFurnitureMaterial(source, profile = DEFAULT_FURNITURE_PROFILE) {
-  const material = source.clone()
-  // The master GLB is the source of truth for all texture/UV data.
-  // Never replace, rescale, repeat, rotate, offset or regenerate its maps.
-  const sourceMaps = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap']
-  sourceMaps.forEach((key) => {
-    if (source[key]) material[key] = source[key]
-  })
-
-  // Furniture finishes are treated as dielectric surfaces by default.
-  if ('metalness' in material && (material.metalness ?? 0) < 0.5) {
-    material.metalness = profile.metalness
-  }
-
-  if ('roughness' in material && (material.metalness ?? 0) < 0.5) {
-    material.roughness = Math.max(
-      material.roughness ?? profile.minRoughness,
-      profile.minRoughness
-    )
-  }
-
-  // Keep studio reflections realistic without allowing the environment
-  // to overpower the material's base colour and texture.
-  if ('envMapIntensity' in material) {
-    material.envMapIntensity = profile.envMapIntensity
-  }
-
-  // Normalize optional physical lobes when a GLB exports MeshPhysicalMaterial.
-  if ('clearcoat' in material) {
-    material.clearcoat = Math.min(material.clearcoat ?? 0, profile.clearcoatMax)
-  }
-  if ('clearcoatRoughness' in material) {
-    material.clearcoatRoughness = Math.max(material.clearcoatRoughness ?? 0.6, 0.6)
-  }
-
-  material.userData = {
-    ...material.userData,
-    configuratorMaterialProfile: { ...profile },
-  }
-  material.needsUpdate = true
-  return material
-}
-
-export function buildMaterialLibrary(root, materialProfiles = {}) {
+export function buildMaterialLibrary(root) {
   const library = new Map()
 
   root.traverse((object) => {
@@ -58,18 +8,7 @@ export function buildMaterialLibrary(root, materialProfiles = {}) {
     materials.forEach((material) => {
       if (!material?.name || library.has(material.name)) return
 
-      const profile = {
-        ...DEFAULT_FURNITURE_PROFILE,
-        ...(materialProfiles[material.name] ?? {}),
-      }
-
-      const masterMaterial = normalizeFurnitureMaterial(material, profile)
-      masterMaterial.userData = {
-        ...masterMaterial.userData,
-        masterGlbMaterial: true,
-        masterGlbMaterialName: material.name,
-      }
-      library.set(material.name, masterMaterial)
+      library.set(material.name, material)
     })
   })
 
@@ -105,8 +44,7 @@ export function applyMaterialToParts(root, parts, material) {
 
     target.traverse((object) => {
       if (!object.isMesh) return
-      object.material = material.clone()
-      object.material.needsUpdate = true
+      object.material = material
       applied = true
     })
   })
