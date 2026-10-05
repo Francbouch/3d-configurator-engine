@@ -4,21 +4,21 @@ export const DEFAULT_STUDIO_LIGHTING = Object.freeze({
   hemisphere: {
     skyColor: '#ffffff',
     groundColor: '#e7e7e4',
-    intensity: 0.34,
+    intensity: 0.24,
   },
   key: {
     position: [10.5, 2.6, 4.5],
     intensity: 1.2,
   },
   fill: {
-    position: [-6.5, 4.1, 3.5],
-    intensity: 1.22,
+    position: [-7.5, 5.0, 3.0],
+    intensity: 1.42,
   },
   rim: {
     position: [2.5, 4, -6],
     intensity: 0.95,
   },
-  environmentIntensity: 0.64,
+  environmentIntensity: 0.60,
 })
 
 export default function StudioLighting({ preset = DEFAULT_STUDIO_LIGHTING }) {
@@ -45,8 +45,8 @@ export default function StudioLighting({ preset = DEFAULT_STUDIO_LIGHTING }) {
         />
         <Lightformer
           form="rect"
-          intensity={2.18}
-          position={[-5.5, 2.2, 2]}
+          intensity={2.45}
+          position={[-6, 3.2, 2]}
           rotation={[0, 0.9, 0]}
           scale={[3.5, 6, 1]}
         />
