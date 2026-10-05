@@ -2,8 +2,8 @@
   {
     "id": "580",
     "name": "580",
-    "code": "580",
-    "manufacturer": null,
+    "code": "L580K",
+    "manufacturer": "Tafisa",
     "category": "decor",
     "active": true,
     "source": {
@@ -27,8 +27,8 @@
   {
     "id": "581",
     "name": "581",
-    "code": "581",
-    "manufacturer": null,
+    "code": "L581K",
+    "manufacturer": "Tafisa",
     "category": "decor",
     "active": true,
     "source": {
@@ -51,9 +51,9 @@
   },
   {
     "id": "582",
-    "name": "582",
-    "code": "582",
-    "manufacturer": null,
+    "name": "Fashionista",
+    "code": "L582K",
+    "manufacturer": "Tafisa",
     "category": "decor",
     "active": true,
     "source": {
@@ -78,7 +78,7 @@
     "id": "588",
     "name": "588",
     "code": "588",
-    "manufacturer": null,
+    "manufacturer": "Tafisa",
     "category": "decor",
     "active": true,
     "source": {
@@ -102,8 +102,8 @@
   {
     "id": "Blanc",
     "name": "Blanc",
-    "code": "Blanc",
-    "manufacturer": null,
+    "code": "L175C",
+    "manufacturer": "Tafisa",
     "category": "solid",
     "active": true,
     "source": {
@@ -128,7 +128,7 @@
     "id": "832",
     "name": "832",
     "code": "832",
-    "manufacturer": null,
+    "manufacturer": "Tafisa",
     "category": "decor",
     "active": true,
     "source": {
@@ -152,8 +152,8 @@
   {
     "id": "831",
     "name": "831",
-    "code": "831",
-    "manufacturer": null,
+    "code": "L831K",
+    "manufacturer": "Tafisa",
     "category": "decor",
     "active": true,
     "source": {
@@ -177,8 +177,8 @@
   {
     "id": "592",
     "name": "592",
-    "code": "592",
-    "manufacturer": null,
+    "code": "L592K",
+    "manufacturer": "Tafisa",
     "category": "decor",
     "active": true,
     "source": {
@@ -202,8 +202,8 @@
   {
     "id": "noir",
     "name": "Noir",
-    "code": "noir",
-    "manufacturer": null,
+    "code": "BLC11",
+    "manufacturer": "Tafisa",
     "category": "solid",
     "active": true,
     "source": {
