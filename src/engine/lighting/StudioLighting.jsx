@@ -11,8 +11,8 @@ export const DEFAULT_STUDIO_LIGHTING = Object.freeze({
     intensity: 1.2,
   },
   fill: {
-    position: [-5.5, 3.2, 4],
-    intensity: 1.1,
+    position: [-6.5, 4.1, 3.5],
+    intensity: 1.22,
   },
   rim: {
     position: [2.5, 4, -6],
@@ -45,8 +45,8 @@ export default function StudioLighting({ preset = DEFAULT_STUDIO_LIGHTING }) {
         />
         <Lightformer
           form="rect"
-          intensity={2.0}
-          position={[-5, 1.5, 2]}
+          intensity={2.18}
+          position={[-5.5, 2.2, 2]}
           rotation={[0, 0.9, 0]}
           scale={[3.5, 6, 1]}
         />
