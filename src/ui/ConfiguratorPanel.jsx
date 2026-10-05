@@ -1,18 +1,26 @@
-import { useState } from 'react'
-import materials from '../data/materials/materials.json'
+import { useEffect, useMemo, useState } from 'react'
+import { useGLTF } from '@react-three/drei'
 import product from '../data/products/product.example.json'
 import { getGroupMaterials } from '../configurator/materials/MaterialAvailability'
 import { useConfiguratorStore } from '../configurator/state/configuratorStore'
 import { calculatePrice } from '../configurator/pricing/PriceEngine'
 import { formatPrice } from '../configurator/pricing/PricingUtils'
 import MaterialPreview from './MaterialPreview'
+import { MASTER_MATERIAL_LIBRARY_URL, materialRecordsFromScene } from '../engine/materials/MasterMaterialLibrary'
 
 export default function ConfiguratorPanel() {
   const [openSection, setOpenSection] = useState(null)
+  const materialGltf = useGLTF(MASTER_MATERIAL_LIBRARY_URL)
+  const materials = useMemo(() => materialRecordsFromScene(materialGltf.scene), [materialGltf.scene])
+  const initializeMaterialCatalog = useConfiguratorStore((state) => state.initializeMaterialCatalog)
   const selectedMaterials = useConfiguratorStore((state) => state.selectedMaterials)
   const setMaterial = useConfiguratorStore((state) => state.setMaterial)
   const selectedModules = useConfiguratorStore((state) => state.selectedModules)
   const toggleModule = useConfiguratorStore((state) => state.toggleModule)
+
+  useEffect(() => {
+    initializeMaterialCatalog(materials)
+  }, [initializeMaterialCatalog, materials])
 
   const modules = (product.modules ?? []).filter((module) => module.enabled !== false && module.model?.url)
   const price = calculatePrice(product.pricing, selectedMaterials, modules, selectedModules)
