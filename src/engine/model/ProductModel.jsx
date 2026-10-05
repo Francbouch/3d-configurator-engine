@@ -20,8 +20,13 @@ function LoadedProduct({ url }) {
   useEffect(() => {
     Object.entries(selectedMaterials).forEach(([groupId, materialId]) => {
       const material = materialLibrary.get(materialId)
-      const partNames = product.model.parts[groupId]
-      if (material && partNames) applyMaterialToParts(model, partNames, material)
+      const partNames = product.model.parts
+        .filter((part) => part.group === groupId && part.materialEditable)
+        .map((part) => part.node)
+
+      if (material && partNames.length) {
+        applyMaterialToParts(model, partNames, material)
+      }
     })
   }, [materialLibrary, model, selectedMaterials])
 
