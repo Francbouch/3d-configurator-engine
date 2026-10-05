@@ -114,5 +114,10 @@
     "facade",
     "caisson",
     "interieur"
-  ]
+  ],
+  "pricing": {
+    "currency": "CAD",
+    "basePrice": 0,
+    "adjustments": []
+  }
 }
