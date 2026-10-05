@@ -2,7 +2,7 @@
   "id": "lit-cabinet-development",
   "name": "Lit Cabinet — modèle de développement",
   "model": {
-    "url": "/models/cabinet-test.glb",
+    "url": "/CABINET%20TEST.glb",
     "status": "temporary",
     "parts": {
       "facade": "FACADE",
