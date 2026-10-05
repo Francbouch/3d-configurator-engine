@@ -1,8 +1,13 @@
-import { Clone, useGLTF } from '@react-three/drei'
+import { Center, Clone, useGLTF } from '@react-three/drei'
 
 function LoadedProduct({ url }) {
   const { scene } = useGLTF(url)
-  return <Clone object={scene} castShadow receiveShadow />
+
+  return (
+    <Center bottom>
+      <Clone object={scene} castShadow receiveShadow />
+    </Center>
+  )
 }
 
 export default function ProductModel({ url }) {
