@@ -1,20 +1,34 @@
-import * as THREE from 'three'
+export function buildMaterialLibrary(root) {
+  const library = new Map()
 
-export function createMaterial(definition) {
-  return new THREE.MeshStandardMaterial({
-    color: definition.color ?? '#ffffff',
-    roughness: definition.roughness ?? 0.5,
-    metalness: definition.metalness ?? 0,
+  root.traverse((object) => {
+    if (!object.isMesh || !object.material) return
+    const materials = Array.isArray(object.material) ? object.material : [object.material]
+    materials.forEach((material) => {
+      if (material?.name && !library.has(material.name)) {
+        library.set(material.name, material.clone())
+      }
+    })
   })
+
+  return library
 }
 
-export function applyMaterialToPart(root, partName, material) {
-  const target = root.getObjectByName(partName)
-  if (!target) return false
+export function applyMaterialToParts(root, partNames, material) {
+  const names = Array.isArray(partNames) ? partNames : [partNames]
+  let applied = false
 
-  target.traverse((object) => {
-    if (object.isMesh) object.material = material
+  names.forEach((partName) => {
+    const target = root.getObjectByName(partName)
+    if (!target) return
+
+    target.traverse((object) => {
+      if (!object.isMesh) return
+      object.material = material.clone()
+      object.material.needsUpdate = true
+      applied = true
+    })
   })
 
-  return true
+  return applied
 }
