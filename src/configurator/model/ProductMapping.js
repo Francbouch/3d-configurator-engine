@@ -1,4 +1,4 @@
-import { scanModel, getEditableCandidates } from './ModelScanner'
+import { scanModel, getEditableCandidates } from '../../engine/model/ModelScanner'
 
 export function buildProductMappingDraft(root) {
   const scan = scanModel(root)
