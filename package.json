@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "validate-config": "node scripts/validate-config.mjs",
+    "check": "npm run validate-config && npm run build"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.6",
