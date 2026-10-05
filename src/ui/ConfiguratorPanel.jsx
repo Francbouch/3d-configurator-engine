@@ -33,8 +33,8 @@ export default function ConfiguratorPanel() {
               .flatMap((collection) => collection.materialIds),
           )
           const groupMaterials = collectionIds.length
-            ? materials.filter((material) => collectionMaterialIds.has(material.id))
-            : materials
+            ? materials.filter((material) => material.active !== false && collectionMaterialIds.has(material.id))
+            : materials.filter((material) => material.active !== false)
 
           const allowedMaterials = getAllowedMaterials({
             groupId: section.id,
@@ -64,7 +64,19 @@ export default function ConfiguratorPanel() {
                       key={material.id}
                       onClick={() => setMaterial(section.id, material.id)}
                     >
-                      {material.name}
+                      <span className="material-chip__preview">
+                        {material.thumbnail ? (
+                          <img src={material.thumbnail} alt="" />
+                        ) : (
+                          <span className="material-chip__fallback" aria-hidden="true" />
+                        )}
+                      </span>
+                      <span className="material-chip__meta">
+                        <span className="material-chip__name">{material.name}</span>
+                        {material.code && material.code !== material.name && (
+                          <span className="material-chip__code">{material.code}</span>
+                        )}
+                      </span>
                     </button>
                   ))}
                 </div>
