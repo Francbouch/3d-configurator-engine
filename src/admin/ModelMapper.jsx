@@ -25,6 +25,7 @@ export default function ModelMapper() {
   const [materials, setMaterials] = useState(initialMaterials)
   const [activeSection, setActiveSection] = useState('model')
   const [rules, setRules] = useState(product.rules ?? [])
+  const [modules, setModules] = useState([])
 
   const groupIds = product.configurationFlow ?? Object.keys(product.materialGroups ?? {})
   const validation = useMemo(
@@ -186,6 +187,42 @@ export default function ModelMapper() {
     setSaveStatus('')
   }
 
+  function addModule() {
+    setModules((current) => [...current, {
+      id: `module-${Date.now()}`,
+      name: 'Nouvelle option',
+      enabled: true,
+      price: 0,
+      glbFileName: '',
+      anchor: '',
+      materialGroup: '',
+    }])
+    setSaveStatus('')
+  }
+
+  function updateModule(index, patch) {
+    setModules((current) => current.map((item, i) => (i === index ? { ...item, ...patch } : item)))
+    setSaveStatus('')
+  }
+
+  function removeModule(index) {
+    setModules((current) => current.filter((_, i) => i !== index))
+    setSaveStatus('')
+  }
+
+  function handleModuleGlb(index, event) {
+    const file = event.target.files?.[0]
+    if (!file) return
+    if (!file.name.toLowerCase().endsWith('.glb')) {
+      setSaveStatus('Le module doit être un fichier GLB.')
+      event.target.value = ''
+      return
+    }
+    updateModule(index, { glbFileName: file.name })
+    setSaveStatus(`${file.name} prêt à être associé au module.`)
+    event.target.value = ''
+  }
+
   function updateRule(index, patch) {
     setRules((current) => current.map((rule, i) => (i === index ? { ...rule, ...patch } : rule)))
     setSaveStatus('')
@@ -233,6 +270,7 @@ export default function ModelMapper() {
       parts: toProductParts({ parts }),
       name: modelName.trim(),
       materials,
+      modules,
       rules,
       pricing: {
         currency: product.pricing?.currency ?? 'CAD',
@@ -292,6 +330,7 @@ export default function ModelMapper() {
         {[
           ['model', 'Meuble & pièces'],
           ['materials', 'Matériaux'],
+          ['modules', 'Options'],
           ['rules', 'Règles'],
           ['pricing', 'Prix'],
         ].map(([id, label]) => (
@@ -375,6 +414,31 @@ export default function ModelMapper() {
               <input placeholder="Nom dans le GLB" value={material.source?.materialName ?? ''} onChange={(e) => updateMaterial(index, { source: { ...(material.source ?? {}), type: 'glb-material', materialName: e.target.value } })} />
               <label className="admin__toggle"><input type="checkbox" checked={material.active !== false} onChange={(e) => updateMaterial(index, { active: e.target.checked })} /><span>{material.active !== false ? 'Oui' : 'Non'}</span></label>
               <div className="admin__material-actions"><button type="button" className="admin__icon-button" onClick={() => duplicateMaterial(index)} aria-label="Dupliquer le matériau">＋</button><button type="button" className="admin__remove" onClick={() => removeMaterial(index)} aria-label="Supprimer le matériau">×</button></div>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {activeSection === 'modules' && (
+        <section className="admin__modules">
+          <div className="admin__pricing-title">
+            <div><strong>Options et modules 3D</strong><small>Ajoutez des éléments qui apparaîtront directement sur le meuble du client.</small></div>
+            <button type="button" onClick={addModule}>+ Ajouter une option</button>
+          </div>
+          {modules.length === 0 && <div className="admin__empty">Aucune option configurée.</div>}
+          {modules.map((module, index) => (
+            <div className="admin__module-card" key={module.id}>
+              <div className="admin__module-top">
+                <input aria-label="Nom de l'option" value={module.name} onChange={(e) => updateModule(index, { name: e.target.value })} />
+                <label className="admin__toggle"><input type="checkbox" checked={module.enabled !== false} onChange={(e) => updateModule(index, { enabled: e.target.checked })} /><span>{module.enabled !== false ? 'Active' : 'Inactive'}</span></label>
+                <button type="button" className="admin__remove" onClick={() => removeModule(index)} aria-label="Supprimer l'option">×</button>
+              </div>
+              <div className="admin__module-grid">
+                <label><span>GLB du module</span><div className="admin__module-file"><strong>{module.glbFileName || 'Aucun fichier'}</strong><label className="admin__upload"><input type="file" accept=".glb,model/gltf-binary" onChange={(e) => handleModuleGlb(index, e)} /><span>Choisir</span></label></div></label>
+                <label><span>Point d’ancrage</span><input placeholder="ANCHOR_STORAGE_RIGHT" value={module.anchor} onChange={(e) => updateModule(index, { anchor: e.target.value })} /></label>
+                <label><span>Supplément</span><div className="admin__money"><input type="number" min="0" step="1" value={module.price} onChange={(e) => updateModule(index, { price: Number(e.target.value) })} /><span>$ CAD</span></div></label>
+                <label><span>Matériaux</span><select value={module.materialGroup} onChange={(e) => updateModule(index, { materialGroup: e.target.value })}><option value="">Fixe / aucun</option>{groupIds.map((id) => <option key={id} value={id}>{product.materialGroups?.[id]?.label ?? id}</option>)}</select></label>
+              </div>
             </div>
           ))}
         </section>
