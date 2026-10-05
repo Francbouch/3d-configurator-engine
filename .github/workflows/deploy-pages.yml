@@ -28,6 +28,10 @@ jobs:
         run: npm install
       - name: Build
         run: npm run build
+      - name: Copy 3D assets
+        run: |
+          cp "CABINET TEST.glb" dist/
+          cp "CUBES TEXTURES TEST.glb" dist/
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
