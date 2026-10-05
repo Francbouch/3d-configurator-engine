@@ -30,6 +30,26 @@ export default function ModelMapper() {
     () => validateProductMapping({ parts }, product.materialGroups ?? {}),
     [parts],
   )
+  const materialIds = useMemo(() => new Set(materials.map((material) => material.id)), [materials])
+  const duplicateMaterialIds = useMemo(
+    () => materials.map((material) => material.id).filter((id, index, ids) => id && ids.indexOf(id) !== index),
+    [materials],
+  )
+  const adminErrors = useMemo(() => {
+    const errors = [...validation.errors]
+    if (!modelName.trim()) errors.push('Le meuble doit avoir un nom.')
+    if (!Number.isFinite(basePrice) || basePrice < 0) errors.push('Le prix de base doit être un nombre positif.')
+    if (duplicateMaterialIds.length) errors.push(`IDs de matériaux dupliqués : ${[...new Set(duplicateMaterialIds)].join(', ')}.`)
+    materials.forEach((material) => {
+      if (!material.id?.trim()) errors.push('Chaque matériau doit avoir un identifiant.')
+      if (!material.name?.trim()) errors.push(`Le matériau "${material.id || 'sans id'}" doit avoir un nom.`)
+      if (material.active !== false && !material.source?.materialName?.trim()) {
+        errors.push(`Le matériau "${material.name || material.id}" n’a pas de matériau source GLB.`)
+      }
+    })
+    return [...new Set(errors)]
+  }, [validation.errors, modelName, basePrice, duplicateMaterialIds, materials])
+  const canSave = adminErrors.length === 0
 
   useEffect(() => {
     let cancelled = false
@@ -155,6 +175,16 @@ export default function ModelMapper() {
     setSaveStatus('')
   }
 
+  function duplicateMaterial(index) {
+    const source = materials[index]
+    const id = `${source.id || 'material'}-copy-${Date.now()}`
+    setMaterials((current) => [
+      ...current,
+      { ...source, id, name: `${source.name || 'Matériau'} copie` },
+    ])
+    setSaveStatus('')
+  }
+
   function addAdjustment() {
     setAdjustments((current) => [
       ...current,
@@ -185,6 +215,7 @@ export default function ModelMapper() {
   function saveDraft() {
     const ok = saveAdminDraft(product.id, {
       parts: toProductParts({ parts }),
+      name: modelName.trim(),
       materials,
       pricing: {
         currency: product.pricing?.currency ?? 'CAD',
@@ -289,15 +320,15 @@ export default function ModelMapper() {
           <button type="button" className="admin__secondary" onClick={resetDraft}>
             Réinitialiser
           </button>
-          <button type="button" onClick={saveDraft} disabled={!validation.valid}>
+          <button type="button" onClick={saveDraft} disabled={!canSave}>
             Enregistrer
           </button>
         </div>
       </section>
 
-      {(validation.errors.length > 0 || validation.warnings.length > 0) && (
+      {(adminErrors.length > 0 || validation.warnings.length > 0) && (
         <section className="admin__validation">
-          {validation.errors.map((message) => (
+          {adminErrors.map((message) => (
             <p className="is-error" key={message}>{message}</p>
           ))}
           {validation.warnings.map((message) => (
@@ -316,7 +347,7 @@ export default function ModelMapper() {
             <button type="button" onClick={addMaterial}>+ Ajouter un matériau</button>
           </div>
           <div className="admin__materials-head">
-            <span>Nom</span><span>Code</span><span>Fabricant</span><span>Source GLB</span><span>Actif</span><span />
+            <span>Nom</span><span>Code</span><span>Fabricant</span><span>Source GLB</span><span>Actif</span><span>Actions</span>
           </div>
           {materials.map((material, index) => (
             <div className="admin__material-row" key={material.id}>
@@ -325,7 +356,7 @@ export default function ModelMapper() {
               <input placeholder="Fabricant" value={material.manufacturer ?? ''} onChange={(e) => updateMaterial(index, { manufacturer: e.target.value })} />
               <input placeholder="Nom dans le GLB" value={material.source?.materialName ?? ''} onChange={(e) => updateMaterial(index, { source: { ...(material.source ?? {}), type: 'glb-material', materialName: e.target.value } })} />
               <label className="admin__toggle"><input type="checkbox" checked={material.active !== false} onChange={(e) => updateMaterial(index, { active: e.target.checked })} /><span>{material.active !== false ? 'Oui' : 'Non'}</span></label>
-              <button type="button" className="admin__remove" onClick={() => removeMaterial(index)} aria-label="Supprimer le matériau">×</button>
+              <div className="admin__material-actions"><button type="button" className="admin__icon-button" onClick={() => duplicateMaterial(index)} aria-label="Dupliquer le matériau">＋</button><button type="button" className="admin__remove" onClick={() => removeMaterial(index)} aria-label="Supprimer le matériau">×</button></div>
             </div>
           ))}
         </section>
