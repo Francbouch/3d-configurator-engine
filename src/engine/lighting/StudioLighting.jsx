@@ -1,4 +1,4 @@
-import { Environment } from '@react-three/drei'
+import { Environment, Lightformer } from '@react-three/drei'
 
 export const DEFAULT_STUDIO_LIGHTING = Object.freeze({
   hemisphere: {
@@ -7,7 +7,7 @@ export const DEFAULT_STUDIO_LIGHTING = Object.freeze({
     intensity: 0.34,
   },
   key: {
-    position: [7.5, 2.6, -9.5],
+    position: [10.5, 2.6, 4.5],
     intensity: 1.2,
   },
   fill: {
@@ -18,7 +18,7 @@ export const DEFAULT_STUDIO_LIGHTING = Object.freeze({
     position: [2.5, 4, -6],
     intensity: 0.95,
   },
-  environmentIntensity: 0.32,
+  environmentIntensity: 0.42,
 })
 
 export default function StudioLighting({ preset = DEFAULT_STUDIO_LIGHTING }) {
@@ -34,7 +34,30 @@ export default function StudioLighting({ preset = DEFAULT_STUDIO_LIGHTING }) {
       <directionalLight position={preset.key.position} intensity={preset.key.intensity} />
       <directionalLight position={preset.fill.position} intensity={preset.fill.intensity} />
       <directionalLight position={preset.rim.position} intensity={preset.rim.intensity} />
-      <Environment preset="studio" environmentIntensity={preset.environmentIntensity} />
+
+      <Environment resolution={256} environmentIntensity={preset.environmentIntensity}>
+        <Lightformer
+          form="rect"
+          intensity={2.2}
+          position={[5, 2.5, 4]}
+          rotation={[0, -0.75, 0]}
+          scale={[3, 6, 1]}
+        />
+        <Lightformer
+          form="rect"
+          intensity={1.5}
+          position={[-5, 1.5, 2]}
+          rotation={[0, 0.9, 0]}
+          scale={[2.5, 5, 1]}
+        />
+        <Lightformer
+          form="rect"
+          intensity={1.1}
+          position={[1, 2.5, -5]}
+          rotation={[0, 0, 0]}
+          scale={[4, 3, 1]}
+        />
+      </Environment>
     </>
   )
 }
