@@ -93,6 +93,32 @@ export function validateProductConfig(product, materials = []) {
     })
   })
 
+
+  const modules = product?.modules ?? []
+  const duplicateModuleIds = modules
+    .map((module) => module.id)
+    .filter(Boolean)
+    .filter((id, index, ids) => ids.indexOf(id) !== index)
+
+  if (duplicateModuleIds.length) {
+    errors.push(`IDs de modules dupliqués: ${[...new Set(duplicateModuleIds)].join(', ')}.`)
+  }
+
+  modules.forEach((module) => {
+    const label = module.name ?? module.id ?? 'sans nom'
+    if (!module.id) errors.push(`Le module "${label}" doit avoir un id.`)
+    if (!module.name?.trim()) errors.push(`Le module "${label}" doit avoir un nom.`)
+    if (!Number.isFinite(Number(module.price ?? 0)) || Number(module.price ?? 0) < 0) {
+      errors.push(`Le module "${label}" a un supplément invalide.`)
+    }
+    if (module.materialGroup && !groupIds.has(module.materialGroup)) {
+      errors.push(`Le module "${label}" référence le groupe inexistant "${module.materialGroup}".`)
+    }
+    if (module.model?.url && !module.model?.anchor?.trim()) {
+      errors.push(`Le module "${label}" doit avoir une position d’assemblage.`)
+    }
+  })
+
   const basePrice = product?.pricing?.basePrice
   if (basePrice != null && !Number.isFinite(Number(basePrice))) {
     errors.push('Le prix de base doit être numérique.')
