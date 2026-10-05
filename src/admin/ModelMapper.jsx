@@ -3,8 +3,9 @@ import { useEffect, useState } from 'react'
 import product from '../data/products/product.example.json'
 import { buildProductMappingDraft } from '../configurator/model/ProductMapping'
 import { formatPrice } from '../configurator/pricing/PricingUtils'
+import { resolveAssetUrl } from '../engine/assets/resolveAssetUrl'
 
-const MODEL_URL = `${import.meta.env.BASE_URL}CABINET%20TEST.glb`
+const MODEL_URL = resolveAssetUrl(product.model?.url)
 
 export default function ModelMapper() {
   const [draft, setDraft] = useState(null)
