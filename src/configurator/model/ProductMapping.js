@@ -31,8 +31,11 @@ export function validateProductMapping(mapping, materialGroups = {}) {
   const warnings = []
   const editable = (mapping.parts ?? []).filter((part) => part.materialEditable)
 
+  const seenPaths = new Set()
+
   editable.forEach((part) => {
     const label = part.node || part.nodePath || 'Sans nom'
+    const identity = part.nodePath || part.node
 
     if (!part.group) {
       errors.push(`La pièce modifiable "${label}" n’a aucun groupe sémantique.`)
@@ -41,6 +44,19 @@ export function validateProductMapping(mapping, materialGroups = {}) {
 
     if (!materialGroups[part.group]) {
       warnings.push(`Le groupe "${part.group}" de la pièce "${label}" n’existe pas encore dans le produit.`)
+    }
+
+    if (identity) {
+      if (seenPaths.has(identity)) {
+        errors.push(`La pièce "${label}" est mappée plus d’une fois.`)
+      }
+      seenPaths.add(identity)
+    }
+  })
+
+  Object.keys(materialGroups).forEach((groupId) => {
+    if (!editable.some((part) => part.group === groupId)) {
+      warnings.push(`Le groupe "${groupId}" n’a aucune pièce modifiable dans le modèle.`)
     }
   })
 
