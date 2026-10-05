@@ -1,11 +1,11 @@
 import { create } from 'zustand'
 
 export const useConfiguratorStore = create((set) => ({
-  productId: null,
+  productId: 'lit-cabinet-development',
   selectedMaterials: {
-    facade: null,
-    caisson: null,
-    interieur: null,
+    facade: 'Blanc',
+    caisson: 'Blanc',
+    interieur: 'Blanc',
   },
   animationProgress: 0,
   setMaterial: (part, materialId) =>
@@ -18,7 +18,7 @@ export const useConfiguratorStore = create((set) => ({
   setAnimationProgress: (animationProgress) => set({ animationProgress }),
   reset: () =>
     set({
-      selectedMaterials: { facade: null, caisson: null, interieur: null },
+      selectedMaterials: { facade: 'Blanc', caisson: 'Blanc', interieur: 'Blanc' },
       animationProgress: 0,
     }),
 }))
