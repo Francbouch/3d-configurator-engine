@@ -52,6 +52,7 @@ export default function ModelMapper() {
     return [...new Set(errors)]
   }, [validation.errors, modelName, basePrice, duplicateMaterialIds, materials])
   const canSave = adminErrors.length === 0
+  const publishReady = canSave && !uploadedModelName && modules.every((module) => !module.glbFileName)
 
   useEffect(() => {
     let cancelled = false
@@ -386,6 +387,15 @@ export default function ModelMapper() {
           </button>
           <button type="button" onClick={saveDraft} disabled={!canSave}>
             Enregistrer
+          </button>
+          <button
+            type="button"
+            className="admin__publish"
+            disabled={!publishReady}
+            title={publishReady ? 'Configuration prête à être publiée' : 'Enregistrez les nouveaux fichiers 3D avant publication'}
+            onClick={() => setSaveStatus('Configuration validée. Connexion de la publication au site en cours.')}
+          >
+            Publier
           </button>
         </div>
       </section>
