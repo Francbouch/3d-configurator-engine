@@ -3,9 +3,12 @@ import materials from '../../data/materials/materials.json'
 import product from '../../data/products/product.example.json'
 import { getAllowedMaterials } from '../rules/RulesEngine'
 
-const groupOrder = Object.keys(product.materialGroups)
+const groupOrder = product.configurationFlow ?? Object.keys(product.materialGroups)
 const initialMaterials = Object.fromEntries(
-  groupOrder.map((groupId) => [groupId, 'Blanc']),
+  groupOrder.map((groupId) => [
+    groupId,
+    product.materialGroups[groupId]?.defaultMaterialId ?? materials[0]?.id ?? null,
+  ]),
 )
 
 function repairDownstreamSelections(selected, changedGroupId) {
@@ -28,7 +31,8 @@ function repairDownstreamSelections(selected, changedGroupId) {
     )
 
     if (!currentIsValid) {
-      const preferredDefault = allowed.find((material) => material.id === 'Blanc')
+      const defaultId = product.materialGroups[groupId]?.defaultMaterialId
+      const preferredDefault = allowed.find((material) => material.id === defaultId)
       repaired[groupId] = preferredDefault?.id ?? allowed[0]?.id ?? null
     }
   }
