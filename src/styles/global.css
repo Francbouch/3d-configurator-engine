@@ -209,3 +209,13 @@ button { font: inherit; }
 
 .admin__material-actions{display:flex;align-items:center;justify-content:flex-end;gap:5px}
 .admin__icon-button{width:34px;height:34px;border:0;border-radius:50%;background:#f1f1ee;color:#333;cursor:pointer;font-size:17px;line-height:1}
+
+.admin__rules{max-width:1100px;margin:0 auto 18px;padding:18px 20px;border:1px solid #e1e1dd;border-radius:18px;background:#fff}
+.admin__rule-card{margin-top:14px;padding:16px;border:1px solid #e8e8e4;border-radius:14px;background:#fafaf8}
+.admin__rule-top{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.admin__rule-top>div{display:flex;flex-direction:column;gap:3px}.admin__rule-top strong{font-size:13px}.admin__rule-top small{color:#888;font-size:11px}
+.admin__rule-materials{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+.admin__rule-materials label{display:flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid #e2e2de;border-radius:10px;background:#fff;cursor:pointer}
+.admin__rule-materials label.is-selected{border-color:#222;box-shadow:0 0 0 1px #222 inset}
+.admin__rule-materials input{width:auto}.admin__rule-materials span{display:flex;flex-direction:column;font-size:12px;font-weight:650}.admin__rule-materials small{color:#888;font-size:10px;font-weight:500}
+.admin__rule-note{margin:12px 0 0;color:#777;font-size:11px}
