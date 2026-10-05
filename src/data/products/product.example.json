@@ -86,15 +86,35 @@
       }
     },
     {
-      "id": "interieur-match-caisson",
+      "id": "facade-non-neutral",
       "enabled": true,
-      "targetGroup": "interieur",
+      "targetGroup": "facade",
+      "when": {
+        "group": "caisson",
+        "operator": "notIn",
+        "values": [
+          "Blanc",
+          "noir"
+        ]
+      },
       "allow": {
         "materialIds": [
           "Blanc",
           "noir"
         ],
         "selectedFromGroups": [
+          "caisson"
+        ]
+      }
+    },
+    {
+      "id": "interieur-match-facade-or-caisson",
+      "enabled": true,
+      "targetGroup": "interieur",
+      "allow": {
+        "materialIds": [],
+        "selectedFromGroups": [
+          "facade",
           "caisson"
         ]
       }
