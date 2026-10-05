@@ -4,7 +4,7 @@ import { useConfiguratorStore } from '../../configurator/state/configuratorStore
 import product from '../../data/products/product.example.json'
 import { applyMaterialToParts, buildMaterialLibrary } from '../materials/MaterialEngine'
 
-const MATERIAL_LIBRARY_URL = '/CUBES%20TEXTURES%20TEST.glb'
+const MATERIAL_LIBRARY_URL = `${import.meta.env.BASE_URL}CUBES%20TEXTURES%20TEST.glb`
 
 function LoadedProduct({ url }) {
   const productGltf = useGLTF(url)
