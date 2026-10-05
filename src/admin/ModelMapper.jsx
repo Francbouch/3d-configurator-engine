@@ -1,5 +1,5 @@
-import { useGLTF } from '@react-three/drei'
-import { useMemo, useState } from 'react'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { useEffect, useState } from 'react'
 import product from '../data/products/product.example.json'
 import { buildProductMappingDraft } from '../configurator/model/ProductMapping'
 import { formatPrice } from '../configurator/pricing/PricingUtils'
@@ -7,18 +7,48 @@ import { formatPrice } from '../configurator/pricing/PricingUtils'
 const MODEL_URL = `${import.meta.env.BASE_URL}CABINET%20TEST.glb`
 
 export default function ModelMapper() {
-  const gltf = useGLTF(MODEL_URL)
-  const draft = useMemo(() => buildProductMappingDraft(gltf.scene), [gltf.scene])
-  const [parts, setParts] = useState(draft.parts)
+  const [draft, setDraft] = useState(null)
+  const [loadError, setLoadError] = useState('')
+  const [parts, setParts] = useState([])
   const [basePrice, setBasePrice] = useState(product.pricing?.basePrice ?? 0)
   const [adjustments, setAdjustments] = useState(product.pricing?.adjustments ?? [])
 
+  useEffect(() => {
+    let cancelled = false
+    const loader = new GLTFLoader()
+
+    loader.load(
+      MODEL_URL,
+      (gltf) => {
+        if (cancelled) return
+        const nextDraft = buildProductMappingDraft(gltf.scene)
+        setDraft(nextDraft)
+        setParts(nextDraft.parts)
+      },
+      undefined,
+      (error) => {
+        if (cancelled) return
+        console.error('Unable to load GLB for back-office mapping', error)
+        setLoadError('Impossible de charger le modèle 3D. Vérifiez que le fichier GLB est bien déployé.')
+      },
+    )
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   function addAdjustment() {
-    setAdjustments((current) => [...current, { id: `adjustment-${Date.now()}`, label: '', amount: 0, enabled: true }])
+    setAdjustments((current) => [
+      ...current,
+      { id: `adjustment-${Date.now()}`, label: '', amount: 0, enabled: true },
+    ])
   }
 
   function updateAdjustment(index, patch) {
-    setAdjustments((current) => current.map((item, i) => i === index ? { ...item, ...patch } : item))
+    setAdjustments((current) =>
+      current.map((item, i) => (i === index ? { ...item, ...patch } : item)),
+    )
   }
 
   function removeAdjustment(index) {
@@ -26,7 +56,34 @@ export default function ModelMapper() {
   }
 
   function updatePart(index, patch) {
-    setParts((current) => current.map((part, i) => i === index ? { ...part, ...patch } : part))
+    setParts((current) =>
+      current.map((part, i) => (i === index ? { ...part, ...patch } : part)),
+    )
+  }
+
+  if (loadError) {
+    return (
+      <main className="admin admin--status">
+        <div className="admin__status-card">
+          <div className="admin__eyebrow">Back-office · Modèle 3D</div>
+          <h1>Le modèle ne s’est pas chargé</h1>
+          <p>{loadError}</p>
+          <a className="admin__link" href="./">Retour au configurateur</a>
+        </div>
+      </main>
+    )
+  }
+
+  if (!draft) {
+    return (
+      <main className="admin admin--status">
+        <div className="admin__status-card">
+          <div className="admin__eyebrow">Back-office · Modèle 3D</div>
+          <h1>Chargement du modèle…</h1>
+          <p>Lecture des pièces du GLB en cours.</p>
+        </div>
+      </main>
+    )
   }
 
   return (
@@ -46,49 +103,86 @@ export default function ModelMapper() {
           <small>Le moteur ajoutera ensuite les suppléments selon la configuration.</small>
         </div>
         <label>
-          <input type="number" min="0" step="1" value={basePrice} onChange={(event) => setBasePrice(Number(event.target.value))} />
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={basePrice}
+            onChange={(event) => setBasePrice(Number(event.target.value))}
+          />
           <span>$ CAD</span>
         </label>
       </section>
 
       <section className="admin__pricing-list">
         <div className="admin__pricing-title">
-          <div><strong>Suppléments</strong><small>Options, matériaux ou dimensions pourront utiliser ces ajustements.</small></div>
+          <div>
+            <strong>Suppléments</strong>
+            <small>Options, matériaux ou dimensions pourront utiliser ces ajustements.</small>
+          </div>
           <button type="button" onClick={addAdjustment}>+ Ajouter</button>
         </div>
-        {adjustments.length === 0 && <div className="admin__empty">Aucun supplément configuré.</div>}
+
+        {adjustments.length === 0 && (
+          <div className="admin__empty">Aucun supplément configuré.</div>
+        )}
+
         {adjustments.map((item, index) => (
           <div className="admin__price-row" key={item.id}>
-            <input placeholder="Nom du supplément" value={item.label} onChange={(event) => updateAdjustment(index, { label: event.target.value })} />
-            <input type="number" step="1" value={item.amount} onChange={(event) => updateAdjustment(index, { amount: Number(event.target.value) })} />
+            <input
+              placeholder="Nom du supplément"
+              value={item.label}
+              onChange={(event) => updateAdjustment(index, { label: event.target.value })}
+            />
+            <input
+              type="number"
+              step="1"
+              value={item.amount}
+              onChange={(event) => updateAdjustment(index, { amount: Number(event.target.value) })}
+            />
             <span>{formatPrice(item.amount, product.pricing?.currency)}</span>
-            <button type="button" className="admin__remove" onClick={() => removeAdjustment(index)}>×</button>
+            <button
+              type="button"
+              className="admin__remove"
+              onClick={() => removeAdjustment(index)}
+            >
+              ×
+            </button>
           </div>
         ))}
       </section>
 
       <section className="admin__card">
         <div className="admin__table-head">
-          <span>Pièce GLB</span><span>Rôle</span><span>Groupe</span>
+          <span>Pièce GLB</span>
+          <span>Rôle</span>
+          <span>Groupe</span>
         </div>
+
         {parts.map((part, index) => (
           <div className="admin__row" key={part.nodePath}>
             <div className="admin__part">
               <strong>{part.node || 'Sans nom'}</strong>
               <small>{part.sourceMaterials.join(', ') || 'Aucun matériau'}</small>
             </div>
+
             <select
               value={part.materialEditable ? 'editable' : 'fixed'}
-              onChange={(event) => updatePart(index, { materialEditable: event.target.value === 'editable' })}
+              onChange={(event) =>
+                updatePart(index, { materialEditable: event.target.value === 'editable' })
+              }
             >
               <option value="fixed">Fixe</option>
               <option value="editable">Modifiable</option>
             </select>
+
             <input
               value={part.group ?? ''}
               disabled={!part.materialEditable}
               placeholder={part.materialEditable ? 'ex. facade' : '—'}
-              onChange={(event) => updatePart(index, { group: event.target.value || null })}
+              onChange={(event) =>
+                updatePart(index, { group: event.target.value || null })
+              }
             />
           </div>
         ))}
