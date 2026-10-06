@@ -10,6 +10,34 @@ function headers(token) {
   }
 }
 
+function adminRedirectUrl() {
+  if (typeof window === 'undefined') return ''
+  return `${window.location.origin}${window.location.pathname}?admin=model`
+}
+
+function authError(data, fallback) {
+  const raw = data?.msg || data?.message || data?.error_description || data?.error || fallback
+
+  const wait = String(raw).match(/after\s+(\d+)\s+seconds?/i)
+  if (wait) {
+    return `Une demande vient d’être envoyée. Réessaie dans environ ${wait[1]} secondes.`
+  }
+
+  if (/email not confirmed/i.test(String(raw))) {
+    return 'Ton compte existe, mais ton adresse courriel n’est pas encore confirmée.'
+  }
+
+  if (/invalid login credentials/i.test(String(raw))) {
+    return 'Adresse courriel ou mot de passe incorrect.'
+  }
+
+  if (/user already registered/i.test(String(raw))) {
+    return 'Ce compte existe déjà. Connecte-toi avec ton mot de passe.'
+  }
+
+  return String(raw)
+}
+
 export function loadAdminSession() {
   try {
     const session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null')
@@ -33,6 +61,28 @@ function saveSession(data) {
   return data
 }
 
+export function consumeAdminSessionFromUrl() {
+  if (typeof window === 'undefined' || !window.location.hash) return null
+
+  const params = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+  const accessToken = params.get('access_token')
+  const refreshToken = params.get('refresh_token')
+  if (!accessToken) return null
+
+  const expiresAt = Number(params.get('expires_at')) ||
+    Math.floor(Date.now() / 1000) + Number(params.get('expires_in') || 3600)
+
+  const session = saveSession({
+    access_token: accessToken,
+    refresh_token: refreshToken || undefined,
+    token_type: params.get('token_type') || 'bearer',
+    expires_at: expiresAt,
+  })
+
+  window.history.replaceState({}, document.title, adminRedirectUrl())
+  return session
+}
+
 export async function signInAdmin(email, password) {
   const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
     method: 'POST',
@@ -40,18 +90,31 @@ export async function signInAdmin(email, password) {
     body: JSON.stringify({ email, password }),
   })
   const data = await response.json()
-  if (!response.ok) throw new Error(data?.msg || data?.error_description || 'Connexion impossible.')
+  if (!response.ok) throw new Error(authError(data, 'Connexion impossible.'))
   return saveSession(data)
 }
 
 export async function signUpAdmin(email, password) {
-  const response = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+  const redirectTo = encodeURIComponent(adminRedirectUrl())
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/signup?redirect_to=${redirectTo}`, {
     method: 'POST',
     headers: headers(),
     body: JSON.stringify({ email, password }),
   })
   const data = await response.json()
-  if (!response.ok) throw new Error(data?.msg || data?.error_description || 'Création du compte impossible.')
+  if (!response.ok) throw new Error(authError(data, 'Création du compte impossible.'))
   if (data?.access_token) saveSession(data)
+  return data
+}
+
+export async function resendSignupConfirmation(email) {
+  const redirectTo = encodeURIComponent(adminRedirectUrl())
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/resend?redirect_to=${redirectTo}`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({ type: 'signup', email }),
+  })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) throw new Error(authError(data, 'Impossible de renvoyer le courriel de confirmation.'))
   return data
 }
