@@ -15,7 +15,7 @@ export default function ProductCamera() {
       maxDistance={12}
       minPolarAngle={Math.PI * 0.12}
       maxPolarAngle={Math.PI * 0.62}
-      target={[0, 1, 0]}
+      target={[0, 1.12, 0]}
     />
   )
 }
