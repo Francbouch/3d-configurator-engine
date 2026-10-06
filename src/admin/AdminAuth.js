@@ -1,5 +1,5 @@
 const SUPABASE_URL = 'https://vnaoawlrotdogslykbmm.supabase.co'
-const SUPABASE_KEY = 'sb_publishable_YQndqxq2W7Bq2C-0crv0rQ_V4Upvbja'
+const SUPABASE_KEY = 'sb_publishable_AvnQSWs0wrO4QHhMMKCMKw_Depqj2Fk'
 const SESSION_KEY = 'configurator-admin-session'
 
 function headers(token) {
