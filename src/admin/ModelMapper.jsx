@@ -707,9 +707,7 @@ export default function ModelMapper({ onSignOut }) {
       {activeSection === 'model' && <section className="admin__card">
         <div className="admin__table-head">
           <span>Pièce du meuble</span>
-          <span>Rôle</span>
           <span>Groupe</span>
-          <span>Couleur initiale</span>
         </div>
 
         {parts.map((part, index) => (
@@ -720,23 +718,14 @@ export default function ModelMapper({ onSignOut }) {
             </div>
 
             <select
-              value={part.materialEditable ? 'editable' : 'fixed'}
-              onChange={(event) =>
-                updatePart(index, {
-                  materialEditable: event.target.value === 'editable',
-                  ...(event.target.value === 'fixed' ? { group: null } : {}),
-                })
-              }
-            >
-              <option value="fixed">Fixe</option>
-              <option value="editable">Modifiable</option>
-            </select>
-
-            <select
               value={part.group ?? ''}
               disabled={!part.materialEditable}
               onChange={(event) =>
-                updatePart(index, { group: event.target.value || null })
+                updatePart(index, {
+                  group: event.target.value || null,
+                  materialEditable: Boolean(event.target.value),
+                  initialMaterialId: null,
+                })
               }
             >
               <option value="">Choisir…</option>
@@ -747,17 +736,7 @@ export default function ModelMapper({ onSignOut }) {
               ))}
             </select>
 
-            <select
-              value={part.initialMaterialId ?? ''}
-              onChange={(event) => updatePart(index, { initialMaterialId: event.target.value || null })}
-            >
-              <option value="">Matériau du GLB</option>
-              {materials.filter((material) => material.active !== false).map((material) => (
-                <option value={material.id} key={material.id}>
-                  {material.name}{material.code ? ` · ${material.code}` : ''}
-                </option>
-              ))}
-            </select>
+
           </div>
         ))}
       </section>}
