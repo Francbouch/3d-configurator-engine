@@ -1,17 +1,19 @@
 import { Bounds, Center, useGLTF } from '@react-three/drei'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useConfiguratorStore } from '../../configurator/state/configuratorStore'
 import product from '../../data/products/product.example.json'
 import { applyMaterialToParts, buildMaterialLibrary } from '../materials/MaterialEngine'
 import { MASTER_MATERIAL_LIBRARY_URL } from '../materials/MasterMaterialLibrary'
+import { SUPABASE_PROJECT_URL, supabaseHeaders } from '../../admin/AdminAuth'
 
 function LoadedProduct({ url }) {
   const productGltf = useGLTF(url)
   const materialGltf = useGLTF(MASTER_MATERIAL_LIBRARY_URL)
   const selectedMaterials = useConfiguratorStore((state) => state.selectedMaterials)
   const animationProgress = useConfiguratorStore((state) => state.animationProgress)
+  const [publishedParts, setPublishedParts] = useState(null)
   const animationTime = useRef(0)
   const animationAction = useRef(null)
 
@@ -23,6 +25,15 @@ function LoadedProduct({ url }) {
   }, [animation?.clip, animation?.enabled, productGltf.animations])
   const mixer = useMemo(() => animationClip ? new THREE.AnimationMixer(model) : null, [animationClip, model])
 
+  useEffect(() => {
+    let cancelled = false
+    fetch(`${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=configuration&limit=1`, { headers: supabaseHeaders() })
+      .then((response) => response.ok ? response.json() : [])
+      .then((rows) => { if (!cancelled) setPublishedParts(rows?.[0]?.configuration?.parts ?? null) })
+      .catch((error) => console.warn('Unable to load published part mapping', error))
+    return () => { cancelled = true }
+  }, [])
+
   const materialLibrary = useMemo(
     () => buildMaterialLibrary(materialGltf.scene),
     [materialGltf.scene]
@@ -31,14 +42,14 @@ function LoadedProduct({ url }) {
   useEffect(() => {
     Object.entries(selectedMaterials).forEach(([groupId, materialId]) => {
       const material = materialLibrary.get(materialId)
-      const mappedParts = (product.model?.parts ?? [])
-        .filter((part) => part.group === groupId && part.materialEditable)
+      const mappedParts = (publishedParts ?? product.model?.parts ?? [])
+        .filter((part) => part.group === groupId)
 
       if (material && mappedParts.length) {
         applyMaterialToParts(model, mappedParts, material)
       }
     })
-  }, [materialLibrary, model, selectedMaterials])
+  }, [materialLibrary, model, publishedParts, selectedMaterials])
 
   useEffect(() => {
     if (!mixer || !animationClip) return undefined
