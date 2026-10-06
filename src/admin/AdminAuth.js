@@ -122,3 +122,15 @@ export async function resendSignupConfirmation(email) {
   if (!response.ok) throw new Error(authError(data, 'Impossible de renvoyer le courriel de confirmation.'))
   return data
 }
+
+
+export const SUPABASE_PROJECT_URL = SUPABASE_URL
+export const SUPABASE_PUBLIC_KEY = SUPABASE_KEY
+
+export function supabaseHeaders(token, contentType = 'application/json') {
+  return {
+    apikey: SUPABASE_KEY,
+    ...(contentType ? { 'Content-Type': contentType } : {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+}
