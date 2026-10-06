@@ -13,7 +13,7 @@ import { MASTER_MATERIAL_LIBRARY_URL, materialRecordsFromScene } from '../engine
 
 const MODEL_URL = resolveAssetUrl(product.model?.url)
 
-export default function ModelMapper() {
+export default function ModelMapper({ onSignOut }) {
   const [draft, setDraft] = useState(null)
   const [loadError, setLoadError] = useState('')
   const [parts, setParts] = useState([])
@@ -375,7 +375,7 @@ export default function ModelMapper() {
           <h1>{product.name}</h1>
           <p>{draft.scan.meshCount} pièces détectées automatiquement.</p>
         </div>
-        <a className="admin__link" href="./">Retour au configurateur</a>
+        <div className="admin__header-actions"><a className="admin__link" href="./">Retour au configurateur</a><button type="button" className="admin__signout" onClick={onSignOut}>Déconnexion</button></div>
       </header>
 
       <nav className="admin__tabs" aria-label="Sections du back-office">

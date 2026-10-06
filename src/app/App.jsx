@@ -1,10 +1,11 @@
 import ConfiguratorScene from '../engine/scene/ConfiguratorScene'
 import ConfiguratorPanel from '../ui/ConfiguratorPanel'
 import ModelMapper from '../admin/ModelMapper'
+import AdminGate from '../admin/AdminGate'
 
 export default function App() {
   if (new URLSearchParams(window.location.search).get('admin') === 'model') {
-    return <ModelMapper />
+    return <AdminGate>{({ signOut }) => <ModelMapper onSignOut={signOut} />}</AdminGate>
   }
 
   return (
