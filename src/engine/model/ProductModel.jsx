@@ -67,7 +67,7 @@ function LoadedProduct({ url }) {
     if (!mixer || !animationClip || !action) return
 
     const targetTime = THREE.MathUtils.clamp(animationProgress, 0, 1) * animationClip.duration
-    animationTime.current = THREE.MathUtils.damp(animationTime.current, targetTime, 3.5, delta)
+    animationTime.current = THREE.MathUtils.damp(animationTime.current, targetTime, 1.75, delta)
 
     if (Math.abs(animationTime.current - targetTime) < 0.001) {
       animationTime.current = targetTime
