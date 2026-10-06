@@ -17,6 +17,9 @@ export default function ConfiguratorPanel() {
   const setMaterial = useConfiguratorStore((state) => state.setMaterial)
   const selectedModules = useConfiguratorStore((state) => state.selectedModules)
   const toggleModule = useConfiguratorStore((state) => state.toggleModule)
+  const animationProgress = useConfiguratorStore((state) => state.animationProgress)
+  const setAnimationProgress = useConfiguratorStore((state) => state.setAnimationProgress)
+  const bedAnimation = product.animations?.open
 
   useEffect(() => {
     initializeMaterialCatalog(materials)
@@ -110,6 +113,25 @@ export default function ConfiguratorPanel() {
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {bedAnimation?.enabled && (
+        <div className="panel__bed-control" aria-label="Position du lit">
+          <button
+            className={animationProgress < 0.5 ? 'bed-toggle is-active' : 'bed-toggle'}
+            type="button"
+            onClick={() => setAnimationProgress(0)}
+          >
+            {bedAnimation.labelClose ?? 'Fermer le lit'}
+          </button>
+          <button
+            className={animationProgress >= 0.5 ? 'bed-toggle is-active' : 'bed-toggle'}
+            type="button"
+            onClick={() => setAnimationProgress(1)}
+          >
+            {bedAnimation.labelOpen ?? 'Ouvrir le lit'}
+          </button>
         </div>
       )}
 
