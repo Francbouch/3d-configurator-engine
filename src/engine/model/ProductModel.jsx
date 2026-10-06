@@ -46,6 +46,8 @@ function LoadedProduct({ url }) {
     action.enabled = true
     action.setEffectiveWeight(1)
     action.setEffectiveTimeScale(1)
+    action.setLoop(THREE.LoopOnce, 1)
+    action.clampWhenFinished = true
     action.play()
     mixer.update(0)
     mixer.setTime(0)
