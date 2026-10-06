@@ -121,7 +121,9 @@ button { font: inherit; }
 .material-preview .material-chip__fallback { position: absolute; inset: 0; z-index: 0; }
 
 
-.admin { min-height: 100dvh; padding: 54px; overflow: auto; background: #f5f5f3; }
+.admin { min-height: 100dvh; height: auto; padding: 54px; overflow: visible; background: #f5f5f3; }
+body:has(.admin) { overflow-y: auto; overflow-x: hidden; }
+#root:has(.admin) { height: auto; min-height: 100%; }
 .admin__header { display:flex; justify-content:space-between; align-items:flex-start; gap:32px; max-width:1100px; margin:0 auto 28px; }
 .admin__eyebrow { margin-bottom:8px; color:#777; font-size:12px; font-weight:650; letter-spacing:.08em; text-transform:uppercase; }
 .admin h1 { margin:0; font-size:38px; letter-spacing:-.04em; }
