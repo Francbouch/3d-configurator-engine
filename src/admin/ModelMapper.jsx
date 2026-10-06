@@ -87,8 +87,25 @@ export default function ModelMapper({ onSignOut }) {
 
     const loader = new GLTFLoader()
 
-    loader.load(
-      MODEL_URL,
+    async function loadPublishedModelUrl() {
+      try {
+        const response = await fetch(
+          `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=model_path&limit=1`,
+          { headers: supabaseHeaders() },
+        )
+        if (!response.ok) return MODEL_URL
+        const rows = await response.json()
+        const modelPath = rows?.[0]?.model_path
+        return modelPath
+          ? `${SUPABASE_PROJECT_URL}/storage/v1/object/public/models/${encodeURI(modelPath)}`
+          : MODEL_URL
+      } catch {
+        return MODEL_URL
+      }
+    }
+
+    loadPublishedModelUrl().then((activeModelUrl) => loader.load(
+      activeModelUrl,
       (gltf) => {
         if (cancelled) return
 
@@ -142,7 +159,7 @@ export default function ModelMapper({ onSignOut }) {
           'Impossible de charger le modèle 3D. Vérifiez que le fichier GLB est bien déployé.',
         )
       },
-    )
+    ))
 
     return () => {
       cancelled = true
