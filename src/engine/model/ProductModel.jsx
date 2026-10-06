@@ -68,15 +68,23 @@ function LoadedProduct({ url }) {
 
     const targetTime = THREE.MathUtils.clamp(animationProgress, 0, 1) * animationClip.duration
     const isClosing = targetTime < animationTime.current
-    const closingEndZone = animationClip.duration * 0.12
-    const isNearClosed = isClosing && animationTime.current <= closingEndZone
 
-    // Keep the current soft motion overall, but remove the long easing tail
-    // during the last part of the closing animation.
-    const damping = isNearClosed ? 4.5 : 1.5
+    // Opening stays exactly as before. During closing, progressively increase
+    // damping near the end instead of switching values abruptly.
+    let damping = 1.5
+    let snapThreshold = 0.001
+
+    if (isClosing) {
+      const closingBlendZone = animationClip.duration * 0.22
+      const normalizedDistance = THREE.MathUtils.clamp(animationTime.current / closingBlendZone, 0, 1)
+      const blend = 1 - THREE.MathUtils.smoothstep(normalizedDistance, 0, 1)
+      damping = THREE.MathUtils.lerp(1.5, 3.2, blend)
+      snapThreshold = THREE.MathUtils.lerp(0.001, 0.012, blend)
+    }
+
     animationTime.current = THREE.MathUtils.damp(animationTime.current, targetTime, damping, delta * 0.5)
 
-    if (Math.abs(animationTime.current - targetTime) < (isNearClosed ? 0.02 : 0.001)) {
+    if (Math.abs(animationTime.current - targetTime) < snapThreshold) {
       animationTime.current = targetTime
     }
 
