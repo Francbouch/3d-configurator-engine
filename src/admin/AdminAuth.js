@@ -1,4 +1,4 @@
-const SUPABASE_URL = 'https://jetogsbyptglaihktdel.supabase.co'
+const SUPABASE_URL = 'https://vnaoawlrotdogslykbmm.supabase.co'
 const SUPABASE_KEY = 'sb_publishable_YQndqxq2W7Bq2C-0crv0rQ_V4Upvbja'
 const SESSION_KEY = 'configurator-admin-session'
 
