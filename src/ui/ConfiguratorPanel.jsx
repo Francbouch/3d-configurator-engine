@@ -50,7 +50,14 @@ export default function ConfiguratorPanel() {
   const price = calculatePrice(runtimeProduct.pricing, selectedMaterials, modules, selectedModules)
   const showPrice = runtimeProduct.pricing?.displayPrice === true
 
-  const dynamicGroups = Array.isArray(publishedConfig?.materialGroups) ? publishedConfig.materialGroups : []
+  const publishedGroups = Array.isArray(publishedConfig?.materialGroups) ? publishedConfig.materialGroups : []
+  const fallbackGroups = Object.entries(product.materialGroups ?? {}).map(([id, group]) => ({
+    id,
+    name: group.label ?? id,
+    materialId: group.defaultMaterialId ?? '',
+    role: 'modifiable',
+  }))
+  const dynamicGroups = publishedGroups.length ? publishedGroups : fallbackGroups
   const sections = dynamicGroups
     .filter((group) => group.role === 'modifiable')
     .map((group) => ({ id: group.id, label: group.name, defaultMaterialId: group.materialId }))
