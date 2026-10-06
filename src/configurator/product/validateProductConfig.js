@@ -120,8 +120,11 @@ export function validateProductConfig(product, materials = []) {
   })
 
   const basePrice = product?.pricing?.basePrice
-  if (basePrice != null && !Number.isFinite(Number(basePrice))) {
-    errors.push('Le prix de base doit être numérique.')
+  if (
+    basePrice != null &&
+    (!Number.isFinite(Number(basePrice)) || Number(basePrice) < 0)
+  ) {
+    errors.push('Le prix de base doit être un nombre positif ou nul.')
   }
 
   const adjustments = product?.pricing?.adjustments ?? []
@@ -138,6 +141,14 @@ export function validateProductConfig(product, materials = []) {
 
   adjustments.forEach((adjustment) => {
     const label = adjustment.id ?? adjustment.label ?? 'sans id'
+
+    if (!adjustment.id?.trim()) {
+      errors.push(`Le supplément "${label}" doit avoir un id.`)
+    }
+
+    if (!adjustment.label?.trim()) {
+      errors.push(`Le supplément "${label}" doit avoir un libellé.`)
+    }
 
     if (!Number.isFinite(Number(adjustment.amount ?? 0))) {
       errors.push(`Le supplément "${label}" a un montant invalide.`)
