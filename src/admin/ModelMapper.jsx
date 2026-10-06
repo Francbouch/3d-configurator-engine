@@ -719,7 +719,6 @@ export default function ModelMapper({ onSignOut }) {
 
             <select
               value={part.group ?? ''}
-              disabled={!part.materialEditable}
               onChange={(event) =>
                 updatePart(index, {
                   group: event.target.value || null,
