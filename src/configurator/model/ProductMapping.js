@@ -3,7 +3,8 @@ import { scanModel, getEditableCandidates } from '../../engine/model/ModelScanne
 function findExistingPart(node, existingParts = []) {
   return existingParts.find((part) =>
     (part.nodePath && part.nodePath === node.path) ||
-    (part.node && part.node === node.name)
+    (part.meshPath === node.meshPath && Number(part.materialIndex ?? 0) === Number(node.materialIndex ?? 0)) ||
+    (part.node && part.node === node.name && !part.nodePath)
   )
 }
 
@@ -18,8 +19,12 @@ export function buildProductMappingDraft(root, existingParts = []) {
       return {
         node: node.name,
         nodePath: node.path,
+        meshPath: node.meshPath,
+        materialIndex: node.materialIndex,
+        sourceMaterial: node.materialName,
         group: existing?.group ?? null,
         materialEditable: existing?.materialEditable === true,
+        initialMaterialId: existing?.initialMaterialId ?? null,
         sourceMaterials: node.materialNames,
       }
     }),
@@ -68,10 +73,14 @@ export function validateProductMapping(mapping, materialGroups = {}) {
 }
 
 export function toProductParts(mapping) {
-  return (mapping.parts ?? []).map(({ node, nodePath, group, materialEditable }) => ({
+  return (mapping.parts ?? []).map(({ node, nodePath, meshPath, materialIndex, sourceMaterial, group, materialEditable, initialMaterialId }) => ({
     node,
     ...(nodePath ? { nodePath } : {}),
+    ...(meshPath ? { meshPath } : {}),
+    ...(Number.isInteger(materialIndex) ? { materialIndex } : {}),
+    ...(sourceMaterial ? { sourceMaterial } : {}),
     group: group || null,
     materialEditable: materialEditable === true,
+    initialMaterialId: initialMaterialId || null,
   }))
 }
