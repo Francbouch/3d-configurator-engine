@@ -317,3 +317,12 @@ body:has(.admin) { overflow: hidden; }
 .admin-login__status{padding:10px 12px;border-radius:10px;background:#fff7e8;color:#795c25;font-size:12px;line-height:1.45}
 .admin__header-actions{display:flex;align-items:center;gap:14px}
 .admin__signout{padding:9px 12px;border:1px solid #ddd;border-radius:10px;background:#fff;color:#555;font:inherit;font-size:12px;font-weight:650;cursor:pointer}
+
+.admin__groups-card{margin-bottom:18px}
+.admin__groups-card .admin__pricing-title{padding:0 0 12px;margin:0;border-bottom:1px solid #ededE9}
+.admin__groups-head,.admin__group-row{display:grid;grid-template-columns:minmax(180px,1.35fr) minmax(180px,1.15fr) minmax(130px,.7fr) 34px;gap:12px;align-items:center}
+.admin__groups-head{padding:14px 0 8px;color:#888;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.admin__group-row{padding:10px 0;border-top:1px solid #f0f0ed}
+.admin__group-row input,.admin__group-row select{width:100%;min-width:0;padding:10px 12px;border:1px solid #deded9;border-radius:10px;background:#fff;color:#171717;font:inherit;font-size:13px}
+.admin__group-remove{justify-self:end}
+@media(max-width:760px){.admin__groups-head{display:none}.admin__group-row{grid-template-columns:1fr 1fr}.admin__group-remove{justify-self:end}}
