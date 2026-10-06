@@ -42,8 +42,12 @@ function LoadedProduct({ url }) {
   useEffect(() => {
     if (!mixer || !animationClip) return undefined
     const action = mixer.clipAction(animationClip)
+    action.reset()
+    action.enabled = true
+    action.setEffectiveWeight(1)
+    action.setEffectiveTimeScale(1)
     action.play()
-    action.paused = true
+    mixer.update(0)
     mixer.setTime(0)
     return () => mixer.stopAllAction()
   }, [animationClip, mixer])
@@ -57,6 +61,7 @@ function LoadedProduct({ url }) {
       animationTime.current = targetTime
     }
     mixer.setTime(animationTime.current)
+    mixer.update(0)
   })
 
   return (
