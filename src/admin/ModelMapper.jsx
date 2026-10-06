@@ -30,8 +30,16 @@ export default function ModelMapper({ onSignOut }) {
   const [rules, setRules] = useState(product.rules ?? [])
   const [modules, setModules] = useState(product.modules ?? [])
   const [displayPrice, setDisplayPrice] = useState(product.pricing?.displayPrice === true)
+  const [materialGroups, setMaterialGroups] = useState(() =>
+    Object.entries(product.materialGroups ?? {}).map(([id, group]) => ({
+      id,
+      name: group.label ?? id,
+      materialId: group.defaultMaterialId ?? '',
+      role: 'modifiable',
+    })),
+  )
 
-  const groupIds = product.configurationFlow ?? Object.keys(product.materialGroups ?? {})
+  const groupIds = materialGroups.map((group) => group.id)
   const validation = useMemo(
     () => validateProductMapping({ parts }, product.materialGroups ?? {}),
     [parts],
@@ -64,6 +72,7 @@ export default function ModelMapper({ onSignOut }) {
   function buildDraftPayload() {
     return {
       parts: toProductParts({ parts }),
+      materialGroups,
       name: modelName.trim(),
       materials,
       modules,
@@ -149,6 +158,7 @@ export default function ModelMapper({ onSignOut }) {
         setRules(Array.isArray(saved?.rules) ? saved.rules : product.rules ?? [])
         setModules(Array.isArray(saved?.modules) ? saved.modules : product.modules ?? [])
         setDisplayPrice(saved?.pricing?.displayPrice ?? (product.pricing?.displayPrice === true))
+        if (Array.isArray(saved?.materialGroups)) setMaterialGroups(saved.materialGroups)
         if (saved) setSaveStatus('Brouillon local restauré')
       },
       undefined,
@@ -319,6 +329,19 @@ export default function ModelMapper({ onSignOut }) {
     setSaveStatus('')
   }
 
+  function addGroup() {
+    setMaterialGroups((current) => [
+      ...current,
+      { id: `group-${Date.now()}`, name: 'Nouveau groupe', materialId: '', role: 'modifiable' },
+    ])
+    setSaveStatus('')
+  }
+
+  function updateGroup(index, patch) {
+    setMaterialGroups((current) => current.map((group, i) => (i === index ? { ...group, ...patch } : group)))
+    setSaveStatus('')
+  }
+
   function updatePart(index, patch) {
     setParts((current) =>
       current.map((part, i) => (i === index ? { ...part, ...patch } : part)),
@@ -418,6 +441,7 @@ export default function ModelMapper({ onSignOut }) {
   function saveDraft() {
     const ok = saveAdminDraft(product.id, {
       parts: toProductParts({ parts }),
+      materialGroups,
       name: modelName.trim(),
       materials,
       modules,
@@ -449,6 +473,7 @@ export default function ModelMapper({ onSignOut }) {
     setRules(product.rules ?? [])
     setModules(product.modules ?? [])
     setDisplayPrice(product.pricing?.displayPrice === true)
+    setMaterialGroups(Object.entries(product.materialGroups ?? {}).map(([id, group]) => ({ id, name: group.label ?? id, materialId: group.defaultMaterialId ?? '', role: 'modifiable' })))
     setSaveStatus('Brouillon local réinitialisé à la version publiée')
   }
 
@@ -704,6 +729,29 @@ export default function ModelMapper({ onSignOut }) {
       </section>
       </>}
 
+      {activeSection === 'model' && <section className="admin__card admin__groups-card">
+        <div className="admin__pricing-title">
+          <div><strong>Groupes</strong><small>Créez les groupes utilisés pour classer les pièces du meuble.</small></div>
+          <button type="button" onClick={addGroup}>+ Ajouter un groupe</button>
+        </div>
+        <div className="admin__groups-head"><span>Nom du groupe</span><span>Matériau</span><span>Rôle</span></div>
+        {materialGroups.map((group, index) => (
+          <div className="admin__group-row" key={group.id}>
+            <input value={group.name} onChange={(e) => updateGroup(index, { name: e.target.value })} />
+            <select value={group.materialId} onChange={(e) => updateGroup(index, { materialId: e.target.value })}>
+              <option value="">Choisir un matériau…</option>
+              {materials.filter((material) => material.active !== false).map((material) => (
+                <option key={material.id} value={material.id}>{material.name}{material.code ? ` · ${material.code}` : ''}</option>
+              ))}
+            </select>
+            <select value={group.role} onChange={(e) => updateGroup(index, { role: e.target.value })}>
+              <option value="fixed">Fixe</option>
+              <option value="modifiable">Modifiable</option>
+            </select>
+          </div>
+        ))}
+      </section>}
+
       {activeSection === 'model' && <section className="admin__card">
         <div className="admin__table-head">
           <span>Pièce du meuble</span>
@@ -730,7 +778,7 @@ export default function ModelMapper({ onSignOut }) {
               <option value="">Choisir…</option>
               {groupIds.map((groupId) => (
                 <option value={groupId} key={groupId}>
-                  {product.materialGroups?.[groupId]?.label ?? groupId}
+                  {materialGroups.find((group) => group.id === groupId)?.name ?? product.materialGroups?.[groupId]?.label ?? groupId}
                 </option>
               ))}
             </select>
