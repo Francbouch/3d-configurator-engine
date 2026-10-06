@@ -23,6 +23,10 @@ function authError(data, fallback) {
     return `Une demande vient d’être envoyée. Réessaie dans environ ${wait[1]} secondes.`
   }
 
+  if (/email rate limit exceeded|over_email_send_rate_limit/i.test(String(raw))) {
+    return 'Supabase limite temporairement l’envoi de courriels. Attends quelques minutes avant de réessayer.'
+  }
+
   if (/email not confirmed/i.test(String(raw))) {
     return 'Ton compte existe, mais ton adresse courriel n’est pas encore confirmée.'
   }
