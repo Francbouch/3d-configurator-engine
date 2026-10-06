@@ -228,3 +228,34 @@ button { font: inherit; }
 .admin__module-file,.admin__money{display:flex;align-items:center;gap:8px}.admin__module-file{min-height:40px}.admin__module-file>strong{flex:1;min-width:0;overflow:hidden;color:#666;font-size:12px;text-overflow:ellipsis;white-space:nowrap}
 .admin__module-file .admin__upload{min-height:38px;padding:7px 11px}.admin__money input{min-width:0}.admin__money>span{color:#777;font-size:11px;white-space:nowrap}
 @media(max-width:900px){.admin__module-grid{grid-template-columns:1fr 1fr}}@media(max-width:600px){.admin__module-top,.admin__module-grid{grid-template-columns:1fr}.admin__module-top .admin__remove{justify-self:end}}
+
+
+.panel__bed-control {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-top: 24px;
+  padding: 4px;
+  border: 1px solid #e1e1dd;
+  border-radius: 14px;
+  background: #ecece8;
+}
+.bed-toggle {
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 650;
+  transition: background .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.bed-toggle:hover { color: #171717; }
+.bed-toggle:active { transform: scale(.985); }
+.bed-toggle.is-active {
+  background: #fff;
+  color: #171717;
+  box-shadow: 0 1px 4px rgba(0,0,0,.07);
+}
