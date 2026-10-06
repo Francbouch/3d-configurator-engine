@@ -178,7 +178,7 @@ export default function ModelMapper({ onSignOut }) {
         setUploadedModelName(file.name)
         setUploadedModelFile(file)
         setModelName(file.name.replace(/\.glb$/i, ''))
-        setSaveStatus(`${nextDraft.scan.meshCount} pièces détectées dans ${file.name}`)
+        setSaveStatus(`${nextDraft.scan.partCount ?? nextDraft.scan.meshCount} pièces détectées dans ${file.name}`)
         URL.revokeObjectURL(url)
       },
       undefined,
@@ -466,7 +466,7 @@ export default function ModelMapper({ onSignOut }) {
         <div>
           <div className="admin__eyebrow">Back-office · Modèle 3D</div>
           <h1>{product.name}</h1>
-          <p>{draft.scan.meshCount} pièces détectées automatiquement.</p>
+          <p>{draft.scan.partCount ?? draft.scan.meshCount} pièces détectées automatiquement.</p>
         </div>
         <div className="admin__header-actions"><a className="admin__link" href="./">Retour au configurateur</a><button type="button" className="admin__signout" onClick={onSignOut}>Déconnexion</button></div>
       </header>
@@ -692,13 +692,14 @@ export default function ModelMapper({ onSignOut }) {
           <span>Pièce du meuble</span>
           <span>Rôle</span>
           <span>Groupe</span>
+          <span>Couleur initiale</span>
         </div>
 
         {parts.map((part, index) => (
           <div className="admin__row" key={part.nodePath || part.node}>
             <div className="admin__part">
-              <strong>{part.node || 'Sans nom'}</strong>
-              <small>{part.sourceMaterials?.join(', ') || 'Aucun matériau source'}</small>
+              <strong>{part.node || 'Sans nom'}{part.sourceMaterial ? ` · ${part.sourceMaterial}` : ''}</strong>
+              <small>{part.meshPath || part.nodePath || 'Pièce GLB'}</small>
             </div>
 
             <select
@@ -725,6 +726,18 @@ export default function ModelMapper({ onSignOut }) {
               {groupIds.map((groupId) => (
                 <option value={groupId} key={groupId}>
                   {product.materialGroups?.[groupId]?.label ?? groupId}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={part.initialMaterialId ?? ''}
+              onChange={(event) => updatePart(index, { initialMaterialId: event.target.value || null })}
+            >
+              <option value="">Matériau du GLB</option>
+              {materials.filter((material) => material.active !== false).map((material) => (
+                <option value={material.id} key={material.id}>
+                  {material.name}{material.code ? ` · ${material.code}` : ''}
                 </option>
               ))}
             </select>
