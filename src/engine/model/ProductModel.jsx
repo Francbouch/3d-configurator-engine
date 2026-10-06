@@ -69,23 +69,18 @@ function LoadedProduct({ url }) {
     const targetTime = THREE.MathUtils.clamp(animationProgress, 0, 1) * animationClip.duration
     const isClosing = targetTime < animationTime.current
 
-    // Opening stays exactly as before. During closing, progressively increase
-    // damping near the end instead of switching values abruptly.
-    let damping = 1.5
-    let snapThreshold = 0.001
-
     if (isClosing) {
-      const closingBlendZone = animationClip.duration * 0.22
-      const normalizedDistance = THREE.MathUtils.clamp(animationTime.current / closingBlendZone, 0, 1)
-      const blend = 1 - THREE.MathUtils.smoothstep(normalizedDistance, 0, 1)
-      damping = THREE.MathUtils.lerp(1.5, 3.2, blend)
-      snapThreshold = THREE.MathUtils.lerp(0.001, 0.012, blend)
-    }
+      // Test mode: no easing/damping on closing. Move at a constant speed.
+      const closingSpeed = animationClip.duration * 0.75
+      const distance = closingSpeed * delta
+      animationTime.current = Math.max(targetTime, animationTime.current - distance)
+    } else {
+      // Keep opening exactly as it was.
+      animationTime.current = THREE.MathUtils.damp(animationTime.current, targetTime, 1.5, delta * 0.5)
 
-    animationTime.current = THREE.MathUtils.damp(animationTime.current, targetTime, damping, delta * 0.5)
-
-    if (Math.abs(animationTime.current - targetTime) < snapThreshold) {
-      animationTime.current = targetTime
+      if (Math.abs(animationTime.current - targetTime) < 0.001) {
+        animationTime.current = targetTime
+      }
     }
 
     // A paused AnimationAction does not advance with mixer.setTime().
