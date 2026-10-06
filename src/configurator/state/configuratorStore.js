@@ -62,6 +62,9 @@ export const useConfiguratorStore = create((set) => ({
 
   initializeMaterialCatalog: (materials) => set((state) => ({ materialCatalog: materials, selectedMaterials: Object.keys(state.selectedMaterials).length ? state.selectedMaterials : buildInitialMaterials(materials) })),
 
+  setMaterialDirect: (groupId, materialId) =>
+    set((state) => ({ selectedMaterials: { ...state.selectedMaterials, [groupId]: materialId } })),
+
   setMaterial: (groupId, materialId) =>
     set((state) => {
       const materials = state.materialCatalog
