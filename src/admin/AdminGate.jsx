@@ -16,6 +16,7 @@ export default function AdminGate({ children }) {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [status, setStatus] = useState('')
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false)
+  const [signupSent, setSignupSent] = useState(false)
   const [busy, setBusy] = useState(false)
 
   async function submit(event) {
@@ -40,6 +41,7 @@ export default function AdminGate({ children }) {
 
       if (mode === 'signup' && data?.user) {
         setAwaitingConfirmation(true)
+        setSignupSent(true)
         setStatus('Compte créé. Vérifie maintenant ton courriel et clique sur le lien de confirmation. Ensuite, connecte-toi avec le même mot de passe.')
         return
       }
@@ -78,6 +80,7 @@ export default function AdminGate({ children }) {
     setMode(nextMode)
     setStatus('')
     setAwaitingConfirmation(false)
+    setSignupSent(false)
     setPassword('')
     setConfirmPassword('')
   }
@@ -139,8 +142,8 @@ export default function AdminGate({ children }) {
 
           {status && <div className="admin-login__status">{status}</div>}
 
-          <button type="submit" disabled={busy}>
-            {busy ? 'Un instant…' : isSignup ? 'Créer mon compte' : 'Se connecter'}
+          <button type="submit" disabled={busy || (isSignup && signupSent)}>
+            {busy ? 'Un instant…' : isSignup ? (signupSent ? 'Compte créé — vérifie ton courriel' : 'Créer mon compte') : 'Se connecter'}
           </button>
         </form>
 
