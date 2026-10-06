@@ -9,6 +9,7 @@ import {
 import { formatPrice } from '../configurator/pricing/PricingUtils'
 import { resolveAssetUrl } from '../engine/assets/resolveAssetUrl'
 import { clearAdminDraft, loadAdminDraft, saveAdminDraft } from './AdminDraftStore'
+import { loadAdminSession, SUPABASE_PROJECT_URL, supabaseHeaders } from './AdminAuth'
 import { MASTER_MATERIAL_LIBRARY_URL, materialRecordsFromScene } from '../engine/materials/MasterMaterialLibrary'
 
 const MODEL_URL = resolveAssetUrl(product.model?.url)
@@ -22,6 +23,7 @@ export default function ModelMapper({ onSignOut }) {
   const [saveStatus, setSaveStatus] = useState('')
   const [modelName, setModelName] = useState(product.name)
   const [uploadedModelName, setUploadedModelName] = useState('')
+  const [uploadedModelFile, setUploadedModelFile] = useState(null)
   const [materials, setMaterials] = useState([])
   const [publishedMaterials, setPublishedMaterials] = useState([])
   const [activeSection, setActiveSection] = useState('model')
@@ -57,7 +59,7 @@ export default function ModelMapper({ onSignOut }) {
     return [...new Set(errors)]
   }, [validation.errors, modelName, basePrice, duplicateMaterialIds, materials])
   const canSave = adminErrors.length === 0
-  const publishReady = canSave && !uploadedModelName && modules.every((module) => !module.glbFileName)
+  const publishReady = canSave && modules.every((module) => !module.glbFileName)
 
   function buildDraftPayload() {
     return {
@@ -174,6 +176,7 @@ export default function ModelMapper({ onSignOut }) {
       (gltf) => {
         const nextDraft = scanScene(gltf.scene)
         setUploadedModelName(file.name)
+        setUploadedModelFile(file)
         setModelName(file.name.replace(/\.glb$/i, ''))
         setSaveStatus(`${nextDraft.scan.meshCount} pièces détectées dans ${file.name}`)
         URL.revokeObjectURL(url)
@@ -306,6 +309,95 @@ export default function ModelMapper({ onSignOut }) {
     setSaveStatus('')
   }
 
+  async function publishConfiguration() {
+    const session = loadAdminSession()
+    if (!session?.access_token) {
+      setSaveStatus('Session expirée. Reconnecte-toi au back-office.')
+      return
+    }
+
+    setSaveStatus('Publication en cours…')
+
+    try {
+      let modelPath = null
+
+      if (uploadedModelFile) {
+        const safeName = uploadedModelFile.name.replace(/[^a-zA-Z0-9._-]+/g, '-')
+        modelPath = `${product.id}/current-${Date.now()}-${safeName}`
+        const upload = await fetch(
+          `${SUPABASE_PROJECT_URL}/storage/v1/object/models/${encodeURI(modelPath)}`,
+          {
+            method: 'POST',
+            headers: {
+              ...supabaseHeaders(session.access_token, uploadedModelFile.type || 'model/gltf-binary'),
+              'x-upsert': 'true',
+            },
+            body: uploadedModelFile,
+          },
+        )
+        if (!upload.ok) {
+          const detail = await upload.text()
+          throw new Error(`Upload GLB impossible: ${detail}`)
+        }
+      } else {
+        const existing = await fetch(
+          `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=model_path&limit=1`,
+          { headers: supabaseHeaders(session.access_token) },
+        )
+        if (existing.ok) {
+          const rows = await existing.json()
+          modelPath = rows?.[0]?.model_path ?? null
+        }
+      }
+
+      if (!modelPath) throw new Error('Choisis d’abord le GLB à publier.')
+
+      const payload = buildDraftPayload()
+      payload.animations = product.animations
+      const publication = {
+        product_id: product.id,
+        model_path: modelPath,
+        model_name: uploadedModelName || modelName.trim(),
+        configuration: payload,
+        updated_at: new Date().toISOString(),
+        updated_by: session.user?.id ?? null,
+      }
+
+      if (!publication.updated_by) {
+        const userResponse = await fetch(`${SUPABASE_PROJECT_URL}/auth/v1/user`, {
+          headers: supabaseHeaders(session.access_token),
+        })
+        if (!userResponse.ok) throw new Error('Impossible d’identifier le compte administrateur.')
+        const user = await userResponse.json()
+        publication.updated_by = user.id
+      }
+
+      const response = await fetch(
+        `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?on_conflict=product_id`,
+        {
+          method: 'POST',
+          headers: {
+            ...supabaseHeaders(session.access_token),
+            Prefer: 'resolution=merge-duplicates,return=minimal',
+          },
+          body: JSON.stringify(publication),
+        },
+      )
+      if (!response.ok) {
+        const detail = await response.text()
+        throw new Error(`Publication impossible: ${detail}`)
+      }
+
+      saveAdminDraft(product.id, payload)
+      setUploadedModelFile(null)
+      setUploadedModelName('')
+      setSaveStatus('Publié ✓ Le site client utilise maintenant ce GLB.')
+    } catch (error) {
+      console.error(error)
+      setSaveStatus(error instanceof Error ? error.message : 'Publication impossible.')
+    }
+  }
+
   function saveDraft() {
     const ok = saveAdminDraft(product.id, {
       parts: toProductParts({ parts }),
@@ -333,6 +425,7 @@ export default function ModelMapper({ onSignOut }) {
     }
     setModelName(product.name)
     setUploadedModelName('')
+    setUploadedModelFile(null)
     setBasePrice(product.pricing?.basePrice ?? 0)
     setAdjustments(product.pricing?.adjustments ?? [])
     setMaterials(publishedMaterials)
@@ -437,11 +530,7 @@ export default function ModelMapper({ onSignOut }) {
             className="admin__publish"
             disabled={!publishReady}
             title={publishReady ? 'Configuration prête à être publiée' : 'Enregistrez les nouveaux fichiers 3D avant publication'}
-            onClick={() => {
-              const payload = buildDraftPayload()
-              saveAdminDraft(product.id, payload)
-              setSaveStatus('Configuration prête à publier. Publication serveur non encore connectée.')
-            }}
+            onClick={publishConfiguration}
           >
             Publier
           </button>
