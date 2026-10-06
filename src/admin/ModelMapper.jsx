@@ -342,6 +342,17 @@ export default function ModelMapper({ onSignOut }) {
     setSaveStatus('')
   }
 
+  function removeGroup(index) {
+    const groupId = materialGroups[index]?.id
+    setMaterialGroups((current) => current.filter((_, i) => i !== index))
+    if (groupId) {
+      setParts((current) => current.map((part) =>
+        part.group === groupId ? { ...part, group: null, materialEditable: false } : part
+      ))
+    }
+    setSaveStatus('')
+  }
+
   function updatePart(index, patch) {
     setParts((current) =>
       current.map((part, i) => (i === index ? { ...part, ...patch } : part)),
@@ -734,7 +745,7 @@ export default function ModelMapper({ onSignOut }) {
           <div><strong>Groupes</strong><small>Créez les groupes utilisés pour classer les pièces du meuble.</small></div>
           <button type="button" onClick={addGroup}>+ Ajouter un groupe</button>
         </div>
-        <div className="admin__groups-head"><span>Nom du groupe</span><span>Matériau</span><span>Rôle</span></div>
+        <div className="admin__groups-head"><span>Nom du groupe</span><span>Matériau</span><span>Rôle</span><span></span></div>
         {materialGroups.map((group, index) => (
           <div className="admin__group-row" key={group.id}>
             <input value={group.name} onChange={(e) => updateGroup(index, { name: e.target.value })} />
@@ -748,6 +759,7 @@ export default function ModelMapper({ onSignOut }) {
               <option value="fixed">Fixe</option>
               <option value="modifiable">Modifiable</option>
             </select>
+            <button type="button" className="admin__remove admin__group-remove" onClick={() => removeGroup(index)} aria-label={`Supprimer le groupe ${group.name}`}>×</button>
           </div>
         ))}
       </section>}
