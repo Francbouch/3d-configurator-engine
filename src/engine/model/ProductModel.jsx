@@ -67,9 +67,16 @@ function LoadedProduct({ url }) {
     if (!mixer || !animationClip || !action) return
 
     const targetTime = THREE.MathUtils.clamp(animationProgress, 0, 1) * animationClip.duration
-    animationTime.current = THREE.MathUtils.damp(animationTime.current, targetTime, 1.5, delta * 0.5)
+    const isClosing = targetTime < animationTime.current
+    const closingEndZone = animationClip.duration * 0.12
+    const isNearClosed = isClosing && animationTime.current <= closingEndZone
 
-    if (Math.abs(animationTime.current - targetTime) < 0.001) {
+    // Keep the current soft motion overall, but remove the long easing tail
+    // during the last part of the closing animation.
+    const damping = isNearClosed ? 4.5 : 1.5
+    animationTime.current = THREE.MathUtils.damp(animationTime.current, targetTime, damping, delta * 0.5)
+
+    if (Math.abs(animationTime.current - targetTime) < (isNearClosed ? 0.02 : 0.001)) {
       animationTime.current = targetTime
     }
 
