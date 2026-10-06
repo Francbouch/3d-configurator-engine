@@ -23,6 +23,7 @@ export default function ModelMapper() {
   const [modelName, setModelName] = useState(product.name)
   const [uploadedModelName, setUploadedModelName] = useState('')
   const [materials, setMaterials] = useState([])
+  const [publishedMaterials, setPublishedMaterials] = useState([])
   const [activeSection, setActiveSection] = useState('model')
   const [rules, setRules] = useState(product.rules ?? [])
   const [modules, setModules] = useState(product.modules ?? [])
@@ -116,6 +117,8 @@ export default function ModelMapper() {
           MASTER_MATERIAL_LIBRARY_URL,
           (materialGltf) => {
             if (cancelled) return
+            const published = materialRecordsFromScene(materialGltf.scene)
+            setPublishedMaterials(published)
             setMaterials(materialRecordsFromScene(materialGltf.scene, Array.isArray(saved?.materials) ? saved.materials : []))
           },
           undefined,
@@ -332,7 +335,7 @@ export default function ModelMapper() {
     setUploadedModelName('')
     setBasePrice(product.pricing?.basePrice ?? 0)
     setAdjustments(product.pricing?.adjustments ?? [])
-    setMaterials(materials)
+    setMaterials(publishedMaterials)
     setRules(product.rules ?? [])
     setModules(product.modules ?? [])
     setDisplayPrice(product.pricing?.displayPrice === true)
