@@ -48,10 +48,10 @@ function LoadedProduct({ url }) {
     action.setEffectiveTimeScale(1)
     action.setLoop(THREE.LoopOnce, 1)
     action.clampWhenFinished = true
-    action.paused = true
     action.play()
     mixer.setTime(0)
     mixer.update(0)
+    action.paused = true
     return () => mixer.stopAllAction()
   }, [animationClip, mixer])
 
@@ -63,9 +63,9 @@ function LoadedProduct({ url }) {
     if (Math.abs(animationTime.current - targetTime) <= step * 0.02) {
       animationTime.current = targetTime
     }
-    // We scrub the clip manually. Keep the action paused so Three.js never
-    // advances past the last keyframe and wraps back to the first frame.
-    mixer.setTime(Math.min(animationTime.current, animationClip.duration))
+    // Scrub the active clip manually and keep it paused between updates.
+    // The action must be started before pausing or it contributes no pose.
+    mixer.setTime(THREE.MathUtils.clamp(animationTime.current, 0, animationClip.duration))
     mixer.update(0)
   })
 
