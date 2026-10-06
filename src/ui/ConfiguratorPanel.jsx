@@ -7,9 +7,11 @@ import { calculatePrice } from '../configurator/pricing/PriceEngine'
 import { formatPrice } from '../configurator/pricing/PricingUtils'
 import MaterialPreview from './MaterialPreview'
 import { MASTER_MATERIAL_LIBRARY_URL, materialRecordsFromScene } from '../engine/materials/MasterMaterialLibrary'
+import { SUPABASE_PROJECT_URL, supabaseHeaders } from '../admin/AdminAuth'
 
 export default function ConfiguratorPanel() {
   const [openSection, setOpenSection] = useState(null)
+  const [publishedConfig, setPublishedConfig] = useState(null)
   const materialGltf = useGLTF(MASTER_MATERIAL_LIBRARY_URL)
   const materials = useMemo(() => materialRecordsFromScene(materialGltf.scene), [materialGltf.scene])
   const initializeMaterialCatalog = useConfiguratorStore((state) => state.initializeMaterialCatalog)
@@ -19,23 +21,39 @@ export default function ConfiguratorPanel() {
   const toggleModule = useConfiguratorStore((state) => state.toggleModule)
   const animationProgress = useConfiguratorStore((state) => state.animationProgress)
   const setAnimationProgress = useConfiguratorStore((state) => state.setAnimationProgress)
-  const bedAnimation = product.animations?.open
+  const runtimeProduct = publishedConfig ? {
+    ...product,
+    model: { ...product.model, parts: publishedConfig.parts ?? product.model?.parts ?? [] },
+    rules: publishedConfig.rules ?? product.rules,
+    modules: publishedConfig.modules ?? product.modules,
+    pricing: publishedConfig.pricing ?? product.pricing,
+  } : product
+  const bedAnimation = runtimeProduct.animations?.open ?? product.animations?.open
+
+  useEffect(() => {
+    let cancelled = false
+    fetch(
+      `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=configuration&limit=1`,
+      { headers: supabaseHeaders() },
+    )
+      .then((response) => response.ok ? response.json() : [])
+      .then((rows) => { if (!cancelled) setPublishedConfig(rows?.[0]?.configuration ?? null) })
+      .catch((error) => console.warn('Unable to load published configuration', error))
+    return () => { cancelled = true }
+  }, [])
 
   useEffect(() => {
     initializeMaterialCatalog(materials)
   }, [initializeMaterialCatalog, materials])
 
-  const modules = (product.modules ?? []).filter((module) => module.enabled !== false && module.model?.url)
-  const price = calculatePrice(product.pricing, selectedMaterials, modules, selectedModules)
-  const showPrice = product.pricing?.displayPrice === true
+  const modules = (runtimeProduct.modules ?? []).filter((module) => module.enabled !== false && module.model?.url)
+  const price = calculatePrice(runtimeProduct.pricing, selectedMaterials, modules, selectedModules)
+  const showPrice = runtimeProduct.pricing?.displayPrice === true
 
-  const groupOrder = product.configurationFlow ?? Object.keys(product.materialGroups)
-  const sections = groupOrder
-    .filter((id) => product.materialGroups[id])
-    .map((id) => ({
-      id,
-      label: product.materialGroups[id].label,
-    }))
+  const dynamicGroups = Array.isArray(publishedConfig?.materialGroups) ? publishedConfig.materialGroups : []
+  const sections = dynamicGroups
+    .filter((group) => group.role === 'modifiable')
+    .map((group) => ({ id: group.id, label: group.name, defaultMaterialId: group.materialId }))
 
   return (
     <aside className="panel">
@@ -47,11 +65,12 @@ export default function ConfiguratorPanel() {
         {sections.map((section) => {
           const isOpen = openSection === section.id
           const allowedMaterials = getGroupMaterials({
-            product,
+            product: runtimeProduct,
             groupId: section.id,
             selected: selectedMaterials,
             materials,
           })
+          const sectionMaterials = dynamicGroups.length ? materials : allowedMaterials
 
           return (
             <div className="panel__group" key={section.id}>
@@ -67,12 +86,12 @@ export default function ConfiguratorPanel() {
 
               {isOpen && (
                 <div className="material-grid">
-                  {allowedMaterials.map((material) => (
+                  {sectionMaterials.map((material) => (
                     <button
                       className={selectedMaterials[section.id] === material.id ? 'material-chip is-selected' : 'material-chip'}
                       type="button"
                       key={material.id}
-                      onClick={() => setMaterial(section.id, material.id)}
+                      onClick={() => useConfiguratorStore.getState().setMaterialDirect(section.id, material.id)}
                     >
                       <span className="material-chip__preview">
                         <MaterialPreview material={material} />
