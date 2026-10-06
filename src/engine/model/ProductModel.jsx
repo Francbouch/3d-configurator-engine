@@ -13,6 +13,7 @@ function LoadedProduct({ url }) {
   const selectedMaterials = useConfiguratorStore((state) => state.selectedMaterials)
   const animationProgress = useConfiguratorStore((state) => state.animationProgress)
   const animationTime = useRef(0)
+  const animationAction = useRef(null)
 
   const model = useMemo(() => productGltf.scene.clone(true), [productGltf.scene])
   const animation = product.animations?.open
@@ -49,23 +50,32 @@ function LoadedProduct({ url }) {
     action.setLoop(THREE.LoopOnce, 1)
     action.clampWhenFinished = true
     action.play()
-    mixer.setTime(0)
-    mixer.update(0)
     action.paused = true
-    return () => mixer.stopAllAction()
+    action.time = 0
+    animationTime.current = 0
+    animationAction.current = action
+    mixer.update(0)
+
+    return () => {
+      animationAction.current = null
+      mixer.stopAllAction()
+    }
   }, [animationClip, mixer])
 
   useFrame((_, delta) => {
-    if (!mixer || !animationClip) return
+    const action = animationAction.current
+    if (!mixer || !animationClip || !action) return
+
     const targetTime = THREE.MathUtils.clamp(animationProgress, 0, 1) * animationClip.duration
-    const step = Math.max(animationClip.duration / 1.25, 0.01) * delta
     animationTime.current = THREE.MathUtils.damp(animationTime.current, targetTime, 7, delta)
-    if (Math.abs(animationTime.current - targetTime) <= step * 0.02) {
+
+    if (Math.abs(animationTime.current - targetTime) < 0.001) {
       animationTime.current = targetTime
     }
-    // Scrub the active clip manually and keep it paused between updates.
-    // The action must be started before pausing or it contributes no pose.
-    mixer.setTime(THREE.MathUtils.clamp(animationTime.current, 0, animationClip.duration))
+
+    // A paused AnimationAction does not advance with mixer.setTime().
+    // Set the action time directly, then evaluate the pose without advancing it.
+    action.time = THREE.MathUtils.clamp(animationTime.current, 0, animationClip.duration)
     mixer.update(0)
   })
 
