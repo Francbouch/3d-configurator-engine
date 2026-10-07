@@ -94,13 +94,13 @@ function EditableShadowLight({ editor, settings }) {
 
     controls.addEventListener('objectChange', onChange)
     controls.addEventListener('dragging-changed', onDragChanged)
-    scene.add(controls)
+    scene.add(controls.getHelper())
 
     return () => {
       controls.removeEventListener('objectChange', onChange)
       controls.removeEventListener('dragging-changed', onDragChanged)
       controls.detach()
-      scene.remove(controls)
+      scene.remove(controls.getHelper())
       controls.dispose()
     }
   }, [bundle, camera, gl, scene, editor?.selection?.type, editor?.selection?.id, editor?.mode, editor?.onTransform])
