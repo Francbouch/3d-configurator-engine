@@ -224,6 +224,78 @@ export default function ModelMapper({ onSignOut }) {
     event.target.value = ''
   }
 
+  async function persistMaterialLibrary(nextMaterials, pendingFiles = materialImageFiles) {
+    const session = loadAdminSession()
+    if (!session?.access_token) throw new Error('Session expirée. Reconnecte-toi au back-office.')
+
+    const existingResponse = await fetch(
+      `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=model_path,model_name,configuration&limit=1`,
+      { headers: supabaseHeaders(session.access_token) },
+    )
+    if (!existingResponse.ok) throw new Error('Impossible de lire la configuration publiée.')
+    const rows = await existingResponse.json()
+    const current = rows?.[0]
+    if (!current?.model_path) throw new Error('Publie d’abord le meuble GLB.')
+
+    const storedMaterials = []
+    for (const material of nextMaterials) {
+      const imageFile = pendingFiles[material.id]
+      if (!imageFile) {
+        storedMaterials.push(material)
+        continue
+      }
+      const extension = imageFile.name.toLowerCase().endsWith('.png') ? 'png' : 'jpg'
+      const safeId = material.id.replace(/[^a-zA-Z0-9._-]+/g, '-')
+      const imagePath = `${product.id}/materials/${safeId}-${Date.now()}.${extension}`
+      const upload = await fetch(
+        `${SUPABASE_PROJECT_URL}/storage/v1/object/models/${encodeURI(imagePath)}`,
+        {
+          method: 'POST',
+          headers: {
+            ...supabaseHeaders(session.access_token, imageFile.type || (extension === 'png' ? 'image/png' : 'image/jpeg')),
+            'x-upsert': 'true',
+          },
+          body: imageFile,
+        },
+      )
+      if (!upload.ok) throw new Error(`Upload texture impossible (${material.name}).`)
+      storedMaterials.push({
+        ...material,
+        source: {
+          type: 'image',
+          fileName: imageFile.name,
+          imagePath,
+          imageUrl: `${SUPABASE_PROJECT_URL}/storage/v1/object/public/models/${imagePath.split('/').map(encodeURIComponent).join('/')}`,
+        },
+      })
+    }
+
+    const configuration = { ...(current.configuration ?? {}), materials: storedMaterials }
+    const response = await fetch(
+      `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?on_conflict=product_id`,
+      {
+        method: 'POST',
+        headers: { ...supabaseHeaders(session.access_token), Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({
+          product_id: product.id,
+          model_path: current.model_path,
+          model_name: current.model_name ?? modelName.trim(),
+          configuration,
+          updated_at: new Date().toISOString(),
+          updated_by: session.user?.id ?? null,
+        }),
+      },
+    )
+    if (!response.ok) throw new Error('Impossible d’enregistrer la bibliothèque de matériaux.')
+
+    setMaterials(storedMaterials)
+    setPublishedMaterials(storedMaterials)
+    setMaterialImageFiles({})
+    const local = loadAdminDraft(product.id) ?? buildDraftPayload()
+    saveAdminDraft(product.id, { ...local, materials: storedMaterials })
+    return storedMaterials
+  }
+
   function materialNameFromFile(fileName) {
     return fileName.replace(/\.(png|jpe?g)$/i, '').trim() || 'Nouveau matériau'
   }
@@ -253,8 +325,15 @@ export default function ModelMapper({ onSignOut }) {
         source: { type: 'image', fileName: file.name, imagePath: '', imageUrl: URL.createObjectURL(file) },
       }
     })
-    setMaterials((current) => [...current, ...created])
-    setSaveStatus(`${created.length} matériau${created.length > 1 ? 'x' : ''} créé${created.length > 1 ? 's' : ''} à partir des images.`)
+    const nextMaterials = [...materials, ...created]
+    const nextFiles = { ...materialImageFiles }
+    files.forEach((file, index) => { nextFiles[created[index].id] = file })
+    setMaterials(nextMaterials)
+    setMaterialImageFiles(nextFiles)
+    setSaveStatus('Enregistrement des textures…')
+    persistMaterialLibrary(nextMaterials, nextFiles)
+      .then(() => setSaveStatus(`${created.length} matériau${created.length > 1 ? 'x' : ''} enregistré${created.length > 1 ? 's' : ''} durablement ✓`))
+      .catch((error) => setSaveStatus(error instanceof Error ? error.message : 'Enregistrement impossible.'))
   }
 
   function handleTextureDrop(event) {
@@ -300,8 +379,12 @@ export default function ModelMapper({ onSignOut }) {
   }
 
   function removeMaterial(index) {
-    setMaterials((current) => current.filter((_, i) => i !== index))
-    setSaveStatus('')
+    const nextMaterials = materials.filter((_, i) => i !== index)
+    setMaterials(nextMaterials)
+    setSaveStatus('Suppression du matériau…')
+    persistMaterialLibrary(nextMaterials)
+      .then(() => setSaveStatus('Matériau supprimé durablement ✓'))
+      .catch((error) => setSaveStatus(error instanceof Error ? error.message : 'Suppression impossible.'))
   }
 
   function duplicateMaterial(index) {
