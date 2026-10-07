@@ -16,7 +16,11 @@ function SceneCalibration({ settings }) {
   const { gl } = useThree()
   useEffect(() => {
     gl.toneMappingExposure = Number(settings.exposure ?? 1)
-  }, [gl, settings.exposure])
+    gl.shadowMap.enabled = true
+    gl.shadowMap.type = THREE.PCFSoftShadowMap
+    gl.shadowMap.autoUpdate = true
+    gl.shadowMap.needsUpdate = true
+  }, [gl, settings])
   return null
 }
 
@@ -69,7 +73,7 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null 
 
   return (
     <Canvas
-      shadows
+      shadows={{ type: THREE.PCFSoftShadowMap }}
       dpr={[1, 2]}
       camera={{ position: [4.2, 2.5, 5.2], fov: 34, near: 0.01, far: 100 }}
       gl={{
