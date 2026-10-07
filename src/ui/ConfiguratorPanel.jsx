@@ -35,6 +35,7 @@ export default function ConfiguratorPanel() {
     rules: publishedConfig.rules ?? product.rules,
     modules: publishedConfig.modules ?? product.modules,
     pricing: publishedConfig.pricing ?? product.pricing,
+    name: publishedConfig.name ?? product.name,
   } : product
   const bedAnimation = runtimeProduct.animations?.open ?? product.animations?.open
 
@@ -111,7 +112,7 @@ export default function ConfiguratorPanel() {
   return (
     <aside className="panel">
       <div className="panel__eyebrow">Configurateur 3D</div>
-      <h1>Votre meuble</h1>
+      <h1>{runtimeProduct.name || 'Votre meuble'}</h1>
       <p className="panel__intro">Choisissez les finitions de chaque partie du meuble.</p>
 
       <div className="panel__sections">
