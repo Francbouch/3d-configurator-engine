@@ -39,7 +39,7 @@ export default function ConfiguratorScene() {
         antialias: true,
         alpha: false,
         toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.15
+        toneMappingExposure: 1.0
       }}
     >
       <color attach="background" args={['#f7f7f5']} />
