@@ -42,8 +42,11 @@ export default function ModelMapper({ onSignOut }) {
 
   const groupIds = materialGroups.map((group) => group.id)
   const validation = useMemo(
-    () => validateProductMapping({ parts }, product.materialGroups ?? {}),
-    [parts],
+    () => validateProductMapping(
+      { parts },
+      Object.fromEntries(materialGroups.map((group) => [group.id, group])),
+    ),
+    [parts, materialGroups],
   )
   const materialIds = useMemo(() => new Set(materials.map((material) => material.id)), [materials])
   const duplicateMaterialIds = useMemo(
