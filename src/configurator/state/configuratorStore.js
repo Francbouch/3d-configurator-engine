@@ -63,12 +63,12 @@ export const useConfiguratorStore = create((set) => ({
   initializeMaterialCatalog: (materials) => set((state) => ({ materialCatalog: materials, selectedMaterials: Object.keys(state.selectedMaterials).length ? state.selectedMaterials : buildInitialMaterials(materials) })),
 
   initializeDynamicGroups: (groups = []) =>
-    set((state) => {
-      const selectedMaterials = { ...state.selectedMaterials }
+    set(() => {
+      // Each fresh configurator load starts from the exact defaults configured
+      // for the current back-office groups. Static/legacy selections must not leak in.
+      const selectedMaterials = {}
       groups.forEach((group) => {
-        if (group?.id && group.materialId && !selectedMaterials[group.id]) {
-          selectedMaterials[group.id] = group.materialId
-        }
+        if (group?.id) selectedMaterials[group.id] = group.materialId || null
       })
       return { selectedMaterials }
     }),
