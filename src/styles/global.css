@@ -665,3 +665,40 @@ body:has(.admin) { overflow: hidden; }
   font-weight: 700;
   text-align: center;
 }
+
+/* Compact material picker inside rule nodes */
+.admin__relation-materials {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+}
+.admin__relation-material {
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 5px;
+  min-width: 0;
+  padding: 4px;
+  border-radius: 7px;
+}
+.admin__relation-material-preview {
+  width: 28px;
+  height: 28px;
+  border-radius: 5px;
+}
+.admin__relation-material-name {
+  font-size: 9px;
+  line-height: 1.05;
+}
+.admin__relation-material-check {
+  position: absolute;
+  margin: -22px 0 0 19px;
+  display: grid;
+  width: 11px;
+  height: 11px;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 7px;
+  line-height: 1;
+}
+.admin__relation-node {
+  width: 320px;
+}
