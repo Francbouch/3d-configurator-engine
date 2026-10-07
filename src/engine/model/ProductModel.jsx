@@ -7,7 +7,7 @@ import product from '../../data/products/product.example.json'
 import { applyMaterialToParts } from '../materials/MaterialEngine'
 import { SUPABASE_PROJECT_URL, supabaseHeaders } from '../../admin/AdminAuth'
 
-function LoadedProduct({ url }) {
+function LoadedProduct({ url, previewMaterials = null }) {
   const productGltf = useGLTF(url)
    const selectedMaterials = useConfiguratorStore((state) => state.selectedMaterials)
   const animationProgress = useConfiguratorStore((state) => state.animationProgress)
@@ -42,7 +42,7 @@ function LoadedProduct({ url }) {
   }, [])
 
   const configuredMaterials = useMemo(() => {
-    const records = Array.isArray(publishedConfig?.materials) ? publishedConfig.materials : []
+    const records = Array.isArray(previewMaterials) ? previewMaterials : (Array.isArray(publishedConfig?.materials) ? publishedConfig.materials : [])
     const library = new Map()
     const textureLoader = new THREE.TextureLoader()
 
@@ -77,7 +77,7 @@ function LoadedProduct({ url }) {
       library.set(record.id, material)
     })
     return library
-  }, [publishedConfig])
+  }, [publishedConfig, previewMaterials])
 
   useEffect(() => {
     const parts = publishedConfig?.parts ?? []
@@ -151,7 +151,7 @@ function LoadedProduct({ url }) {
   )
 }
 
-export default function ProductModel({ url }) {
+export default function ProductModel({ url, previewMaterials = null }) {
   if (!url) return null
-  return <LoadedProduct url={url} />
+  return <LoadedProduct url={url} previewMaterials={previewMaterials} />
 }
