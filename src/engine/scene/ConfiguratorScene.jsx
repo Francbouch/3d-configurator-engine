@@ -1,6 +1,7 @@
 import { Canvas, useThree } from '@react-three/fiber'
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
+import { TransformControls } from '@react-three/drei'
 import ProductCamera from '../camera/ProductCamera'
 import StudioLighting, { DEFAULT_SCENE_SETTINGS } from '../lighting/StudioLighting'
 import ProductModel from '../model/ProductModel'
@@ -19,7 +20,31 @@ function SceneCalibration({ settings }) {
   return null
 }
 
-export default function ConfiguratorScene({ sceneOverride = null }) {
+function EditorGizmo({ editor, settings }) {
+  const ref = useRef()
+  if (!editor?.selection) return null
+  const { type, id } = editor.selection
+  let position = [0,0,0], rotation = [0,0,0], scale = [1,1,1]
+  if (type === 'light') position = settings[id + 'Position'] ?? position
+  if (type === 'plane') {
+    const p = (settings.planes ?? []).find((item) => item.id === id)
+    if (!p) return null
+    position = p.position; rotation = p.rotation; scale = p.scale
+  }
+  const commit = () => {
+    const o = ref.current
+    if (!o) return
+    editor.onTransform?.({ type, id, position: o.position.toArray(), rotation: [o.rotation.x,o.rotation.y,o.rotation.z], scale: o.scale.toArray() })
+  }
+  return <TransformControls mode={editor.mode || 'translate'} onMouseUp={commit}>
+    <mesh ref={ref} position={position} rotation={rotation} scale={scale}>
+      {type === 'light' ? <sphereGeometry args={[0.11,16,16]} /> : <boxGeometry args={[1,1,0.04]} />}
+      <meshBasicMaterial color={type === 'light' ? '#ffb347' : '#5b8cff'} transparent opacity={0.45} depthTest={false} />
+    </mesh>
+  </TransformControls>
+}
+
+export default function ConfiguratorScene({ sceneOverride = null, editor = null }) {
   const [modelUrl, setModelUrl] = useState(FALLBACK_MODEL_URL)
   const [publishedScene, setPublishedScene] = useState(null)
 
@@ -59,6 +84,7 @@ export default function ConfiguratorScene({ sceneOverride = null }) {
         <SceneCalibration settings={sceneSettings} />
         <StudioLighting settings={sceneSettings} />
         <ProductModel url={modelUrl} />
+        {editor && <EditorGizmo editor={editor} settings={sceneSettings} />}
       </Suspense>
       <ProductCamera />
     </Canvas>
