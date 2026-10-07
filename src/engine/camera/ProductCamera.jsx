@@ -17,6 +17,8 @@ export default function ProductCamera({ initialView = null, onViewChange = null 
       onViewChange({
         position: camera.position.toArray(),
         target: controlsRef.current.target.toArray(),
+        fov: camera.fov,
+        aspect: camera.aspect,
       })
     }
   }, [camera, initialView, onViewChange])
@@ -26,6 +28,8 @@ export default function ProductCamera({ initialView = null, onViewChange = null 
     onViewChange({
       position: camera.position.toArray(),
       target: controlsRef.current.target.toArray(),
+      fov: camera.fov,
+      aspect: camera.aspect,
     })
   }
 
