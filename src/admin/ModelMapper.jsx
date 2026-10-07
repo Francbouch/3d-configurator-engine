@@ -1263,6 +1263,10 @@ export default function ModelMapper({ onSignOut }) {
               })}
             </div>
             <button type="button" style={{ marginTop: 12 }} onClick={saveGlobalPbrIntensity}>Enregistrer les intensités</button>
+            <div className="admin__scene-preview" style={{ marginTop: 12 }}>
+              <ConfiguratorScene matchPublishedView previewMaterials={materials} />
+            </div>
+            <small>Prévisualisation en direct : déplace les curseurs pour voir les effets sur le meuble. Enregistre pour les appliquer au site client.</small>
           </div>
           <div
             className={isTextureDragOver ? 'admin__texture-drop is-dragging' : 'admin__texture-drop'}
