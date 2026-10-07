@@ -1001,7 +1001,8 @@ export default function ModelMapper({ onSignOut }) {
                 const [type,id] = e.target.value.split(':'); setSceneSelection({ type, id })
               }}>
                 <optgroup label="Lumières">
-                  <option value="light:key">Lumière principale</option>
+                  <option value="light:shadow">Lumière d’ombre</option>
+                  <option value="light:key">Lumière principale / softbox</option>
                   <option value="light:fill">Lumière de remplissage</option>
                   <option value="light:rim">Contre-jour</option>
                   <option value="light:top">Lumière du dessus</option>
