@@ -3,7 +3,7 @@ import { MOUSE } from 'three'
 import { useEffect, useRef } from 'react'
 import { useThree } from '@react-three/fiber'
 
-export default function ProductCamera({ initialView = null, onViewChange = null }) {
+export default function ProductCamera({ initialView = null, onViewChange = null, preserveRawFraming = false }) {
   const controlsRef = useRef()
   const { camera } = useThree()
 
@@ -18,7 +18,7 @@ export default function ProductCamera({ initialView = null, onViewChange = null 
     camera.clearViewOffset?.()
     const savedAspect = Number(initialView.aspect)
     const currentAspect = Number(camera.aspect)
-    if (savedAspect > 0 && currentAspect > 0 && Math.abs(savedAspect - currentAspect) > 0.0001) {
+    if (!preserveRawFraming && savedAspect > 0 && currentAspect > 0 && Math.abs(savedAspect - currentAspect) > 0.0001) {
       const virtualWidth = 10000
       const virtualHeight = virtualWidth / savedAspect
       const currentWidth = virtualHeight * currentAspect
@@ -34,7 +34,7 @@ export default function ProductCamera({ initialView = null, onViewChange = null 
     // Public configurator framing compensation: shift the camera viewport
     // slightly left so the furniture appears a little farther right on screen.
     // This changes only the view, never the model position.
-    if (savedAspect > 0 && currentAspect > 0) {
+    if (!preserveRawFraming && savedAspect > 0 && currentAspect > 0) {
       const fullWidth = 10000
       const fullHeight = fullWidth / savedAspect
       const viewportWidth = fullHeight * currentAspect
@@ -53,7 +53,7 @@ export default function ProductCamera({ initialView = null, onViewChange = null 
         aspect: camera.aspect,
       })
     }
-  }, [camera, initialView, onViewChange])
+  }, [camera, initialView, onViewChange, preserveRawFraming])
 
   const reportView = () => {
     if (!controlsRef.current || !onViewChange) return
