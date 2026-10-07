@@ -25,9 +25,8 @@ function SceneCalibration({ settings }) {
 }
 
 function EditorGizmo({ editor, settings }) {
-  const transformRef = useRef()
-  const objectRef = useRef()
-  const [object, setObject] = useState(null)
+  const targetRef = useRef()
+  const [target, setTarget] = useState(null)
 
   if (!editor?.selection) return null
 
@@ -46,51 +45,47 @@ function EditorGizmo({ editor, settings }) {
   }
 
   const commit = () => {
-    const target = objectRef.current
-    if (!target) return
+    const object = targetRef.current
+    if (!object) return
     editor.onTransform?.({
       type,
       id,
-      position: target.position.toArray(),
-      rotation: [target.rotation.x, target.rotation.y, target.rotation.z],
-      scale: target.scale.toArray(),
+      position: object.position.toArray(),
+      rotation: [object.rotation.x, object.rotation.y, object.rotation.z],
+      scale: object.scale.toArray(),
     })
   }
 
   return (
     <>
-      <group
-        key={type + ':' + id}
+      <mesh
+        key={'editor-target-' + type + '-' + id}
         ref={(node) => {
-          objectRef.current = node
-          setObject(node)
+          targetRef.current = node
+          if (node && node !== target) setTarget(node)
         }}
         position={position}
         rotation={rotation}
         scale={scale}
+        renderOrder={1000}
       >
-        {type === 'light' ? (
-          <mesh renderOrder={999}>
-            <sphereGeometry args={[0.18, 20, 20]} />
-            <meshBasicMaterial
-              color={id === 'shadow' ? '#ff6b00' : '#ffd166'}
-              depthTest={false}
-              depthWrite={false}
-            />
-          </mesh>
-        ) : (
-          <mesh renderOrder={999}>
-            <boxGeometry args={[1, 1, 0.04]} />
-            <meshBasicMaterial color="#5b8cff" transparent opacity={0.45} depthTest={false} depthWrite={false} />
-          </mesh>
-        )}
-      </group>
-      {object && (
+        {type === 'light' ? <sphereGeometry args={[0.22, 20, 20]} /> : <boxGeometry args={[1, 1, 0.06]} />}
+        <meshBasicMaterial
+          color={type === 'light' ? (id === 'shadow' ? '#ff5a00' : '#ffcc33') : '#4f7cff'}
+          transparent
+          opacity={0.9}
+          depthTest={false}
+          depthWrite={false}
+        />
+      </mesh>
+      {target && (
         <TransformControls
-          ref={transformRef}
-          object={object}
+          key={'editor-controls-' + type + '-' + id + '-' + (editor.mode || 'translate')}
+          object={target}
           mode={editor.mode || 'translate'}
-          size={1.25}
+          space="world"
+          size={1.5}
+          enabled
           onObjectChange={commit}
         />
       )}
