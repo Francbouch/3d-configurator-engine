@@ -503,6 +503,25 @@ export default function ModelMapper({ onSignOut }) {
     } catch (error) { setSaveStatus(error instanceof Error ? error.message : 'Importation impossible.') }
   }
 
+  function setGlobalPbrIntensity(kind, value) {
+    const key = kind === 'normal' ? 'normalIntensity' : kind === 'roughness' ? 'roughnessIntensity' : 'bumpScale'
+    const next = materials.map(material => ({
+      ...material,
+      pbr: { ...(material.pbr ?? {}), [key]: Number(value) },
+    }))
+    setMaterials(next)
+    const local = loadAdminDraft(product.id) ?? buildDraftPayload()
+    saveAdminDraft(product.id, { ...local, materials: next })
+  }
+
+  async function saveGlobalPbrIntensity() {
+    try {
+      setSaveStatus('Enregistrement des intensités PBR…')
+      await persistConfigurationPatch({ materials })
+      setSaveStatus('Intensités PBR enregistrées ✓')
+    } catch (error) { setSaveStatus(error instanceof Error ? error.message : 'Enregistrement impossible.') }
+  }
+
   function removeMaterial(index) {
     const nextMaterials = materials.filter((_, i) => i !== index)
     setMaterials(nextMaterials)
@@ -1223,6 +1242,27 @@ export default function ModelMapper({ onSignOut }) {
                 </label>
               ))}
             </div>
+            <div style={{ display: 'grid', gap: 12, marginTop: 16 }}>
+              {[
+                ['normal', 'Intensité Normal', 'normalIntensity', 1, 0, 2, 0.05],
+                ['roughness', 'Intensité Roughness', 'roughnessIntensity', 1, 0, 2, 0.05],
+                ['bump', 'Intensité Bump', 'bumpScale', 0.035, 0, 0.15, 0.005],
+              ].map(([kind, label, key, fallback, min, max, step]) => {
+                const value = Number(materials[0]?.pbr?.[key] ?? fallback)
+                return (
+                  <label key={kind} style={{ display: 'grid', gap: 4, fontSize: 12 }}>
+                    <span>{label} : <strong>{value.toFixed(3)}</strong></span>
+                    <input type="range" min={min} max={max} step={step} value={value}
+                      disabled={!materials.length}
+                      onChange={(event) => setGlobalPbrIntensity(kind, event.target.value)}
+                      onPointerUp={saveGlobalPbrIntensity}
+                      onKeyUp={saveGlobalPbrIntensity}
+                    />
+                  </label>
+                )
+              })}
+            </div>
+            <button type="button" style={{ marginTop: 12 }} onClick={saveGlobalPbrIntensity}>Enregistrer les intensités</button>
           </div>
           <div
             className={isTextureDragOver ? 'admin__texture-drop is-dragging' : 'admin__texture-drop'}
