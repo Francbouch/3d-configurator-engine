@@ -992,7 +992,7 @@ export default function ModelMapper({ onSignOut }) {
       {activeSection === 'scene' && (
         <section className="admin__scene-editor">
           <div className="admin__scene-preview">
-            <ConfiguratorScene sceneOverride={sceneSettings} onCameraViewChange={setCurrentCameraView} editor={{
+            <ConfiguratorScene matchPublishedView onCameraViewChange={setCurrentCameraView} editor={{
               selection: sceneSelection,
               mode: sceneTransformMode,
               onPreviewTransform: () => {},
