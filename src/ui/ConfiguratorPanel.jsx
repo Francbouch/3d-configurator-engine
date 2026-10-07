@@ -29,15 +29,29 @@ export default function ConfiguratorPanel() {
   const toggleModule = useConfiguratorStore((state) => state.toggleModule)
   const animationProgress = useConfiguratorStore((state) => state.animationProgress)
   const setAnimationProgress = useConfiguratorStore((state) => state.setAnimationProgress)
+  const publishedGroups = Array.isArray(publishedConfig?.materialGroups) ? publishedConfig.materialGroups : []
+  const dynamicGroups = publishedGroups.length ? publishedGroups : localGroups
+  const runtimeMaterialGroups = Object.fromEntries(dynamicGroups.map((group) => [
+    group.id,
+    {
+      ...(product.materialGroups?.[group.id] ?? {}),
+      label: group.name || group.id,
+      defaultMaterialId: group.materialId || null,
+    },
+  ]))
   const runtimeProduct = publishedConfig ? {
     ...product,
     model: { ...product.model, parts: publishedConfig.parts ?? product.model?.parts ?? [] },
+    materialGroups: runtimeMaterialGroups,
     rules: publishedConfig.rules ?? product.rules,
     ruleGraph: publishedConfig.ruleGraph ?? product.ruleGraph,
     modules: publishedConfig.modules ?? product.modules,
     pricing: publishedConfig.pricing ?? product.pricing,
     name: publishedConfig.name ?? product.name,
-  } : product
+  } : {
+    ...product,
+    materialGroups: dynamicGroups.length ? runtimeMaterialGroups : product.materialGroups,
+  }
   const bedAnimation = runtimeProduct.animations?.open ?? product.animations?.open
 
   useEffect(() => {
@@ -77,17 +91,6 @@ export default function ConfiguratorPanel() {
     }
   }, [])
 
-  const publishedGroups = Array.isArray(publishedConfig?.materialGroups) ? publishedConfig.materialGroups : []
-  const dynamicGroups = publishedGroups.length ? publishedGroups : localGroups
-  const runtimeMaterialGroups = Object.fromEntries(dynamicGroups.map((group) => [
-    group.id,
-    {
-      ...(runtimeProduct.materialGroups?.[group.id] ?? {}),
-      label: group.name || group.id,
-      defaultMaterialId: group.materialId || null,
-    },
-  ]))
-  runtimeProduct.materialGroups = runtimeMaterialGroups
   const sections = dynamicGroups
     .filter((group) => group.role === 'modifiable')
     .map((group) => ({ id: group.id, label: group.name || 'Groupe', defaultMaterialId: group.materialId }))
