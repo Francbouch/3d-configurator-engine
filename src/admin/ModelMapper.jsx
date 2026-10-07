@@ -94,6 +94,7 @@ export default function ModelMapper({ onSignOut }) {
       materials,
       modules,
       rules,
+      ruleGraph: { blocks: ruleBlocks, connections: ruleConnections },
       pricing: {
         currency: product.pricing?.currency ?? 'CAD',
         basePrice,
@@ -182,6 +183,9 @@ export default function ModelMapper({ onSignOut }) {
         setPublishedMaterials(publishedImageMaterials)
         setMaterials(imageMaterials)
         setRules(Array.isArray(baseline?.rules) ? baseline.rules : product.rules ?? [])
+        const restoredRuleGraph = baseline?.ruleGraph
+        setRuleBlocks(Array.isArray(restoredRuleGraph?.blocks) ? restoredRuleGraph.blocks : [])
+        setRuleConnections(Array.isArray(restoredRuleGraph?.connections) ? restoredRuleGraph.connections : [])
         setModules(Array.isArray(baseline?.modules) ? baseline.modules : product.modules ?? [])
         setDisplayPrice(baseline?.pricing?.displayPrice ?? (product.pricing?.displayPrice !== false))
         setSceneSettings({ ...DEFAULT_SCENE_SETTINGS, ...(baseline?.scene ?? {}) })
@@ -466,26 +470,50 @@ export default function ModelMapper({ onSignOut }) {
     event.target.value = ''
   }
 
+  function persistRuleGraph(blocks, connections) {
+    const graph = { blocks, connections }
+    const local = loadAdminDraft(product.id) ?? buildDraftPayload()
+    saveAdminDraft(product.id, { ...local, ruleGraph: graph })
+    persistConfigurationPatch({ ruleGraph: graph })
+  }
+
+  function removeRuleBlock(id) {
+    const nextBlocks = ruleBlocks.filter((block) => block.id !== id)
+    const nextConnections = ruleConnections.filter((connection) => connection.causeId !== id && connection.effectId !== id)
+    setRuleBlocks(nextBlocks)
+    setRuleConnections(nextConnections)
+    delete rulePortRefs.current[id]
+    if (pendingRuleConnectionRef.current?.sourceId === id) {
+      pendingRuleConnectionRef.current = null
+      setPendingRuleConnection(null)
+    }
+    persistRuleGraph(nextBlocks, nextConnections)
+  }
+
   function addRuleBlock(type) {
-    setRuleBlocks((current) => [
-      ...current,
+    const nextBlocks = [
+      ...ruleBlocks,
       {
         id: `${type}-${Date.now()}`,
         type,
         groupIds: [],
         materialId: '',
-        position: { x: 28 + (current.length % 3) * 350, y: 36 + Math.floor(current.length / 3) * 260 },
+        position: { x: 28 + (ruleBlocks.length % 3) * 350, y: 36 + Math.floor(ruleBlocks.length / 3) * 260 },
       },
-    ])
+    ]
+    setRuleBlocks(nextBlocks)
     setIsRuleAddMenuOpen(false)
+    persistRuleGraph(nextBlocks, ruleConnections)
   }
 
-  function updateRuleBlock(id, patch) {
-    setRuleBlocks((current) => current.map((block) => block.id === id ? { ...block, ...patch } : block))
+  function updateRuleBlock(id, patch, persist = true) {
+    const nextBlocks = ruleBlocks.map((block) => block.id === id ? { ...block, ...patch } : block)
+    setRuleBlocks(nextBlocks)
+    if (persist) persistRuleGraph(nextBlocks, ruleConnections)
   }
 
   function toggleRuleBlockGroup(id, groupId) {
-    setRuleBlocks((current) => current.map((block) => {
+    const nextBlocks = ruleBlocks.map((block) => {
       if (block.id !== id) return block
       const selected = block.groupIds ?? []
       return {
@@ -494,7 +522,9 @@ export default function ModelMapper({ onSignOut }) {
           ? selected.filter((value) => value !== groupId)
           : [...selected, groupId],
       }
-    }))
+    })
+    setRuleBlocks(nextBlocks)
+    persistRuleGraph(nextBlocks, ruleConnections)
   }
 
   function beginRuleBlockDrag(event, block) {
@@ -518,10 +548,11 @@ export default function ModelMapper({ onSignOut }) {
     const rect = canvas.getBoundingClientRect()
     const x = Math.max(0, event.clientX - rect.left + canvas.scrollLeft - drag.offsetX)
     const y = Math.max(0, event.clientY - rect.top + canvas.scrollTop - drag.offsetY)
-    updateRuleBlock(drag.id, { position: { x, y } })
+    updateRuleBlock(drag.id, { position: { x, y } }, false)
   }
 
   function endRuleBlockDrag() {
+    if (ruleDragRef.current) persistRuleGraph(ruleBlocks, ruleConnections)
     ruleDragRef.current = null
   }
 
@@ -584,9 +615,12 @@ export default function ModelMapper({ onSignOut }) {
     if (targetBlock && current.sourceId !== targetBlock.id && current.sourceType !== targetBlock.type) {
       const causeId = current.sourceType === 'cause' ? current.sourceId : targetBlock.id
       const effectId = current.sourceType === 'effect' ? current.sourceId : targetBlock.id
-      setRuleConnections((connections) => connections.some((connection) => connection.causeId === causeId && connection.effectId === effectId)
-        ? connections
-        : [...connections, { id: `${causeId}->${effectId}`, causeId, effectId }])
+      setRuleConnections((connections) => {
+        if (connections.some((connection) => connection.causeId === causeId && connection.effectId === effectId)) return connections
+        const nextConnections = [...connections, { id: `${causeId}->${effectId}`, causeId, effectId }]
+        persistRuleGraph(ruleBlocks, nextConnections)
+        return nextConnections
+      })
     }
 
     pendingRuleConnectionRef.current = null
@@ -1204,7 +1238,19 @@ export default function ModelMapper({ onSignOut }) {
               >
                 <div className="admin__relation-node-title">
                   <strong>{block.type === 'cause' ? 'Cause' : 'Effet'}</strong>
-                  <small>Glisser pour déplacer</small>
+                  <div className="admin__relation-node-actions">
+                    <small>Glisser pour déplacer</small>
+                    <button
+                      type="button"
+                      className="admin__relation-delete"
+                      aria-label="Supprimer ce bloc"
+                      title="Supprimer le bloc"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        removeRuleBlock(block.id)
+                      }}
+                    >×</button>
+                  </div>
                 </div>
 
                 <div className="admin__relation-field">
