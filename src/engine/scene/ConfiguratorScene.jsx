@@ -100,7 +100,9 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null,
         shadowPosition: undefined,
       }
     : null
-  const effectiveOverride = matchPublishedView ? null : sceneOverride
+  // Back-office previews keep the public camera framing, but sceneOverride must
+  // remain live so every editor control reacts immediately.
+  const effectiveOverride = sceneOverride
   const sceneSettings = {
     ...DEFAULT_SCENE_SETTINGS,
     ...(publishedWithoutLegacyLightRig ?? {}),
@@ -131,7 +133,7 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null,
         <SceneCalibration settings={sceneSettings} />
         <StudioLighting settings={sceneSettings} />
         <ProductModel url={modelUrl} />
-        {editor && !matchPublishedView && <EditorGizmo editor={editor} settings={sceneSettings} />}
+        {editor && <EditorGizmo editor={editor} settings={sceneSettings} />}
       </Suspense>
       <ProductCamera initialView={sceneSettings.cameraView ?? null} onViewChange={onCameraViewChange} />
     </Canvas>
