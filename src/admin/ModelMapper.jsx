@@ -523,26 +523,56 @@ export default function ModelMapper({ onSignOut }) {
     ruleDragRef.current = null
   }
 
-  function handleRulePortClick(block) {
-    if (!pendingRuleConnection) {
-      setPendingRuleConnection(block.id)
-      return
+  function ruleCanvasPoint(event) {
+    const canvas = ruleCanvasRef.current
+    if (!canvas) return { x: 0, y: 0 }
+    const rect = canvas.getBoundingClientRect()
+    return {
+      x: event.clientX - rect.left + canvas.scrollLeft,
+      y: event.clientY - rect.top + canvas.scrollTop,
     }
-    if (pendingRuleConnection === block.id) {
-      setPendingRuleConnection(null)
-      return
-    }
-    const source = ruleBlocks.find((item) => item.id === pendingRuleConnection)
-    if (!source || source.type === block.type) {
-      setPendingRuleConnection(block.id)
-      return
-    }
-    const causeId = source.type === 'cause' ? source.id : block.id
-    const effectId = source.type === 'effect' ? source.id : block.id
-    setRuleConnections((current) => current.some((connection) => connection.causeId === causeId && connection.effectId === effectId)
-      ? current
-      : [...current, { id: `${causeId}->${effectId}`, causeId, effectId }])
-    setPendingRuleConnection(null)
+  }
+
+  function beginRuleConnection(event, block) {
+    if (event.button !== 0) return
+    event.preventDefault()
+    event.stopPropagation()
+    const point = ruleCanvasPoint(event)
+    setPendingRuleConnection({
+      sourceId: block.id,
+      sourceType: block.type,
+      pointer: point,
+      pointerId: event.pointerId,
+    })
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+  }
+
+  function moveRuleConnection(event) {
+    setPendingRuleConnection((current) => current
+      ? { ...current, pointer: ruleCanvasPoint(event) }
+      : current)
+  }
+
+  function finishRuleConnection(event, targetBlock = null) {
+    event?.preventDefault?.()
+    event?.stopPropagation?.()
+    setPendingRuleConnection((current) => {
+      if (!current) return null
+      if (targetBlock && current.sourceId !== targetBlock.id && current.sourceType !== targetBlock.type) {
+        const causeId = current.sourceType === 'cause' ? current.sourceId : targetBlock.id
+        const effectId = current.sourceType === 'effect' ? current.sourceId : targetBlock.id
+        setRuleConnections((connections) => connections.some((connection) => connection.causeId === causeId && connection.effectId === effectId)
+          ? connections
+          : [...connections, { id: `${causeId}->${effectId}`, causeId, effectId }])
+      }
+      return null
+    })
+  }
+
+  function ruleConnectionPath(from, to) {
+    const direction = to.x >= from.x ? 1 : -1
+    const bend = Math.max(70, Math.abs(to.x - from.x) * 0.45)
+    return `M ${from.x} ${from.y} C ${from.x + bend * direction} ${from.y}, ${to.x - bend * direction} ${to.y}, ${to.x} ${to.y}`
   }
 
   function ruleNodeCenter(block, side) {
@@ -1092,9 +1122,18 @@ export default function ModelMapper({ onSignOut }) {
           <div
             className="admin__relation-canvas"
             ref={ruleCanvasRef}
-            onPointerMove={moveRuleBlock}
-            onPointerUp={endRuleBlockDrag}
-            onPointerCancel={endRuleBlockDrag}
+            onPointerMove={(event) => {
+              moveRuleBlock(event)
+              moveRuleConnection(event)
+            }}
+            onPointerUp={(event) => {
+              endRuleBlockDrag()
+              if (pendingRuleConnection) finishRuleConnection(event)
+            }}
+            onPointerCancel={(event) => {
+              endRuleBlockDrag()
+              if (pendingRuleConnection) finishRuleConnection(event)
+            }}
           >
             {ruleBlocks.length === 0 && (
               <div className="admin__relation-empty">
@@ -1109,14 +1148,19 @@ export default function ModelMapper({ onSignOut }) {
                 if (!cause || !effect) return null
                 const from = ruleNodeCenter(cause, 'right')
                 const to = ruleNodeCenter(effect, 'left')
-                const bend = Math.max(70, Math.abs(to.x - from.x) * 0.45)
                 return (
                   <path
                     key={connection.id}
-                    d={`M ${from.x} ${from.y} C ${from.x + bend} ${from.y}, ${to.x - bend} ${to.y}, ${to.x} ${to.y}`}
+                    d={ruleConnectionPath(from, to)}
                   />
                 )
               })}
+              {pendingRuleConnection && (() => {
+                const source = ruleBlocks.find((block) => block.id === pendingRuleConnection.sourceId)
+                if (!source) return null
+                const from = ruleNodeCenter(source, source.type === 'cause' ? 'right' : 'left')
+                return <path className="is-drawing" d={ruleConnectionPath(from, pendingRuleConnection.pointer)} />
+              })()}
             </svg>
 
             {ruleBlocks.map((block) => (
@@ -1165,10 +1209,11 @@ export default function ModelMapper({ onSignOut }) {
 
                 <button
                   type="button"
-                  className={`admin__relation-port ${pendingRuleConnection === block.id ? 'is-pending' : ''}`}
+                  className={`admin__relation-port ${pendingRuleConnection?.sourceId === block.id ? 'is-pending' : ''}`}
                   aria-label={`Connecter le bloc ${block.type === 'cause' ? 'cause' : 'effet'}`}
-                  title="Cliquer pour connecter"
-                  onClick={() => handleRulePortClick(block)}
+                  title="Glisser vers le node d’un autre bloc"
+                  onPointerDown={(event) => beginRuleConnection(event, block)}
+                  onPointerUp={(event) => finishRuleConnection(event, block)}
                 />
               </article>
             ))}          </div>
