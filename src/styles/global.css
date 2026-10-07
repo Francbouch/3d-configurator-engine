@@ -381,3 +381,133 @@ body:has(.admin) { overflow: hidden; }
 .admin__scene-tools button.is-danger{color:#a33}
 .admin__scene-tools label{display:flex;flex-direction:column;gap:6px;color:#666;font-size:11px;font-weight:650}
 .admin__scene-tools select{width:100%;padding:10px;border:1px solid #deded9;border-radius:9px;background:#fff;font:inherit;font-size:12px}
+
+
+/* Rules — cause/effect workspace */
+.admin__relation-workspace {
+  position: relative;
+  min-height: 680px;
+  margin-top: 18px;
+  padding: 22px;
+  border: 1px solid #e7e7e7;
+  border-radius: 20px;
+  background: #fafafa;
+}
+.admin__relation-header {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+.admin__relation-header > div:first-child {
+  display: grid;
+  gap: 5px;
+}
+.admin__relation-header strong { font-size: 18px; }
+.admin__relation-header small { color: #777; }
+.admin__relation-add { position: relative; }
+.admin__relation-plus {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 24px;
+  line-height: 1;
+}
+.admin__relation-menu {
+  position: absolute;
+  top: 46px;
+  right: 0;
+  z-index: 10;
+  width: 190px;
+  padding: 7px;
+  border: 1px solid #e3e3e3;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 12px 34px rgba(0,0,0,.1);
+}
+.admin__relation-menu button {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  color: #222;
+}
+.admin__relation-canvas {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 18px;
+  min-height: 570px;
+  padding-top: 28px;
+}
+.admin__relation-empty {
+  display: grid;
+  width: 100%;
+  min-height: 480px;
+  place-items: center;
+  color: #aaa;
+  font-size: 13px;
+}
+.admin__relation-node {
+  position: relative;
+  width: min(320px, 100%);
+  align-self: flex-start;
+  padding: 18px;
+  border: 1px solid #dedede;
+  border-radius: 17px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0,0,0,.045);
+}
+.admin__relation-node-title {
+  margin-bottom: 18px;
+  font-size: 15px;
+}
+.admin__relation-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+.admin__relation-field > span {
+  color: #777;
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.admin__relation-field select { width: 100%; }
+.admin__relation-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.admin__relation-groups label {
+  cursor: pointer;
+  padding: 7px 10px;
+  border: 1px solid #e2e2e2;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 12px;
+}
+.admin__relation-groups label.is-selected {
+  border-color: #222;
+  background: #222;
+  color: #fff;
+}
+.admin__relation-groups input { display: none; }
+.admin__relation-port {
+  position: absolute;
+  top: 50%;
+  right: -7px;
+  width: 13px;
+  height: 13px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #777;
+  box-shadow: 0 0 0 1px #ccc;
+}
+.admin__relation-node--effect .admin__relation-port {
+  right: auto;
+  left: -7px;
+}
