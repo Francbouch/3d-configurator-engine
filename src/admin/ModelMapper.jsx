@@ -329,22 +329,30 @@ export default function ModelMapper({ onSignOut }) {
     setSaveStatus('')
   }
 
+  function persistGroups(nextGroups) {
+    setMaterialGroups(nextGroups)
+    const current = loadAdminDraft(product.id) ?? buildDraftPayload()
+    saveAdminDraft(product.id, { ...current, materialGroups: nextGroups })
+  }
+
   function addGroup() {
-    setMaterialGroups((current) => [
-      ...current,
+    const nextGroups = [
+      ...materialGroups,
       { id: `group-${Date.now()}`, name: 'Nouveau groupe', materialId: '', role: 'modifiable' },
-    ])
+    ]
+    persistGroups(nextGroups)
     setSaveStatus('')
   }
 
   function updateGroup(index, patch) {
-    setMaterialGroups((current) => current.map((group, i) => (i === index ? { ...group, ...patch } : group)))
+    const nextGroups = materialGroups.map((group, i) => (i === index ? { ...group, ...patch } : group))
+    persistGroups(nextGroups)
     setSaveStatus('')
   }
 
   function removeGroup(index) {
     const groupId = materialGroups[index]?.id
-    setMaterialGroups((current) => current.filter((_, i) => i !== index))
+    persistGroups(materialGroups.filter((_, i) => i !== index))
     if (groupId) {
       setParts((current) => current.map((part) =>
         part.group === groupId ? { ...part, group: null, materialEditable: false } : part
