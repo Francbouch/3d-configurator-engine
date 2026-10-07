@@ -137,7 +137,7 @@ export default function ModelMapper({ onSignOut }) {
           `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=model_path,configuration&limit=1`,
           { headers: supabaseHeaders(loadAdminSession()?.access_token) },
         )
-        if (!response.ok) return { modelUrl: MODEL_URL, configuration: null }
+        if (!response.ok) throw new Error('Impossible de lire la configuration publiée.') { modelUrl: MODEL_URL, configuration: null }
         const rows = await response.json()
         const publication = rows?.[0]
         const modelPath = publication?.model_path
@@ -732,7 +732,7 @@ export default function ModelMapper({ onSignOut }) {
 
   async function publishGroups(nextGroups) {
     const session = loadAdminSession()
-    if (!session?.access_token) return
+    if (!session?.access_token) throw new Error('Session administrateur expirée.')
     try {
       const existing = await fetch(
         `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=model_path,model_name,configuration&limit=1`,
@@ -741,9 +741,9 @@ export default function ModelMapper({ onSignOut }) {
       if (!existing.ok) return
       const rows = await existing.json()
       const current = rows?.[0]
-      if (!current?.model_path) return
+      if (!current?.model_path) throw new Error('Aucun modèle publié à mettre à jour.')
       const configuration = { ...(current.configuration ?? {}), materialGroups: nextGroups }
-      await fetch(
+      const saveResponse = await fetch(
         `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?on_conflict=product_id`,
         {
           method: 'POST',
@@ -801,8 +801,11 @@ export default function ModelMapper({ onSignOut }) {
           }),
         },
       )
+      if (!saveResponse.ok) throw new Error('Impossible d’enregistrer la configuration publiée.')
+      return configuration
     } catch (error) {
       console.warn('Unable to persist back-office change', error)
+      throw error
     }
   }
 
@@ -1399,9 +1402,12 @@ export default function ModelMapper({ onSignOut }) {
                   fov: Number(currentCameraView.fov || 34),
                   aspect: Number(currentCameraView.aspect || 1),
                 }
-                persistConfigurationPatch({ scene: { ...(sceneSettings ?? {}), cameraView } })
-                setSceneSettings((current) => ({ ...current, cameraView }))
-                setSaveStatus('Vue initiale du configurateur enregistrée ✓')
+                setSaveStatus('Enregistrement de la vue…')
+                const nextScene = { ...(sceneSettings ?? {}), cameraView }
+                setSceneSettings(nextScene)
+                persistConfigurationPatch({ scene: nextScene })
+                  .then(() => setSaveStatus('Vue initiale du configurateur enregistrée ✓ — recharge le configurateur'))
+                  .catch((error) => setSaveStatus(error instanceof Error ? error.message : 'Enregistrement impossible.'))
               }}>Enregistrer la vue</button>
             </div>
           </div>
