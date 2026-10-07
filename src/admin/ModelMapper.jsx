@@ -474,46 +474,32 @@ export default function ModelMapper({ onSignOut }) {
     }
   }
 
-  async function importPbrBatch(fileList) {
-    const files = Array.from(fileList ?? []).filter(file => /\.(png|jpe?g)$/i.test(file.name))
+  async function applyPbrMapToAll(kind, file) {
+    if (!file || !materials.length) return
     const session = loadAdminSession()
     if (!session?.access_token) { setSaveStatus('Reconnecte-toi au back-office.'); return }
-    const normalize = value => String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')
-    const kindOf = name => /normal/i.test(name) ? 'normal' : /roughness/i.test(name) ? 'roughness' : /bump|displacement|height/i.test(name) ? 'bump' : null
-    const matched = []
-    const ignored = []
-    for (const file of files) {
-      const kind = kindOf(file.name)
-      const candidates = materials.filter(material => {
-        const code = normalize(material.code)
-        return code.length >= 4 && normalize(file.name).includes(code)
-      })
-      if (!kind || candidates.length !== 1) { ignored.push(file.name); continue }
-      matched.push({ file, kind, material: candidates[0] })
-    }
-    if (!matched.length) { setSaveStatus('Aucune correspondance unique trouvée. Vérifie les codes des matériaux et les noms des fichiers.'); return }
-    if (!window.confirm(`Importer ${matched.length} maps PBR pour ${new Set(matched.map(x => x.material.id)).size} matériaux ? ${ignored.length} fichier(s) ignoré(s).`)) return
+    const title = kind === 'normal' ? 'Normal' : kind === 'roughness' ? 'Roughness' : 'Bump'
+    if (!window.confirm(`Appliquer cette map ${title} à tous les ${materials.length} matériaux ? Les maps ${title} existantes seront remplacées.`)) return
     try {
-      setSaveStatus(`Importation de ${matched.length} maps PBR…`)
-      const next = materials.map(material => ({ ...material, pbr: { ...(material.pbr ?? {}) } }))
-      for (const { file, kind, material } of matched) {
-        const ext = /\.jpe?g$/i.test(file.name) ? 'jpg' : 'png'
-        const safeId = material.id.replace(/[^a-zA-Z0-9._-]+/g, '-')
-        const path = `${product.id}/materials/${safeId}-${kind}-${Date.now()}-${Math.random().toString(36).slice(2,7)}.${ext}`
-        const response = await fetch(`${SUPABASE_PROJECT_URL}/storage/v1/object/models/${encodeURI(path)}`, {
-          method: 'POST',
-          headers: { ...supabaseHeaders(session.access_token, file.type || (ext === 'png' ? 'image/png' : 'image/jpeg')), 'x-upsert': 'true' },
-          body: file,
-        })
-        if (!response.ok) throw new Error(`Importation impossible : ${file.name}`)
-        const url = `${SUPABASE_PROJECT_URL}/storage/v1/object/public/models/${path.split('/').map(encodeURIComponent).join('/')}`
-        const target = next.find(item => item.id === material.id)
-        target.pbr[kind === 'normal' ? 'normalUrl' : kind === 'roughness' ? 'roughnessUrl' : 'bumpUrl'] = url
-      }
+      setSaveStatus(`Importation de la map ${title}…`)
+      const ext = /\.jpe?g$/i.test(file.name) ? 'jpg' : 'png'
+      const path = `${product.id}/materials/shared-${kind}-${Date.now()}.${ext}`
+      const upload = await fetch(`${SUPABASE_PROJECT_URL}/storage/v1/object/models/${encodeURI(path)}`, {
+        method: 'POST',
+        headers: { ...supabaseHeaders(session.access_token, file.type || (ext === 'png' ? 'image/png' : 'image/jpeg')), 'x-upsert': 'true' },
+        body: file,
+      })
+      if (!upload.ok) throw new Error(`Importation de la map ${title} impossible.`)
+      const url = `${SUPABASE_PROJECT_URL}/storage/v1/object/public/models/${path.split('/').map(encodeURIComponent).join('/')}`
+      const key = kind === 'normal' ? 'normalUrl' : kind === 'roughness' ? 'roughnessUrl' : 'bumpUrl'
+      const next = materials.map(material => ({
+        ...material,
+        pbr: { ...(material.pbr ?? {}), [key]: url },
+      }))
       await persistConfigurationPatch({ materials: next })
       setMaterials(next)
       saveAdminDraft(product.id, { ...(loadAdminDraft(product.id) ?? buildDraftPayload()), materials: next })
-      setSaveStatus(`${matched.length} maps PBR importées ✓${ignored.length ? ` — ${ignored.length} fichiers ignorés` : ''}`)
+      setSaveStatus(`Map ${title} appliquée aux ${next.length} matériaux ✓`)
     } catch (error) { setSaveStatus(error instanceof Error ? error.message : 'Importation impossible.') }
   }
 
@@ -1223,12 +1209,20 @@ export default function ModelMapper({ onSignOut }) {
       {activeSection === 'materials' && (
         <section className="admin__materials">
           <div className="admin__card" style={{ marginBottom: 16 }}>
-            <strong>Importation PBR en lot</strong>
-            <p style={{ fontSize: 12, margin: '6px 0' }}>Sélectionne ensemble les fichiers Normal, Roughness et Displacement/Bump. Association automatique selon le code du matériau (ex. L581K). Les fichiers non reconnus sont ignorés.</p>
-            <label className="admin__upload">
-              <input type="file" multiple accept=".png,.jpg,.jpeg,image/png,image/jpeg" onChange={(e) => { importPbrBatch(e.target.files); e.target.value = '' }} />
-              <span>Importer les maps PBR en lot</span>
-            </label>
+            <strong>Maps PBR communes à tous les matériaux</strong>
+            <p style={{ fontSize: 12, margin: '6px 0' }}>Importe une image par type. Son nom n'a aucune importance : elle sera appliquée à tous les matériaux, en remplaçant uniquement la map du type choisi.</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
+              {[
+                ['normal', 'Normal'],
+                ['roughness', 'Roughness'],
+                ['bump', 'Bump'],
+              ].map(([kind, label]) => (
+                <label className="admin__upload" key={kind}>
+                  <input type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" onChange={(e) => { applyPbrMapToAll(kind, e.target.files?.[0]); e.target.value = '' }} />
+                  <span>Importer {label}</span>
+                </label>
+              ))}
+            </div>
           </div>
           <div
             className={isTextureDragOver ? 'admin__texture-drop is-dragging' : 'admin__texture-drop'}
