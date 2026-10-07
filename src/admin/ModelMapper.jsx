@@ -1375,8 +1375,34 @@ export default function ModelMapper({ onSignOut }) {
       )}
 
       {activeSection === 'scene' && (
-        <section className="admin__card">
-          <div className="admin__empty">Aucun réglage de scène dans le back-office.</div>
+        <section className="admin__scene-editor">
+          <div className="admin__scene-preview">
+            <ConfiguratorScene
+              matchPublishedView
+              onCameraViewChange={captureCameraView}
+            />
+          </div>
+          <div className="admin__card">
+            <div className="admin__pricing-title">
+              <div>
+                <strong>Vue initiale du configurateur</strong>
+                <small>Place la caméra comme désiré dans l’aperçu, puis enregistre cette vue. Seule la caméra initiale du configurateur sera modifiée.</small>
+              </div>
+              <button type="button" onClick={() => {
+                if (!currentCameraView) {
+                  setSaveStatus('Déplace légèrement la vue 3D, puis réessaie.')
+                  return
+                }
+                const cameraView = {
+                  position: currentCameraView.position.map(Number),
+                  target: currentCameraView.target.map(Number),
+                }
+                persistConfigurationPatch({ scene: { ...(sceneSettings ?? {}), cameraView } })
+                setSceneSettings((current) => ({ ...current, cameraView }))
+                setSaveStatus('Vue initiale du configurateur enregistrée ✓')
+              }}>Enregistrer la vue</button>
+            </div>
+          </div>
         </section>
       )}
 
