@@ -1,4 +1,4 @@
-import { Environment, Lightformer } from '@react-three/drei'
+import { ContactShadows, Environment, Lightformer } from '@react-three/drei'
 import { useEffect, useRef } from 'react'
 
 export const DEFAULT_SCENE_SETTINGS = Object.freeze({
@@ -75,7 +75,18 @@ export default function StudioLighting({ settings = {}, externalShadowLight = fa
         <Lightformer form="rect" intensity={3.4} position={[3, 3, 5]} rotation={[0, 2.9916, 0]} scale={[3, 6, 1]} />
         <Lightformer form="rect" intensity={1.7} position={[-2, 6, -1]} rotation={[Math.PI / 2, 0, 0]} scale={[6, 4, 1]} />
       </Environment>
-      {/* Invisible floor: receives every real shadow without turning the scene into a grey slab. */}
+      {/* Contact controls behave like a simplified DCC shadow catcher. */}
+      {s.shadowOpacity > 0 && (
+        <ContactShadows
+          position={[0, s.groundY + 0.003, 0]}
+          opacity={s.shadowOpacity}
+          blur={s.shadowBlur}
+          scale={12}
+          far={8}
+          frames={1}
+        />
+      )}
+      {/* Invisible floor: receives every real projected shadow without turning the scene into a grey slab. */}
       <mesh position={[0, s.groundY, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[20, 20]} />
         <shadowMaterial transparent opacity={s.shadowStrength} depthWrite={false} />
