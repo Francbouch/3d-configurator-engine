@@ -1,4 +1,5 @@
 import { Environment, Lightformer } from '@react-three/drei'
+import { useEffect, useRef } from 'react'
 
 export const DEFAULT_SCENE_SETTINGS = Object.freeze({
   background: '#f7f7f5',
@@ -26,12 +27,25 @@ export const DEFAULT_SCENE_SETTINGS = Object.freeze({
 
 export default function StudioLighting({ settings = {} }) {
   const s = { ...DEFAULT_SCENE_SETTINGS, ...settings }
+  const shadowLightRef = useRef()
+  const shadowTargetRef = useRef()
+
+  useEffect(() => {
+    if (!shadowLightRef.current || !shadowTargetRef.current) return
+    shadowLightRef.current.target = shadowTargetRef.current
+    shadowLightRef.current.target.updateMatrixWorld()
+    shadowLightRef.current.shadow?.camera?.updateProjectionMatrix()
+    shadowLightRef.current.shadow.needsUpdate = true
+  }, [s.shadowPosition])
+
   return (
     <>
       <hemisphereLight args={['#ffffff', '#d8d8d5', s.hemisphereIntensity]} />
-      {/* RectAreaLight gives the broad studio reflection; a shadow-only directional companion creates real mesh/self shadows. */}
+      {/* RectAreaLight gives the broad studio reflection; a dedicated directional light controls only the projected shadow. */}
       <rectAreaLight position={s.keyPosition} rotation={[-0.72, 0.55, 0.38]} width={5.5} height={7} intensity={s.keyIntensity} color="#fffdf8" />
+      <object3D ref={shadowTargetRef} position={[0, 0.8, 0]} />
       <directionalLight
+        ref={shadowLightRef}
         position={s.shadowPosition}
         intensity={Math.max(0.35, s.keyIntensity * 0.22)}
         color="#fffdf8"
