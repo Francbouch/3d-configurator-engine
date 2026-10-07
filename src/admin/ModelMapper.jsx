@@ -1320,7 +1320,7 @@ export default function ModelMapper({ onSignOut }) {
                       ...(block.type === 'effect'
                         ? [{
                             id: '__cause_material__',
-                            name: 'Matériau cause',
+                            name: 'Cause',
                             color: '#f2f2f2',
                             isCauseMaterialOption: true,
                           }]
