@@ -56,14 +56,7 @@ export default function ConfiguratorPanel() {
 
   const modules = (runtimeProduct.modules ?? []).filter((module) => module.enabled !== false && module.model?.url)
   const price = calculatePrice(runtimeProduct.pricing, selectedMaterials, modules, selectedModules)
-  const furniturePrice = Number(runtimeProduct.pricing?.basePrice ?? 0)
-  const selectedMaterialSupplement = Object.values(selectedMaterials).reduce((total, materialId) => {
-    const material = materials.find((item) => item.id === materialId)
-    const supplement = Number(material?.priceAdjustment ?? 0)
-    return total + (Number.isFinite(supplement) && supplement > 0 ? supplement : 0)
-  }, 0)
-  const furnitureTotal = furniturePrice + selectedMaterialSupplement
-  const showPrice = Number.isFinite(furnitureTotal)
+  const showPrice = runtimeProduct.pricing?.displayPrice === true && Number.isFinite(price)
 
   useEffect(() => {
     const readGroups = () => {
@@ -202,7 +195,7 @@ export default function ConfiguratorPanel() {
       {showPrice && (
         <div className="panel__price panel__price--floating">
           <span>Prix du meuble</span>
-          <strong>{formatPrice(furnitureTotal, runtimeProduct.pricing?.currency ?? 'CAD')}</strong>
+          <strong>{formatPrice(price, runtimeProduct.pricing?.currency ?? 'CAD')}</strong>
         </div>
       )}
     </aside>
