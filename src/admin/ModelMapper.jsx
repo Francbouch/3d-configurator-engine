@@ -200,7 +200,14 @@ export default function ModelMapper({ onSignOut }) {
         setMaterials(imageMaterials)
         setRules(Array.isArray(baseline?.rules) ? baseline.rules : product.rules ?? [])
         const restoredRuleGraph = baseline?.ruleGraph
-        setRuleBlocks(Array.isArray(restoredRuleGraph?.blocks) ? restoredRuleGraph.blocks : [])
+        setRuleBlocks(Array.isArray(restoredRuleGraph?.blocks)
+          ? restoredRuleGraph.blocks.map((block) => ({
+              ...block,
+              materialIds: Array.isArray(block.materialIds)
+                ? block.materialIds
+                : (block.materialId ? [block.materialId] : []),
+            }))
+          : [])
         setRuleConnections(Array.isArray(restoredRuleGraph?.connections) ? restoredRuleGraph.connections : [])
         setModules(Array.isArray(baseline?.modules) ? baseline.modules : product.modules ?? [])
         setDisplayPrice(baseline?.pricing?.displayPrice ?? (product.pricing?.displayPrice !== false))
@@ -513,7 +520,7 @@ export default function ModelMapper({ onSignOut }) {
         id: `${type}-${Date.now()}`,
         type,
         groupIds: [],
-        materialId: '',
+        materialIds: [],
         position: { x: 28 + (ruleBlocks.length % 3) * 350, y: 36 + Math.floor(ruleBlocks.length / 3) * 260 },
       },
     ]
@@ -537,6 +544,24 @@ export default function ModelMapper({ onSignOut }) {
         groupIds: selected.includes(groupId)
           ? selected.filter((value) => value !== groupId)
           : [...selected, groupId],
+      }
+    })
+    setRuleBlocks(nextBlocks)
+    persistRuleGraph(nextBlocks, ruleConnections)
+  }
+
+  function toggleRuleBlockMaterial(id, materialId) {
+    const nextBlocks = ruleBlocks.map((block) => {
+      if (block.id !== id) return block
+      const selected = Array.isArray(block.materialIds)
+        ? block.materialIds
+        : (block.materialId ? [block.materialId] : [])
+      return {
+        ...block,
+        materialId: undefined,
+        materialIds: selected.includes(materialId)
+          ? selected.filter((value) => value !== materialId)
+          : [...selected, materialId],
       }
     })
     setRuleBlocks(nextBlocks)
@@ -1288,18 +1313,34 @@ export default function ModelMapper({ onSignOut }) {
                   </div>
                 </div>
 
-                <label className="admin__relation-field">
-                  <span>Matériau</span>
-                  <select
-                    value={block.materialId}
-                    onChange={(event) => updateRuleBlock(block.id, { materialId: event.target.value })}
-                  >
-                    <option value="">Sélectionner un matériau</option>
-                    {materials.map((material) => (
-                      <option key={material.id} value={material.id}>{material.name || material.id}</option>
-                    ))}
-                  </select>
-                </label>
+                <div className="admin__relation-field">
+                  <span>Matériaux</span>
+                  <div className="admin__relation-materials">
+                    {materials.map((material) => {
+                      const selectedIds = Array.isArray(block.materialIds)
+                        ? block.materialIds
+                        : (block.materialId ? [block.materialId] : [])
+                      const selected = selectedIds.includes(material.id)
+                      return (
+                        <button
+                          type="button"
+                          className={`admin__relation-material ${selected ? 'is-selected' : ''}`}
+                          key={material.id}
+                          onClick={() => toggleRuleBlockMaterial(block.id, material.id)}
+                          aria-pressed={selected}
+                        >
+                          <span className="admin__relation-material-preview">
+                            {material.source?.imageUrl
+                              ? <img src={material.source.imageUrl} alt="" />
+                              : <span style={{ background: material.color || '#000000' }} />}
+                          </span>
+                          <span className="admin__relation-material-name">{material.name || material.id}</span>
+                          <span className="admin__relation-material-check">{selected ? '✓' : ''}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
 
                 <button
                   type="button"
