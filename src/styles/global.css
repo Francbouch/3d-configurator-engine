@@ -511,3 +511,59 @@ body:has(.admin) { overflow: hidden; }
   right: auto;
   left: -7px;
 }
+
+.admin__relation-canvas {
+  position: relative;
+  display: block;
+  overflow: auto;
+  min-height: 570px;
+  height: 570px;
+  padding-top: 0;
+  touch-action: none;
+}
+.admin__relation-node {
+  position: absolute;
+  z-index: 2;
+  user-select: none;
+  cursor: grab;
+  touch-action: none;
+}
+.admin__relation-node:active { cursor: grabbing; }
+.admin__relation-node input,
+.admin__relation-node select,
+.admin__relation-node label { cursor: pointer; }
+.admin__relation-node-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.admin__relation-node-title small {
+  color: #aaa;
+  font-size: 10px;
+  font-weight: 500;
+}
+.admin__relation-lines {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.admin__relation-lines path {
+  fill: none;
+  stroke: #8b8b8b;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+.admin__relation-port {
+  display: block;
+  padding: 0;
+  cursor: crosshair;
+}
+.admin__relation-port.is-pending {
+  background: #111;
+  box-shadow: 0 0 0 4px rgba(0,0,0,.12);
+}
