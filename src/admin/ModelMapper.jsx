@@ -37,6 +37,7 @@ export default function ModelMapper({ onSignOut }) {
   const [pendingRuleConnection, setPendingRuleConnection] = useState(null)
   const ruleCanvasRef = useRef(null)
   const ruleDragRef = useRef(null)
+  const rulePortRefs = useRef({})
   const [modules, setModules] = useState(product.modules ?? [])
   const [displayPrice, setDisplayPrice] = useState(product.pricing?.displayPrice !== false)
   const [sceneSettings, setSceneSettings] = useState({ ...DEFAULT_SCENE_SETTINGS })
@@ -553,11 +554,28 @@ export default function ModelMapper({ onSignOut }) {
       : current)
   }
 
-  function finishRuleConnection(event, targetBlock = null) {
+  function finishRuleConnection(event, explicitTarget = null) {
     event?.preventDefault?.()
     event?.stopPropagation?.()
+    const clientX = event?.clientX
+    const clientY = event?.clientY
+
     setPendingRuleConnection((current) => {
       if (!current) return null
+
+      let targetBlock = explicitTarget
+      if (!targetBlock && Number.isFinite(clientX) && Number.isFinite(clientY)) {
+        targetBlock = ruleBlocks.find((block) => {
+          if (block.id === current.sourceId || block.type === current.sourceType) return false
+          const port = rulePortRefs.current[block.id]
+          if (!port) return false
+          const rect = port.getBoundingClientRect()
+          const padding = 14
+          return clientX >= rect.left - padding && clientX <= rect.right + padding
+            && clientY >= rect.top - padding && clientY <= rect.bottom + padding
+        }) ?? null
+      }
+
       if (targetBlock && current.sourceId !== targetBlock.id && current.sourceType !== targetBlock.type) {
         const causeId = current.sourceType === 'cause' ? current.sourceId : targetBlock.id
         const effectId = current.sourceType === 'effect' ? current.sourceId : targetBlock.id
@@ -569,20 +587,28 @@ export default function ModelMapper({ onSignOut }) {
     })
   }
 
+  function rulePortCenter(block) {
+    const canvas = ruleCanvasRef.current
+    const port = rulePortRefs.current[block?.id]
+    if (canvas && port) {
+      const canvasRect = canvas.getBoundingClientRect()
+      const portRect = port.getBoundingClientRect()
+      return {
+        x: portRect.left + portRect.width / 2 - canvasRect.left + canvas.scrollLeft,
+        y: portRect.top + portRect.height / 2 - canvasRect.top + canvas.scrollTop,
+      }
+    }
+    const position = block?.position ?? { x: 0, y: 0 }
+    return {
+      x: position.x + (block?.type === 'cause' ? 320 : 0),
+      y: position.y + 110,
+    }
+  }
+
   function ruleConnectionPath(from, to) {
     const direction = to.x >= from.x ? 1 : -1
     const bend = Math.max(70, Math.abs(to.x - from.x) * 0.45)
     return `M ${from.x} ${from.y} C ${from.x + bend * direction} ${from.y}, ${to.x - bend * direction} ${to.y}, ${to.x} ${to.y}`
-  }
-
-  function ruleNodeCenter(block, side) {
-    const width = 320
-    const height = 220
-    const position = block.position ?? { x: 0, y: 0 }
-    return {
-      x: position.x + (side === 'right' ? width : 0),
-      y: position.y + height / 2,
-    }
   }
 
   function updateRule(index, patch) {
@@ -1146,8 +1172,8 @@ export default function ModelMapper({ onSignOut }) {
                 const cause = ruleBlocks.find((block) => block.id === connection.causeId)
                 const effect = ruleBlocks.find((block) => block.id === connection.effectId)
                 if (!cause || !effect) return null
-                const from = ruleNodeCenter(cause, 'right')
-                const to = ruleNodeCenter(effect, 'left')
+                const from = rulePortCenter(cause)
+                const to = rulePortCenter(effect)
                 return (
                   <path
                     key={connection.id}
@@ -1158,7 +1184,7 @@ export default function ModelMapper({ onSignOut }) {
               {pendingRuleConnection && (() => {
                 const source = ruleBlocks.find((block) => block.id === pendingRuleConnection.sourceId)
                 if (!source) return null
-                const from = ruleNodeCenter(source, source.type === 'cause' ? 'right' : 'left')
+                const from = rulePortCenter(source)
                 return <path className="is-drawing" d={ruleConnectionPath(from, pendingRuleConnection.pointer)} />
               })()}
             </svg>
@@ -1209,6 +1235,10 @@ export default function ModelMapper({ onSignOut }) {
 
                 <button
                   type="button"
+                  ref={(element) => {
+                    if (element) rulePortRefs.current[block.id] = element
+                    else delete rulePortRefs.current[block.id]
+                  }}
                   className={`admin__relation-port ${pendingRuleConnection?.sourceId === block.id ? 'is-pending' : ''}`}
                   aria-label={`Connecter le bloc ${block.type === 'cause' ? 'cause' : 'effet'}`}
                   title="Glisser vers le node d’un autre bloc"
