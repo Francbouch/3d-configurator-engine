@@ -70,7 +70,12 @@ export function getRuleGraphAllowedMaterials({
   selected = {},
   materials = [],
   ruleGraph,
+  activeCauseGroupId = null,
 }) {
+  // Default selections initialize the furniture visually, but they are not
+  // user actions and must never trigger Cause -> Effect restrictions.
+  if (!activeCauseGroupId) return materials
+
   const blocks = Array.isArray(ruleGraph?.blocks) ? ruleGraph.blocks : []
   const connections = Array.isArray(ruleGraph?.connections) ? ruleGraph.connections : []
   if (!blocks.length || !connections.length) return materials
@@ -88,7 +93,7 @@ export function getRuleGraphAllowedMaterials({
     // Cause blocks intentionally use one group. Reading the first item also
     // keeps older saved graphs compatible if they still contain several.
     const causeGroupId = (cause.groupIds ?? [])[0]
-    if (!causeGroupId) return
+    if (!causeGroupId || causeGroupId !== activeCauseGroupId) return
 
     const selectedCauseMaterial = selected[causeGroupId]
     const triggerIds = blockMaterialIds(cause)
