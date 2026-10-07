@@ -58,3 +58,46 @@ export function validateSelection({
   return getAllowedMaterials({ groupId, selected, materials, rules })
     .some((material) => material.id === materialId)
 }
+
+
+function blockMaterialIds(block) {
+  if (Array.isArray(block?.materialIds)) return block.materialIds
+  return block?.materialId ? [block.materialId] : []
+}
+
+export function getRuleGraphAllowedMaterials({
+  groupId,
+  selected = {},
+  materials = [],
+  ruleGraph,
+}) {
+  const blocks = Array.isArray(ruleGraph?.blocks) ? ruleGraph.blocks : []
+  const connections = Array.isArray(ruleGraph?.connections) ? ruleGraph.connections : []
+  if (!blocks.length || !connections.length) return materials
+
+  const blockById = new Map(blocks.map((block) => [block.id, block]))
+  const activeRestrictions = []
+
+  connections.forEach((connection) => {
+    const cause = blockById.get(connection.causeId)
+    const effect = blockById.get(connection.effectId)
+    if (!cause || !effect || cause.type !== 'cause' || effect.type !== 'effect') return
+    if (!(effect.groupIds ?? []).includes(groupId)) return
+
+    const triggerIds = blockMaterialIds(cause)
+    const causeActive = (cause.groupIds ?? []).some((causeGroupId) =>
+      triggerIds.includes(selected[causeGroupId]),
+    )
+    if (!causeActive) return
+
+    activeRestrictions.push(new Set(blockMaterialIds(effect)))
+  })
+
+  if (!activeRestrictions.length) return materials
+
+  // If several active causes point to the same effect group, a material remains
+  // available only when every active rule allows it.
+  return materials.filter((material) =>
+    activeRestrictions.every((allowedIds) => allowedIds.has(material.id)),
+  )
+}
