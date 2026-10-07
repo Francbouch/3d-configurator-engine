@@ -38,6 +38,7 @@ export default function ModelMapper({ onSignOut }) {
   const ruleCanvasRef = useRef(null)
   const ruleDragRef = useRef(null)
   const rulePortRefs = useRef({})
+  const pendingRuleConnectionRef = useRef(null)
   const [modules, setModules] = useState(product.modules ?? [])
   const [displayPrice, setDisplayPrice] = useState(product.pricing?.displayPrice !== false)
   const [sceneSettings, setSceneSettings] = useState({ ...DEFAULT_SCENE_SETTINGS })
@@ -539,52 +540,57 @@ export default function ModelMapper({ onSignOut }) {
     event.preventDefault()
     event.stopPropagation()
     const point = ruleCanvasPoint(event)
-    setPendingRuleConnection({
+    const pending = {
       sourceId: block.id,
       sourceType: block.type,
       pointer: point,
       pointerId: event.pointerId,
-    })
+    }
+    pendingRuleConnectionRef.current = pending
+    setPendingRuleConnection(pending)
     event.currentTarget.setPointerCapture?.(event.pointerId)
   }
 
   function moveRuleConnection(event) {
-    setPendingRuleConnection((current) => current
-      ? { ...current, pointer: ruleCanvasPoint(event) }
-      : current)
+    const current = pendingRuleConnectionRef.current
+    if (!current) return
+    const next = { ...current, pointer: ruleCanvasPoint(event) }
+    pendingRuleConnectionRef.current = next
+    setPendingRuleConnection(next)
   }
 
   function finishRuleConnection(event, explicitTarget = null) {
     event?.preventDefault?.()
     event?.stopPropagation?.()
+    const current = pendingRuleConnectionRef.current
+    if (!current) return
+
     const clientX = event?.clientX
     const clientY = event?.clientY
+    let targetBlock = explicitTarget
 
-    setPendingRuleConnection((current) => {
-      if (!current) return null
+    if (!targetBlock && Number.isFinite(clientX) && Number.isFinite(clientY)) {
+      targetBlock = ruleBlocks.find((block) => {
+        if (block.id === current.sourceId || block.type === current.sourceType) return false
+        const port = rulePortRefs.current[block.id]
+        if (!port) return false
+        const rect = port.getBoundingClientRect()
+        const padding = 22
+        return clientX >= rect.left - padding && clientX <= rect.right + padding
+          && clientY >= rect.top - padding && clientY <= rect.bottom + padding
+      }) ?? null
+    }
 
-      let targetBlock = explicitTarget
-      if (!targetBlock && Number.isFinite(clientX) && Number.isFinite(clientY)) {
-        targetBlock = ruleBlocks.find((block) => {
-          if (block.id === current.sourceId || block.type === current.sourceType) return false
-          const port = rulePortRefs.current[block.id]
-          if (!port) return false
-          const rect = port.getBoundingClientRect()
-          const padding = 14
-          return clientX >= rect.left - padding && clientX <= rect.right + padding
-            && clientY >= rect.top - padding && clientY <= rect.bottom + padding
-        }) ?? null
-      }
+    if (targetBlock && current.sourceId !== targetBlock.id && current.sourceType !== targetBlock.type) {
+      const causeId = current.sourceType === 'cause' ? current.sourceId : targetBlock.id
+      const effectId = current.sourceType === 'effect' ? current.sourceId : targetBlock.id
+      setRuleConnections((connections) => connections.some((connection) => connection.causeId === causeId && connection.effectId === effectId)
+        ? connections
+        : [...connections, { id: `${causeId}->${effectId}`, causeId, effectId }])
+    }
 
-      if (targetBlock && current.sourceId !== targetBlock.id && current.sourceType !== targetBlock.type) {
-        const causeId = current.sourceType === 'cause' ? current.sourceId : targetBlock.id
-        const effectId = current.sourceType === 'effect' ? current.sourceId : targetBlock.id
-        setRuleConnections((connections) => connections.some((connection) => connection.causeId === causeId && connection.effectId === effectId)
-          ? connections
-          : [...connections, { id: `${causeId}->${effectId}`, causeId, effectId }])
-      }
-      return null
-    })
+    pendingRuleConnectionRef.current = null
+    setPendingRuleConnection(null)
   }
 
   function rulePortCenter(block) {
@@ -1154,11 +1160,11 @@ export default function ModelMapper({ onSignOut }) {
             }}
             onPointerUp={(event) => {
               endRuleBlockDrag()
-              if (pendingRuleConnection) finishRuleConnection(event)
+              if (pendingRuleConnectionRef.current) finishRuleConnection(event)
             }}
             onPointerCancel={(event) => {
               endRuleBlockDrag()
-              if (pendingRuleConnection) finishRuleConnection(event)
+              if (pendingRuleConnectionRef.current) finishRuleConnection(event)
             }}
           >
             {ruleBlocks.length === 0 && (
@@ -1243,7 +1249,7 @@ export default function ModelMapper({ onSignOut }) {
                   aria-label={`Connecter le bloc ${block.type === 'cause' ? 'cause' : 'effet'}`}
                   title="Glisser vers le node d’un autre bloc"
                   onPointerDown={(event) => beginRuleConnection(event, block)}
-                  onPointerUp={(event) => finishRuleConnection(event, block)}
+                  onPointerUp={(event) => finishRuleConnection(event)}
                 />
               </article>
             ))}          </div>
