@@ -33,8 +33,10 @@ function EditorGizmo({ editor, settings }) {
   let rotation = [0, 0, 0]
   let scale = [1, 1, 1]
 
-  if (type === 'light' && id === 'shadow') {
-    position = settings.shadowPosition ?? DEFAULT_SCENE_SETTINGS.shadowPosition
+  if (type === 'light') {
+    const positionKey = id + 'Position'
+    if (!Object.prototype.hasOwnProperty.call(DEFAULT_SCENE_SETTINGS, positionKey) && !settings[positionKey]) return null
+    position = settings[positionKey] ?? DEFAULT_SCENE_SETTINGS[positionKey]
   } else if (type === 'plane') {
     const plane = (settings.planes ?? []).find((item) => item.id === id)
     if (!plane) return null
