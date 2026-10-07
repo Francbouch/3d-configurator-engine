@@ -133,6 +133,9 @@ export default function ConfiguratorPanel() {
                       </span>
                       <span className="material-chip__meta">
                         <span className="material-chip__name">{material.name}</span>
+                        {Number(material.priceAdjustment ?? 0) > 0 && (
+                          <small className="material-chip__price">+{Number(material.priceAdjustment).toFixed(2)}$</small>
+                        )}
                       </span>
                     </button>
                   ))}
