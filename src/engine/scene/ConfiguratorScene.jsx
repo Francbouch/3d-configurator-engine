@@ -26,6 +26,7 @@ function SceneCalibration({ settings }) {
 
 function EditorGizmo({ editor, settings }) {
   const targetRef = useRef()
+  const draggingRef = useRef(false)
 
   if (!editor?.selection) return null
 
@@ -43,25 +44,34 @@ function EditorGizmo({ editor, settings }) {
     scale = plane.scale
   }
 
-  const commit = () => {
+  const readTransform = () => {
     const object = targetRef.current
-    if (!object) return
-    editor.onTransform?.({
+    if (!object) return null
+    return {
       type,
       id,
       position: object.position.toArray(),
       rotation: [object.rotation.x, object.rotation.y, object.rotation.z],
       scale: object.scale.toArray(),
-    })
+    }
+  }
+
+  const commit = () => {
+    const change = readTransform()
+    if (change) editor.onTransform?.(change)
   }
 
   return (
     <TransformControls
-      key={'transform-' + type + '-' + id + '-' + (editor.mode || 'translate')}
+      key={'transform-' + type + '-' + id}
       mode={editor.mode || 'translate'}
       space="world"
       size={1.4}
-      onObjectChange={commit}
+      onMouseDown={() => { draggingRef.current = true }}
+      onMouseUp={() => {
+        draggingRef.current = false
+        commit()
+      }}
     >
       <mesh
         ref={targetRef}
