@@ -329,10 +329,47 @@ export default function ModelMapper({ onSignOut }) {
     setSaveStatus('')
   }
 
+  async function publishGroups(nextGroups) {
+    const session = loadAdminSession()
+    if (!session?.access_token) return
+    try {
+      const existing = await fetch(
+        `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=model_path,model_name,configuration&limit=1`,
+        { headers: supabaseHeaders(session.access_token) },
+      )
+      if (!existing.ok) return
+      const rows = await existing.json()
+      const current = rows?.[0]
+      if (!current?.model_path) return
+      const configuration = { ...(current.configuration ?? {}), materialGroups: nextGroups }
+      await fetch(
+        `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?on_conflict=product_id`,
+        {
+          method: 'POST',
+          headers: {
+            ...supabaseHeaders(session.access_token),
+            Prefer: 'resolution=merge-duplicates,return=minimal',
+          },
+          body: JSON.stringify({
+            product_id: product.id,
+            model_path: current.model_path,
+            model_name: current.model_name ?? modelName.trim(),
+            configuration,
+            updated_at: new Date().toISOString(),
+            updated_by: session.user?.id ?? null,
+          }),
+        },
+      )
+    } catch (error) {
+      console.warn('Unable to publish groups immediately', error)
+    }
+  }
+
   function persistGroups(nextGroups) {
     setMaterialGroups(nextGroups)
     const current = loadAdminDraft(product.id) ?? buildDraftPayload()
     saveAdminDraft(product.id, { ...current, materialGroups: nextGroups })
+    publishGroups(nextGroups)
   }
 
   function addGroup() {
