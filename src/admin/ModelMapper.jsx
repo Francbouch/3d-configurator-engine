@@ -1380,12 +1380,6 @@ export default function ModelMapper({ onSignOut }) {
             <ConfiguratorScene matchPublishedView liveEditorPreview sceneOverride={sceneSettings} onCameraViewChange={captureCameraView} editor={{
               selection: sceneSelection,
               mode: sceneTransformMode,
-              onPreviewTransform: (change) => {
-                setSceneSettings((current) => change.type === 'light'
-                  ? { ...current, [change.id + 'Position']: change.position }
-                  : { ...current, planes: (current.planes ?? []).map((p) => p.id === change.id ? { ...p, position: change.position, rotation: change.rotation, scale: change.scale } : p) }
-                )
-              },
               onTransform: (change) => {
                 setSceneSettings((current) => {
                   const next = change.type === 'light'
