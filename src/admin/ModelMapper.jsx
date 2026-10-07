@@ -438,6 +438,42 @@ export default function ModelMapper({ onSignOut }) {
     setSaveStatus('')
   }
 
+  async function uploadMaterialPbrMap(index, kind, file) {
+    if (!file) return
+    const session = loadAdminSession()
+    if (!session?.access_token) {
+      setSaveStatus('Session expirée. Reconnecte-toi au back-office.')
+      return
+    }
+    const material = materials[index]
+    if (!material?.id) return
+    try {
+      setSaveStatus(`Upload ${kind}…`)
+      const extension = file.name.toLowerCase().endsWith('.jpg') || file.name.toLowerCase().endsWith('.jpeg') ? 'jpg' : 'png'
+      const safeId = material.id.replace(/[^a-zA-Z0-9._-]+/g, '-')
+      const path = `${product.id}/materials/${safeId}-${kind}-${Date.now()}.${extension}`
+      const upload = await fetch(`${SUPABASE_PROJECT_URL}/storage/v1/object/models/${encodeURI(path)}`, {
+        method: 'POST',
+        headers: {
+          ...supabaseHeaders(session.access_token, file.type || (extension === 'png' ? 'image/png' : 'image/jpeg')),
+          'x-upsert': 'true',
+        },
+        body: file,
+      })
+      if (!upload.ok) throw new Error('Upload impossible.')
+      const url = `${SUPABASE_PROJECT_URL}/storage/v1/object/public/models/${path.split('/').map(encodeURIComponent).join('/')}`
+      const key = kind === 'normal' ? 'normalUrl' : kind === 'roughness' ? 'roughnessUrl' : 'bumpUrl'
+      const nextMaterials = materials.map((item, i) => i === index
+        ? { ...item, pbr: { roughness: 0.55, metalness: 0, bumpScale: 0.035, ...(item.pbr ?? {}), [key]: url } }
+        : item)
+      setMaterials(nextMaterials)
+      await persistConfigurationPatch({ materials: nextMaterials })
+      setSaveStatus(`${kind} enregistré ✓`)
+    } catch (error) {
+      setSaveStatus(error instanceof Error ? error.message : 'Upload impossible.')
+    }
+  }
+
   function removeMaterial(index) {
     const nextMaterials = materials.filter((_, i) => i !== index)
     setMaterials(nextMaterials)
@@ -1175,6 +1211,11 @@ export default function ModelMapper({ onSignOut }) {
                   <input type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" onChange={(e) => { replaceMaterialImage(index, e.target.files?.[0]); e.target.value = '' }} />
                   <small>{material.source?.fileName || 'Ajouter'}</small>
                 </label>
+              </div>
+              <div className="admin__pbr-maps">
+                <label>Normal<input type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" onChange={(e) => { uploadMaterialPbrMap(index, 'normal', e.target.files?.[0]); e.target.value = '' }} /><small>{material.pbr?.normalUrl ? '✓' : '+'}</small></label>
+                <label>Roughness<input type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" onChange={(e) => { uploadMaterialPbrMap(index, 'roughness', e.target.files?.[0]); e.target.value = '' }} /><small>{material.pbr?.roughnessUrl ? '✓' : '+'}</small></label>
+                <label>Bump<input type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" onChange={(e) => { uploadMaterialPbrMap(index, 'bump', e.target.files?.[0]); e.target.value = '' }} /><small>{material.pbr?.bumpUrl ? '✓' : '+'}</small></label>
               </div>
               <div className="admin__money"><input aria-label={`Prix du matériau ${material.name}`} type="number" min="0" step="0.01" inputMode="decimal" placeholder="0.00" value={material.priceAdjustment ?? ''} onChange={(e) => updateMaterial(index, { priceAdjustment: e.target.value === '' ? '' : e.target.value })} onBlur={(e) => updateMaterial(index, { priceAdjustment: e.target.value === '' ? '' : Number(e.target.value).toFixed(2) })} /><span>$</span></div>
               <label className="admin__toggle"><input type="checkbox" checked={material.active !== false} onChange={(e) => updateMaterial(index, { active: e.target.checked })} /><span>{material.active !== false ? 'Oui' : 'Non'}</span></label>
