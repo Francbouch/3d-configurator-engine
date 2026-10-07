@@ -1043,8 +1043,9 @@ export default function ModelMapper({ onSignOut }) {
               ['fillIntensity','Lumière de remplissage',0,10,0.1],
               ['rimIntensity','Contre-jour / contour',0,10,0.1],
               ['topIntensity','Lumière du dessus',0,10,0.1],
-              ['shadowOpacity','Intensité ombre',0,1,0.01],
-              ['shadowBlur','Douceur ombre',0.5,8,0.1],
+              ['shadowOpacity','Intensité ombre de contact',0,1,0.01],
+              ['shadowBlur','Douceur ombre de contact',0.5,8,0.1],
+              ['shadowRadius','Douceur ombres projetées',0,12,0.25],
             ].map(([key,label,min,max,step]) => (
               <label className="admin__scene-control" key={key}>
                 <span>{label}<strong>{Number(sceneSettings[key]).toFixed(2)}</strong></span>
