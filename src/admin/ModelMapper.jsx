@@ -30,7 +30,7 @@ export default function ModelMapper({ onSignOut }) {
   const [activeSection, setActiveSection] = useState('model')
   const [rules, setRules] = useState(product.rules ?? [])
   const [modules, setModules] = useState(product.modules ?? [])
-  const [displayPrice, setDisplayPrice] = useState(product.pricing?.displayPrice === true)
+  const [displayPrice, setDisplayPrice] = useState(product.pricing?.displayPrice !== false)
   const [materialGroups, setMaterialGroups] = useState(() =>
     Object.entries(product.materialGroups ?? {}).map(([id, group]) => ({
       id,
@@ -132,11 +132,12 @@ export default function ModelMapper({ onSignOut }) {
         // hide materials that were already uploaded and stored remotely.
         const baseline = publishedConfig
           ? {
-              ...publishedConfig,
               ...(saved ?? {}),
+              ...publishedConfig,
               materials: Array.isArray(publishedConfig.materials)
                 ? publishedConfig.materials
                 : (saved?.materials ?? []),
+              pricing: publishedConfig.pricing ?? saved?.pricing,
             }
           : (saved ?? {})
 
@@ -166,7 +167,7 @@ export default function ModelMapper({ onSignOut }) {
         setMaterials(imageMaterials)
         setRules(Array.isArray(baseline?.rules) ? baseline.rules : product.rules ?? [])
         setModules(Array.isArray(baseline?.modules) ? baseline.modules : product.modules ?? [])
-        setDisplayPrice(baseline?.pricing?.displayPrice ?? (product.pricing?.displayPrice === true))
+        setDisplayPrice(baseline?.pricing?.displayPrice ?? (product.pricing?.displayPrice !== false))
         if (Array.isArray(baseline?.materialGroups)) setMaterialGroups(baseline.materialGroups)
         if (saved) setSaveStatus('Brouillon local restauré')
         else if (publishedConfig) setSaveStatus('Configuration publiée restaurée')
@@ -759,7 +760,7 @@ export default function ModelMapper({ onSignOut }) {
     setMaterials(publishedMaterials)
     setRules(product.rules ?? [])
     setModules(product.modules ?? [])
-    setDisplayPrice(product.pricing?.displayPrice === true)
+    setDisplayPrice(product.pricing?.displayPrice !== false)
     setMaterialGroups(Object.entries(product.materialGroups ?? {}).map(([id, group]) => ({ id, name: group.label ?? id, materialId: group.defaultMaterialId ?? '', role: 'modifiable' })))
     setSaveStatus('Brouillon local réinitialisé à la version publiée')
   }
