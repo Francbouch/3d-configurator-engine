@@ -362,7 +362,7 @@ body:has(.admin) { overflow: hidden; }
 }
 
 .admin__scene-editor{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(300px,.75fr);gap:18px;align-items:start}
-.admin__scene-preview{height:min(68vh,720px);min-height:520px;overflow:hidden;border:1px solid #e2e2de;border-radius:18px;background:#f7f7f5;position:sticky;top:18px}
+.admin__scene-preview{width:100%;aspect-ratio:1.65/1;height:auto;min-height:0;overflow:hidden;border:1px solid #e2e2de;border-radius:18px;background:#f7f7f5;position:sticky;top:18px}
 .admin__scene-preview canvas{display:block;width:100%!important;height:100%!important}
 .admin__scene-controls{padding:20px;border:1px solid #e2e2de;border-radius:18px;background:#fff}
 .admin__scene-control{display:flex;flex-direction:column;gap:9px;padding:12px 0;border-top:1px solid #efefec}
@@ -371,7 +371,7 @@ body:has(.admin) { overflow: hidden; }
 .admin__scene-control input[type="range"]{width:100%;accent-color:#171717}
 .admin__scene-color{flex-direction:row;align-items:center;justify-content:space-between}
 .admin__scene-color input{width:48px;height:32px;padding:2px;border:1px solid #ddd;border-radius:8px;background:#fff}
-@media(max-width:980px){.admin__scene-editor{grid-template-columns:1fr}.admin__scene-preview{position:relative;top:auto;height:55vh;min-height:420px}}
+@media(max-width:980px){.admin__scene-editor{grid-template-columns:1fr}.admin__scene-preview{position:relative;top:auto;width:100%;aspect-ratio:1.65/1;height:auto;min-height:0}}
 
 .admin__scene-tools{display:flex;flex-direction:column;gap:10px;padding-bottom:16px}
 .admin__scene-tools>strong{font-size:14px}
