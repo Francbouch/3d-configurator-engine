@@ -39,7 +39,7 @@ export default function ProductCamera({ initialView = null, onViewChange = null 
       const fullHeight = fullWidth / savedAspect
       const viewportWidth = fullHeight * currentAspect
       const centeredX = (fullWidth - viewportWidth) / 2
-      const horizontalNudge = fullWidth * -0.055
+      const horizontalNudge = fullWidth * -0.07
       camera.setViewOffset(fullWidth, fullHeight, centeredX + horizontalNudge, 0, viewportWidth, fullHeight)
     }
 
