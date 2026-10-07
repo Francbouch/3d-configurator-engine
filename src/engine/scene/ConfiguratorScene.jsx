@@ -67,7 +67,7 @@ function EditorGizmo({ editor, settings }) {
   )
 }
 
-export default function ConfiguratorScene({ sceneOverride = null, editor = null }) {
+export default function ConfiguratorScene({ sceneOverride = null, editor = null, onCameraViewChange = null }) {
   const [modelUrl, setModelUrl] = useState(FALLBACK_MODEL_URL)
   const [publishedScene, setPublishedScene] = useState(null)
 
@@ -132,7 +132,7 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null 
         <ProductModel url={modelUrl} />
         {editor && <EditorGizmo editor={editor} settings={sceneSettings} />}
       </Suspense>
-      <ProductCamera />
+      <ProductCamera initialView={sceneSettings.cameraView ?? null} onViewChange={onCameraViewChange} />
     </Canvas>
   )
 }
