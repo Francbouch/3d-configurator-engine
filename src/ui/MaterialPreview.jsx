@@ -61,5 +61,6 @@ export default function MaterialPreview({ material }) {
     return () => { active = false }
   }, [material])
   if (material.thumbnail) return <img src={material.thumbnail} alt="" />
+  if (material.color) return <span className="material-chip__fallback" style={{ background: material.color }} aria-hidden="true" />
   return <span className="material-preview"><img ref={ref} alt="" /><span className="material-chip__fallback" aria-hidden="true" /></span>
 }
