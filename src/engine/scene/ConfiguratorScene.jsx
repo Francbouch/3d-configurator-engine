@@ -59,18 +59,6 @@ function EditorGizmo({ editor, settings }) {
     o.updateMatrixWorld(true)
   }, [type, id, position[0], position[1], position[2], rotation[0], rotation[1], rotation[2], scale[0], scale[1], scale[2]])
 
-  const preview = () => {
-    const o = targetRef.current
-    if (!o) return
-    editor.onPreviewTransform?.({
-      type,
-      id,
-      position: o.position.toArray(),
-      rotation: [o.rotation.x, o.rotation.y, o.rotation.z],
-      scale: o.scale.toArray(),
-    })
-  }
-
   const commit = () => {
     const o = targetRef.current
     if (!o) return
@@ -84,7 +72,7 @@ function EditorGizmo({ editor, settings }) {
   }
 
   return (
-    <TransformControls key={type + ':' + id} mode={editor.mode || 'translate'} space="world" size={1.4} onObjectChange={preview} onMouseUp={commit}>
+    <TransformControls key={type + ':' + id} mode={editor.mode || 'translate'} space="world" size={1.4} onMouseUp={commit}>
       <mesh ref={targetRef} position={position} rotation={rotation} scale={scale} renderOrder={1000}>
         {type === 'light' ? <sphereGeometry args={[0.22, 20, 20]} /> : <boxGeometry args={[1, 1, 0.06]} />}
         <meshBasicMaterial color={type === 'light' ? '#ff5a00' : '#4f7cff'} transparent opacity={0.9} depthTest={false} depthWrite={false} />
