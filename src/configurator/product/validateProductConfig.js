@@ -17,6 +17,25 @@ export function validateProductConfig(product, materials = []) {
     errors.push(`IDs de matériaux dupliqués: ${[...new Set(duplicateMaterialIds)].join(', ')}.`)
   }
 
+  materials.forEach((material) => {
+    const label = material?.name ?? material?.id ?? 'sans nom'
+
+    if (!material?.id?.trim()) {
+      errors.push(`Le matériau "${label}" doit avoir un id.`)
+    }
+
+    if (!material?.name?.trim()) {
+      errors.push(`Le matériau "${label}" doit avoir un nom.`)
+    }
+
+    if (
+      material?.priceAdjustment != null &&
+      !Number.isFinite(Number(material.priceAdjustment))
+    ) {
+      errors.push(`Le matériau "${label}" a un supplément invalide.`)
+    }
+  })
+
   const flow = product?.configurationFlow ?? []
   flow.forEach((groupId) => {
     if (!groupIds.has(groupId)) {
