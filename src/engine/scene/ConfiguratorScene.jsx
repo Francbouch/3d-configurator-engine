@@ -67,7 +67,7 @@ function EditorGizmo({ editor, settings }) {
   )
 }
 
-export default function ConfiguratorScene({ sceneOverride = null, editor = null, onCameraViewChange = null, matchPublishedView = false }) {
+export default function ConfiguratorScene({ sceneOverride = null, editor = null, onCameraViewChange = null, matchPublishedView = false, liveEditorPreview = false }) {
   const [modelUrl, setModelUrl] = useState(FALLBACK_MODEL_URL)
   const [publishedScene, setPublishedScene] = useState(null)
 
@@ -100,9 +100,9 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null,
         shadowPosition: undefined,
       }
     : null
-  // Back-office previews keep the public camera framing, but sceneOverride must
-  // remain live so every editor control reacts immediately.
-  const effectiveOverride = sceneOverride
+  // Keep the public/client scene isolated. Live scene overrides are only
+  // enabled explicitly by the back-office editor.
+  const effectiveOverride = liveEditorPreview ? sceneOverride : (matchPublishedView ? null : sceneOverride)
   const sceneSettings = {
     ...DEFAULT_SCENE_SETTINGS,
     ...(publishedWithoutLegacyLightRig ?? {}),
