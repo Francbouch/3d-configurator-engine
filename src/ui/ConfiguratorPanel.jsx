@@ -56,7 +56,7 @@ export default function ConfiguratorPanel() {
     try {
       const raw = window.localStorage.getItem(CONFIGURATOR_DRAFT_KEY)
       const draft = raw ? JSON.parse(raw) : null
-      return Array.isArray(draft?.materialGroups) ? draft.materialGroups : []
+      return Array.isArray(draft?.payload?.materialGroups) ? draft.payload.materialGroups : []
     } catch {
       return []
     }
