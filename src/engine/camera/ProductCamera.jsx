@@ -13,7 +13,13 @@ export default function ProductCamera({ initialView = null, onViewChange = null 
     if (Array.isArray(initialView.target)) controlsRef.current.target.fromArray(initialView.target)
     camera.updateProjectionMatrix()
     controlsRef.current.update()
-  }, [camera, initialView])
+    if (onViewChange) {
+      onViewChange({
+        position: camera.position.toArray(),
+        target: controlsRef.current.target.toArray(),
+      })
+    }
+  }, [camera, initialView, onViewChange])
 
   const reportView = () => {
     if (!controlsRef.current || !onViewChange) return
