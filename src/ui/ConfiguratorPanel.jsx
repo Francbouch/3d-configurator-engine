@@ -100,7 +100,7 @@ export default function ConfiguratorPanel() {
     return total + (Number.isFinite(amount) && amount > 0 ? amount : 0)
   }, 0)
   const price = basePrice + materialSupplement
-  const showPrice = Number.isFinite(price)
+  const showPrice = runtimeProduct.pricing?.displayPrice !== false && Number.isFinite(price)
 
   useEffect(() => {
     initializeDynamicGroups(dynamicGroups)
