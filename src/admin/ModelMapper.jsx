@@ -541,9 +541,12 @@ export default function ModelMapper({ onSignOut }) {
       const selected = block.groupIds ?? []
       return {
         ...block,
-        groupIds: selected.includes(groupId)
-          ? selected.filter((value) => value !== groupId)
-          : [...selected, groupId],
+        // A Cause represents one source group only. Effects may still target several groups.
+        groupIds: block.type === 'cause'
+          ? (selected.includes(groupId) ? [] : [groupId])
+          : (selected.includes(groupId)
+              ? selected.filter((value) => value !== groupId)
+              : [...selected, groupId]),
       }
     })
     setRuleBlocks(nextBlocks)
