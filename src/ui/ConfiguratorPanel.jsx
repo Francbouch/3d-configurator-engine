@@ -179,7 +179,7 @@ export default function ConfiguratorPanel() {
                           }
                         })
                         useConfiguratorStore.setState({ selectedMaterials: repaired })
-                      }
+                      }}
                     >
                       <span className="material-chip__preview">
                         <MaterialPreview material={material} />
