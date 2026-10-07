@@ -4,7 +4,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useConfiguratorStore } from '../../configurator/state/configuratorStore'
 import product from '../../data/products/product.example.json'
-import { applyMaterialToParts, buildMaterialLibrary } from '../materials/MaterialEngine'
+import { applyMaterialToParts, applyMaterialToUngroupedParts, buildMaterialLibrary } from '../materials/MaterialEngine'
 import { MASTER_MATERIAL_LIBRARY_URL } from '../materials/MasterMaterialLibrary'
 import { SUPABASE_PROJECT_URL, supabaseHeaders } from '../../admin/AdminAuth'
 
@@ -52,6 +52,15 @@ function LoadedProduct({ url }) {
         applyMaterialToParts(model, mappedParts, material)
       }
     })
+
+    const blackMaterial =
+      materialLibrary.get('BLC11') ??
+      materialLibrary.get('Noir') ??
+      materialLibrary.get('noir')
+
+    if (blackMaterial) {
+      applyMaterialToUngroupedParts(model, parts, blackMaterial)
+    }
   }, [materialLibrary, model, publishedConfig, selectedMaterials])
 
   useEffect(() => {
