@@ -48,26 +48,30 @@ function LoadedProduct({ url }) {
 
     records.forEach((record) => {
       let material
-      if (record?.source?.imageUrl) {
-        const texture = textureLoader.load(record.source.imageUrl)
-        texture.colorSpace = THREE.SRGBColorSpace
+      const loadMap = (url, color = false) => {
+        if (!url) return null
+        const texture = textureLoader.load(url)
+        if (color) texture.colorSpace = THREE.SRGBColorSpace
         texture.flipY = false
         texture.wrapS = THREE.RepeatWrapping
         texture.wrapT = THREE.RepeatWrapping
         texture.needsUpdate = true
-        material = new THREE.MeshStandardMaterial({
-          map: texture,
-          color: 0xffffff,
-          roughness: 0.8,
-          metalness: 0,
-        })
-      } else {
-        material = new THREE.MeshStandardMaterial({
-          color: new THREE.Color(record?.color || '#000000'),
-          roughness: 0.8,
-          metalness: 0,
-        })
+        return texture
       }
+      const map = loadMap(record?.source?.imageUrl, true)
+      const normalMap = loadMap(record?.pbr?.normalUrl)
+      const roughnessMap = loadMap(record?.pbr?.roughnessUrl)
+      const bumpMap = loadMap(record?.pbr?.bumpUrl)
+      material = new THREE.MeshStandardMaterial({
+        map,
+        color: map ? 0xffffff : new THREE.Color(record?.color || '#000000'),
+        roughness: Number(record?.pbr?.roughness ?? 0.55),
+        metalness: Number(record?.pbr?.metalness ?? 0),
+        normalMap,
+        roughnessMap,
+        bumpMap,
+        bumpScale: Number(record?.pbr?.bumpScale ?? 0.035),
+      })
       material.name = record.id
       library.set(record.id, material)
     })
