@@ -161,22 +161,30 @@ export default function ConfiguratorPanel() {
                       type="button"
                       key={material.id}
                       onClick={() => {
-                        const nextSelected = { ...selectedMaterials, [section.id]: material.id }
+                        // The user's last manual choice is authoritative.
+                        // Rules may repair other groups, but those automatic repairs must
+                        // not cascade back and override the group the user just chose.
+                        const authoritativeGroupId = section.id
+                        const nextSelected = { ...selectedMaterials, [authoritativeGroupId]: material.id }
                         const repaired = { ...nextSelected }
+
                         sections.forEach((targetSection) => {
-                          if (targetSection.id === section.id) return
+                          if (targetSection.id === authoritativeGroupId) return
+
                           const available = getGroupMaterials({
                             product: runtimeProduct,
                             groupId: targetSection.id,
-                            selected: repaired,
+                            selected: nextSelected,
                             materials,
                           })
+
                           if (!available.some((item) => item.id === repaired[targetSection.id])) {
                             repaired[targetSection.id] = available.find((item) => item.id === targetSection.defaultMaterialId)?.id
                               ?? available[0]?.id
                               ?? null
                           }
                         })
+
                         useConfiguratorStore.setState({ selectedMaterials: repaired })
                       }}
                     >
