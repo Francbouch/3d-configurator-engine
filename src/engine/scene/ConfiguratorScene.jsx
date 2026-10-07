@@ -1,7 +1,8 @@
 import { Canvas, useThree } from '@react-three/fiber'
 import { Suspense, useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { TransformControls } from '@react-three/drei'
+import { TransformControls as DreiTransformControls } from '@react-three/drei'
+import { TransformControls } from 'three/addons/controls/TransformControls.js'
 import ProductCamera from '../camera/ProductCamera'
 import StudioLighting, { DEFAULT_SCENE_SETTINGS } from '../lighting/StudioLighting'
 import ProductModel from '../model/ProductModel'
@@ -25,69 +26,86 @@ function SceneCalibration({ settings }) {
 }
 
 function EditableShadowLight({ editor, settings }) {
-  const lightRef = useRef()
-  const targetRef = useRef()
-  const selected = editor?.selection?.type === 'light' && editor?.selection?.id === 'shadow'
+  const { gl, camera, scene } = useThree()
+  const [bundle] = useState(() => {
+    const light = new THREE.DirectionalLight('#fffdf8', 1)
+    light.castShadow = true
+    light.shadow.mapSize.set(2048, 2048)
+    light.shadow.camera.left = -4
+    light.shadow.camera.right = 4
+    light.shadow.camera.top = 5
+    light.shadow.camera.bottom = -3
+    light.shadow.camera.near = 0.1
+    light.shadow.camera.far = 30
+    const target = new THREE.Object3D()
+    target.position.set(0, 0.8, 0)
+    light.target = target
+    return { light, target }
+  })
 
   useEffect(() => {
-    if (!lightRef.current || !targetRef.current) return
-    lightRef.current.target = targetRef.current
-    targetRef.current.updateMatrixWorld()
-    lightRef.current.shadow.needsUpdate = true
-  }, [])
+    const { light, target } = bundle
+    scene.add(light)
+    scene.add(target)
+    return () => {
+      scene.remove(light)
+      scene.remove(target)
+      light.shadow.map?.dispose()
+      light.dispose()
+    }
+  }, [bundle, scene])
 
-  const commit = () => {
-    const light = lightRef.current
-    if (!light) return
+  useEffect(() => {
+    const { light } = bundle
+    light.position.fromArray(settings.shadowPosition ?? DEFAULT_SCENE_SETTINGS.shadowPosition)
+    light.intensity = Math.max(0.35, Number(settings.keyIntensity ?? 5.2) * 0.22)
+    light.shadow.bias = Number(settings.shadowBias ?? -0.00015)
+    light.shadow.normalBias = Number(settings.shadowNormalBias ?? 0.012)
+    light.shadow.radius = Number(settings.shadowRadius ?? 5)
+    light.shadow.camera.updateProjectionMatrix()
     light.shadow.needsUpdate = true
-    editor.onTransform?.({
-      type: 'light',
-      id: 'shadow',
-      position: light.position.toArray(),
-      rotation: [light.rotation.x, light.rotation.y, light.rotation.z],
-      scale: light.scale.toArray(),
-    })
-  }
+  }, [bundle, settings.shadowPosition, settings.keyIntensity, settings.shadowBias, settings.shadowNormalBias, settings.shadowRadius])
 
-  const light = (
-    <directionalLight
-      ref={lightRef}
-      position={settings.shadowPosition}
-      intensity={Math.max(0.35, settings.keyIntensity * 0.22)}
-      color="#fffdf8"
-      castShadow
-      shadow-mapSize-width={2048}
-      shadow-mapSize-height={2048}
-      shadow-camera-left={-4}
-      shadow-camera-right={4}
-      shadow-camera-top={5}
-      shadow-camera-bottom={-3}
-      shadow-camera-near={0.1}
-      shadow-camera-far={30}
-      shadow-bias={settings.shadowBias}
-      shadow-normalBias={settings.shadowNormalBias}
-      shadow-radius={settings.shadowRadius}
-    />
-  )
+  useEffect(() => {
+    if (!(editor?.selection?.type === 'light' && editor?.selection?.id === 'shadow')) return undefined
+    const controls = new THREE.TransformControls(camera, gl.domElement)
+    controls.setMode(editor.mode || 'translate')
+    controls.setSpace('world')
+    controls.setSize(1.35)
+    controls.attach(bundle.light)
 
-  return (
-    <>
-      <object3D ref={targetRef} position={[0, 0.8, 0]} />
-      {selected ? (
-        <TransformControls
-          mode={editor.mode || 'translate'}
-          space="world"
-          size={1.4}
-          onObjectChange={() => {
-            if (lightRef.current) lightRef.current.shadow.needsUpdate = true
-          }}
-          onMouseUp={commit}
-        >
-          {light}
-        </TransformControls>
-      ) : light}
-    </>
-  )
+    const onChange = () => {
+      bundle.light.shadow.needsUpdate = true
+      gl.shadowMap.needsUpdate = true
+    }
+    const onDragChanged = (event) => {
+      const orbit = scene.userData.__r3f?.controls
+      if (orbit) orbit.enabled = !event.value
+      if (!event.value) {
+        editor.onTransform?.({
+          type: 'light',
+          id: 'shadow',
+          position: bundle.light.position.toArray(),
+          rotation: [bundle.light.rotation.x, bundle.light.rotation.y, bundle.light.rotation.z],
+          scale: bundle.light.scale.toArray(),
+        })
+      }
+    }
+
+    controls.addEventListener('objectChange', onChange)
+    controls.addEventListener('dragging-changed', onDragChanged)
+    scene.add(controls)
+
+    return () => {
+      controls.removeEventListener('objectChange', onChange)
+      controls.removeEventListener('dragging-changed', onDragChanged)
+      controls.detach()
+      scene.remove(controls)
+      controls.dispose()
+    }
+  }, [bundle, camera, gl, scene, editor?.selection?.type, editor?.selection?.id, editor?.mode, editor?.onTransform])
+
+  return null
 }
 
 function EditorGizmo({ editor, settings }) {
@@ -102,12 +120,12 @@ function EditorGizmo({ editor, settings }) {
     editor.onTransform?.({ type, id, position:o.position.toArray(), rotation:[o.rotation.x,o.rotation.y,o.rotation.z], scale:o.scale.toArray() })
   }
   return (
-    <TransformControls mode={editor.mode || 'translate'} space="world" size={1.4} onMouseUp={commit}>
+    <DreiTransformControls mode={editor.mode || 'translate'} space="world" size={1.4} onMouseUp={commit}>
       <mesh ref={targetRef} position={plane.position} rotation={plane.rotation} scale={plane.scale} renderOrder={1000}>
         <boxGeometry args={[1,1,0.06]} />
         <meshBasicMaterial color="#4f7cff" transparent opacity={0.7} depthTest={false} depthWrite={false} />
       </mesh>
-    </TransformControls>
+    </DreiTransformControls>
   )
 }
 
