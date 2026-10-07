@@ -33,6 +33,7 @@ export default function ConfiguratorPanel() {
     ...product,
     model: { ...product.model, parts: publishedConfig.parts ?? product.model?.parts ?? [] },
     rules: publishedConfig.rules ?? product.rules,
+    ruleGraph: publishedConfig.ruleGraph ?? product.ruleGraph,
     modules: publishedConfig.modules ?? product.modules,
     pricing: publishedConfig.pricing ?? product.pricing,
     name: publishedConfig.name ?? product.name,
@@ -78,6 +79,15 @@ export default function ConfiguratorPanel() {
 
   const publishedGroups = Array.isArray(publishedConfig?.materialGroups) ? publishedConfig.materialGroups : []
   const dynamicGroups = publishedGroups.length ? publishedGroups : localGroups
+  const runtimeMaterialGroups = Object.fromEntries(dynamicGroups.map((group) => [
+    group.id,
+    {
+      ...(runtimeProduct.materialGroups?.[group.id] ?? {}),
+      label: group.name || group.id,
+      defaultMaterialId: group.materialId || null,
+    },
+  ]))
+  runtimeProduct.materialGroups = runtimeMaterialGroups
   const sections = dynamicGroups
     .filter((group) => group.role === 'modifiable')
     .map((group) => ({ id: group.id, label: group.name || 'Groupe', defaultMaterialId: group.materialId }))
@@ -124,7 +134,7 @@ export default function ConfiguratorPanel() {
             selected: selectedMaterials,
             materials,
           })
-          const sectionMaterials = dynamicGroups.length ? materials : allowedMaterials.filter((material) => material.active !== false)
+          const sectionMaterials = allowedMaterials.filter((material) => material.active !== false)
 
           return (
             <div className="panel__group" key={section.id}>
@@ -148,7 +158,25 @@ export default function ConfiguratorPanel() {
                       className={selectedMaterials[section.id] === material.id ? 'material-chip is-selected' : 'material-chip'}
                       type="button"
                       key={material.id}
-                      onClick={() => useConfiguratorStore.getState().setMaterialDirect(section.id, material.id)}
+                      onClick={() => {
+                        const nextSelected = { ...selectedMaterials, [section.id]: material.id }
+                        const repaired = { ...nextSelected }
+                        sections.forEach((targetSection) => {
+                          if (targetSection.id === section.id) return
+                          const available = getGroupMaterials({
+                            product: runtimeProduct,
+                            groupId: targetSection.id,
+                            selected: repaired,
+                            materials,
+                          })
+                          if (!available.some((item) => item.id === repaired[targetSection.id])) {
+                            repaired[targetSection.id] = available.find((item) => item.id === targetSection.defaultMaterialId)?.id
+                              ?? available[0]?.id
+                              ?? null
+                          }
+                        })
+                        useConfiguratorStore.setState({ selectedMaterials: repaired })
+                      }
                     >
                       <span className="material-chip__preview">
                         <MaterialPreview material={material} />
