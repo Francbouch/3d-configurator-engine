@@ -99,7 +99,7 @@ export default function ModelMapper({ onSignOut }) {
       try {
         const response = await fetch(
           `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=model_path,configuration&limit=1`,
-          { headers: supabaseHeaders() },
+          { headers: supabaseHeaders(loadAdminSession()?.access_token) },
         )
         if (!response.ok) return { modelUrl: MODEL_URL, configuration: null }
         const rows = await response.json()
@@ -125,7 +125,17 @@ export default function ModelMapper({ onSignOut }) {
           product.model?.parts ?? [],
         )
         const saved = loadAdminDraft(product.id)
-        const baseline = saved ?? publishedConfig ?? {}
+        // Supabase is the durable source of truth. A stale local draft must never
+        // hide materials that were already uploaded and stored remotely.
+        const baseline = publishedConfig
+          ? {
+              ...publishedConfig,
+              ...(saved ?? {}),
+              materials: Array.isArray(publishedConfig.materials)
+                ? publishedConfig.materials
+                : (saved?.materials ?? []),
+            }
+          : (saved ?? {})
 
         setDraft(nextDraft)
         const restoredDraft = Array.isArray(saved?.parts)
