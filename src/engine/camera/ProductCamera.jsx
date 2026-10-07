@@ -1,18 +1,36 @@
 import { OrbitControls } from '@react-three/drei'
 import { MOUSE } from 'three'
+import { useEffect, useRef } from 'react'
+import { useThree } from '@react-three/fiber'
 
-export default function ProductCamera() {
+export default function ProductCamera({ initialView = null, onViewChange = null }) {
+  const controlsRef = useRef()
+  const { camera } = useThree()
+
+  useEffect(() => {
+    if (!initialView || !controlsRef.current) return
+    if (Array.isArray(initialView.position)) camera.position.fromArray(initialView.position)
+    if (Array.isArray(initialView.target)) controlsRef.current.target.fromArray(initialView.target)
+    camera.updateProjectionMatrix()
+    controlsRef.current.update()
+  }, [camera, initialView])
+
+  const reportView = () => {
+    if (!controlsRef.current || !onViewChange) return
+    onViewChange({
+      position: camera.position.toArray(),
+      target: controlsRef.current.target.toArray(),
+    })
+  }
+
   return (
     <OrbitControls
+      ref={controlsRef}
       makeDefault
       enableRotate
       enableZoom
       enablePan
-      mouseButtons={{
-        LEFT: MOUSE.ROTATE,
-        MIDDLE: MOUSE.DOLLY,
-        RIGHT: MOUSE.PAN,
-      }}
+      mouseButtons={{ LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN }}
       screenSpacePanning
       enableDamping
       dampingFactor={0.08}
@@ -23,7 +41,8 @@ export default function ProductCamera() {
       maxDistance={12}
       minPolarAngle={Math.PI * 0.12}
       maxPolarAngle={Math.PI * 0.62}
-      target={[0, 1.12, 0]}
+      target={initialView?.target ?? [0, 1.12, 0]}
+      onEnd={reportView}
     />
   )
 }
