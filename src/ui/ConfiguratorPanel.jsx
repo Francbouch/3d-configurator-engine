@@ -15,6 +15,7 @@ export default function ConfiguratorPanel() {
   const [openSection, setOpenSection] = useState(null)
   const [publishedConfig, setPublishedConfig] = useState(null)
   const [localGroups, setLocalGroups] = useState([])
+  const [manualGroupId, setManualGroupId] = useState(null)
   const materialGltf = useGLTF(MASTER_MATERIAL_LIBRARY_URL)
   const legacyMaterials = useMemo(() => materialRecordsFromScene(materialGltf.scene), [materialGltf.scene])
   const materials = useMemo(() => {
@@ -135,6 +136,7 @@ export default function ConfiguratorPanel() {
             groupId: section.id,
             selected: selectedMaterials,
             materials,
+            activeCauseGroupId: manualGroupId,
           })
           const sectionMaterials = allowedMaterials.filter((material) => material.active !== false)
 
@@ -165,6 +167,7 @@ export default function ConfiguratorPanel() {
                         // Rules may repair other groups, but those automatic repairs must
                         // not cascade back and override the group the user just chose.
                         const authoritativeGroupId = section.id
+                        setManualGroupId(authoritativeGroupId)
                         const nextSelected = { ...selectedMaterials, [authoritativeGroupId]: material.id }
                         const repaired = { ...nextSelected }
 
@@ -176,6 +179,7 @@ export default function ConfiguratorPanel() {
                             groupId: targetSection.id,
                             selected: nextSelected,
                             materials,
+                            activeCauseGroupId: authoritativeGroupId,
                           })
 
                           if (!available.some((item) => item.id === repaired[targetSection.id])) {
