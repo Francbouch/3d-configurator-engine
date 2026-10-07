@@ -137,7 +137,7 @@ export default function ModelMapper({ onSignOut }) {
           `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=model_path,configuration&limit=1`,
           { headers: supabaseHeaders(loadAdminSession()?.access_token) },
         )
-        if (!response.ok) throw new Error('Impossible de lire la configuration publiée.') { modelUrl: MODEL_URL, configuration: null }
+        if (!response.ok) throw new Error('Impossible de lire la configuration publiée.')
         const rows = await response.json()
         const publication = rows?.[0]
         const modelPath = publication?.model_path
