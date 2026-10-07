@@ -1,7 +1,7 @@
 import { Canvas, useThree } from '@react-three/fiber'
 import { Suspense, useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { TransformControls, useHelper } from '@react-three/drei'
+import { TransformControls } from '@react-three/drei'
 import ProductCamera from '../camera/ProductCamera'
 import StudioLighting, { DEFAULT_SCENE_SETTINGS } from '../lighting/StudioLighting'
 import ProductModel from '../model/ProductModel'
@@ -25,7 +25,10 @@ function SceneCalibration({ settings }) {
 }
 
 function EditorGizmo({ editor, settings }) {
+  const transformRef = useRef()
   const objectRef = useRef()
+  const [object, setObject] = useState(null)
+
   if (!editor?.selection) return null
 
   const { type, id } = editor.selection
@@ -43,37 +46,55 @@ function EditorGizmo({ editor, settings }) {
   }
 
   const commit = () => {
-    const object = objectRef.current
-    if (!object) return
+    const target = objectRef.current
+    if (!target) return
     editor.onTransform?.({
       type,
       id,
-      position: object.position.toArray(),
-      rotation: [object.rotation.x, object.rotation.y, object.rotation.z],
-      scale: object.scale.toArray(),
+      position: target.position.toArray(),
+      rotation: [target.rotation.x, target.rotation.y, target.rotation.z],
+      scale: target.scale.toArray(),
     })
   }
 
   return (
-    <TransformControls
-      mode={editor.mode || 'translate'}
-      onObjectChange={commit}
-      size={1.15}
-    >
-      <group ref={objectRef} position={position} rotation={rotation} scale={scale}>
+    <>
+      <group
+        key={type + ':' + id}
+        ref={(node) => {
+          objectRef.current = node
+          setObject(node)
+        }}
+        position={position}
+        rotation={rotation}
+        scale={scale}
+      >
         {type === 'light' ? (
-          <mesh>
-            <sphereGeometry args={[0.16, 20, 20]} />
-            <meshBasicMaterial color={id === 'shadow' ? '#ff7a00' : '#ffd166'} depthTest={false} />
+          <mesh renderOrder={999}>
+            <sphereGeometry args={[0.18, 20, 20]} />
+            <meshBasicMaterial
+              color={id === 'shadow' ? '#ff6b00' : '#ffd166'}
+              depthTest={false}
+              depthWrite={false}
+            />
           </mesh>
         ) : (
-          <mesh>
+          <mesh renderOrder={999}>
             <boxGeometry args={[1, 1, 0.04]} />
-            <meshBasicMaterial color="#5b8cff" transparent opacity={0.45} depthTest={false} />
+            <meshBasicMaterial color="#5b8cff" transparent opacity={0.45} depthTest={false} depthWrite={false} />
           </mesh>
         )}
       </group>
-    </TransformControls>
+      {object && (
+        <TransformControls
+          ref={transformRef}
+          object={object}
+          mode={editor.mode || 'translate'}
+          size={1.25}
+          onObjectChange={commit}
+        />
+      )}
+    </>
   )
 }
 
