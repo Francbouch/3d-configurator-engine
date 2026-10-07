@@ -10,6 +10,8 @@ import { formatPrice } from '../configurator/pricing/PricingUtils'
 import { resolveAssetUrl } from '../engine/assets/resolveAssetUrl'
 import { clearAdminDraft, loadAdminDraft, saveAdminDraft } from './AdminDraftStore'
 import { loadAdminSession, SUPABASE_PROJECT_URL, supabaseHeaders } from './AdminAuth'
+import ConfiguratorScene from '../engine/scene/ConfiguratorScene'
+import { DEFAULT_SCENE_SETTINGS } from '../engine/lighting/StudioLighting'
 
 const MODEL_URL = resolveAssetUrl(product.model?.url)
 
@@ -31,6 +33,7 @@ export default function ModelMapper({ onSignOut }) {
   const [rules, setRules] = useState(product.rules ?? [])
   const [modules, setModules] = useState(product.modules ?? [])
   const [displayPrice, setDisplayPrice] = useState(product.pricing?.displayPrice !== false)
+  const [sceneSettings, setSceneSettings] = useState({ ...DEFAULT_SCENE_SETTINGS })
   const [materialGroups, setMaterialGroups] = useState(() =>
     Object.entries(product.materialGroups ?? {}).map(([id, group]) => ({
       id,
@@ -85,6 +88,7 @@ export default function ModelMapper({ onSignOut }) {
         adjustments,
         displayPrice,
       },
+      scene: sceneSettings,
     }
   }
 
@@ -168,6 +172,7 @@ export default function ModelMapper({ onSignOut }) {
         setRules(Array.isArray(baseline?.rules) ? baseline.rules : product.rules ?? [])
         setModules(Array.isArray(baseline?.modules) ? baseline.modules : product.modules ?? [])
         setDisplayPrice(baseline?.pricing?.displayPrice ?? (product.pricing?.displayPrice !== false))
+        setSceneSettings({ ...DEFAULT_SCENE_SETTINGS, ...(baseline?.scene ?? {}) })
         if (Array.isArray(baseline?.materialGroups)) setMaterialGroups(baseline.materialGroups)
         if (saved) setSaveStatus('Brouillon local restauré')
         else if (publishedConfig) setSaveStatus('Configuration publiée restaurée')
@@ -808,6 +813,7 @@ export default function ModelMapper({ onSignOut }) {
           ['modules', 'Options'],
           ['rules', 'Règles'],
           ['pricing', 'Prix'],
+          ['scene', 'Scène'],
         ].map(([id, label]) => (
           <button
             type="button"
@@ -964,6 +970,54 @@ export default function ModelMapper({ onSignOut }) {
               {(rule.allow?.selectedFromGroups ?? []).length > 0 && <p className="admin__rule-note">Autorise aussi le matériau choisi dans : {rule.allow.selectedFromGroups.map((id) => product.materialGroups?.[id]?.label ?? id).join(', ')}</p>}
             </div>
           ))}
+        </section>
+      )}
+
+      {activeSection === 'scene' && (
+        <section className="admin__scene-editor">
+          <div className="admin__scene-preview">
+            <ConfiguratorScene sceneOverride={sceneSettings} />
+          </div>
+          <div className="admin__scene-controls">
+            <div className="admin__pricing-title">
+              <div><strong>Scène React Three Fiber</strong><small>Les changements sont visibles en direct et enregistrés automatiquement dans le configurateur.</small></div>
+              <button type="button" onClick={() => {
+                const next = { ...DEFAULT_SCENE_SETTINGS }
+                setSceneSettings(next)
+                persistConfigurationPatch({ scene: next })
+                setSaveStatus('Scène réinitialisée')
+              }}>Réinitialiser</button>
+            </div>
+            {[
+              ['exposure','Exposition',0.4,1.8,0.02],
+              ['environmentIntensity','HDR / environnement',0,2,0.02],
+              ['hemisphereIntensity','Lumière ambiante',0,1.5,0.02],
+              ['keyIntensity','Lumière principale',0,10,0.1],
+              ['fillIntensity','Lumière de remplissage',0,10,0.1],
+              ['rimIntensity','Contre-jour / contour',0,10,0.1],
+              ['topIntensity','Lumière du dessus',0,10,0.1],
+              ['shadowOpacity','Intensité ombre',0,1,0.01],
+              ['shadowBlur','Douceur ombre',0.5,8,0.1],
+            ].map(([key,label,min,max,step]) => (
+              <label className="admin__scene-control" key={key}>
+                <span>{label}<strong>{Number(sceneSettings[key]).toFixed(2)}</strong></span>
+                <input type="range" min={min} max={max} step={step} value={sceneSettings[key]} onChange={(event) => {
+                  const next = { ...sceneSettings, [key]: Number(event.target.value) }
+                  setSceneSettings(next)
+                  persistConfigurationPatch({ scene: next })
+                  setSaveStatus('Scène enregistrée automatiquement')
+                }} />
+              </label>
+            ))}
+            <label className="admin__scene-control admin__scene-color">
+              <span>Couleur du fond</span>
+              <input type="color" value={sceneSettings.background} onChange={(event) => {
+                const next = { ...sceneSettings, background: event.target.value }
+                setSceneSettings(next)
+                persistConfigurationPatch({ scene: next })
+              }} />
+            </label>
+          </div>
         </section>
       )}
 
