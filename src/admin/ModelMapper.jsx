@@ -983,8 +983,19 @@ export default function ModelMapper({ onSignOut }) {
             step="1"
             value={basePrice}
             onChange={(event) => {
-              setBasePrice(Number(event.target.value))
-              setSaveStatus('')
+              const nextPrice = Number(event.target.value)
+              setBasePrice(nextPrice)
+              const pricing = {
+                currency: product.pricing?.currency ?? 'CAD',
+                basePrice: nextPrice,
+                adjustments,
+                displayPrice: true,
+              }
+              const local = loadAdminDraft(product.id) ?? buildDraftPayload()
+              saveAdminDraft(product.id, { ...local, pricing })
+              persistConfigurationPatch({ pricing })
+              setDisplayPrice(true)
+              setSaveStatus('Prix enregistré automatiquement')
             }}
           />
           <span>$ CAD</span>
