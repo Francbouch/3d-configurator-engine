@@ -47,6 +47,18 @@ function EditorGizmo({ editor, settings }) {
     return null
   }
 
+  // Keep the helper object itself at the selected scene object's coordinates.
+  // TransformControls then attaches to that object, so its pivot/gizmo starts
+  // exactly on the light/plane just like Blender's active-object transform.
+  useEffect(() => {
+    const o = targetRef.current
+    if (!o) return
+    o.position.fromArray(position)
+    o.rotation.set(...rotation)
+    o.scale.fromArray(scale)
+    o.updateMatrixWorld(true)
+  }, [type, id, position[0], position[1], position[2], rotation[0], rotation[1], rotation[2], scale[0], scale[1], scale[2]])
+
   const commit = () => {
     const o = targetRef.current
     if (!o) return
@@ -60,7 +72,7 @@ function EditorGizmo({ editor, settings }) {
   }
 
   return (
-    <TransformControls mode={editor.mode || 'translate'} space="world" size={1.4} onMouseUp={commit}>
+    <TransformControls key={type + ':' + id} mode={editor.mode || 'translate'} space="world" size={1.4} onMouseUp={commit}>
       <mesh ref={targetRef} position={position} rotation={rotation} scale={scale} renderOrder={1000}>
         {type === 'light' ? <sphereGeometry args={[0.22, 20, 20]} /> : <boxGeometry args={[1, 1, 0.06]} />}
         <meshBasicMaterial color={type === 'light' ? '#ff5a00' : '#4f7cff'} transparent opacity={0.9} depthTest={false} depthWrite={false} />
