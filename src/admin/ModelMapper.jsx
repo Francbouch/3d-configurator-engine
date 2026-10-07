@@ -1396,6 +1396,8 @@ export default function ModelMapper({ onSignOut }) {
                 const cameraView = {
                   position: currentCameraView.position.map(Number),
                   target: currentCameraView.target.map(Number),
+                  fov: Number(currentCameraView.fov || 34),
+                  aspect: Number(currentCameraView.aspect || 1),
                 }
                 persistConfigurationPatch({ scene: { ...(sceneSettings ?? {}), cameraView } })
                 setSceneSettings((current) => ({ ...current, cameraView }))
