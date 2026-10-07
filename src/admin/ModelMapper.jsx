@@ -973,7 +973,24 @@ export default function ModelMapper({ onSignOut }) {
           <small>Le moteur ajoutera ensuite les suppléments selon la configuration.</small>
         </div>
         <label className="admin__toggle">
-          <input type="checkbox" checked={displayPrice} onChange={(event) => { setDisplayPrice(event.target.checked); setSaveStatus('') }} />
+          <input
+            type="checkbox"
+            checked={displayPrice}
+            onChange={(event) => {
+              const nextDisplayPrice = event.target.checked
+              setDisplayPrice(nextDisplayPrice)
+              const pricing = {
+                currency: product.pricing?.currency ?? 'CAD',
+                basePrice,
+                adjustments,
+                displayPrice: nextDisplayPrice,
+              }
+              const local = loadAdminDraft(product.id) ?? buildDraftPayload()
+              saveAdminDraft(product.id, { ...local, pricing })
+              persistConfigurationPatch({ pricing })
+              setSaveStatus(nextDisplayPrice ? 'Prix visible enregistré' : 'Prix masqué enregistré')
+            }}
+          />
           <span>{displayPrice ? 'Prix visible sur le site' : 'Prix masqué sur le site'}</span>
         </label>
         <label>
@@ -989,12 +1006,11 @@ export default function ModelMapper({ onSignOut }) {
                 currency: product.pricing?.currency ?? 'CAD',
                 basePrice: nextPrice,
                 adjustments,
-                displayPrice: true,
+                displayPrice,
               }
               const local = loadAdminDraft(product.id) ?? buildDraftPayload()
               saveAdminDraft(product.id, { ...local, pricing })
               persistConfigurationPatch({ pricing })
-              setDisplayPrice(true)
               setSaveStatus('Prix enregistré automatiquement')
             }}
           />
