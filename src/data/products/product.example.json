@@ -139,7 +139,7 @@
     "currency": "CAD",
     "basePrice": 0,
     "adjustments": [],
-    "displayPrice": false
+    "displayPrice": true
   },
   "modules": []
 }
