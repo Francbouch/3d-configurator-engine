@@ -149,7 +149,7 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null,
         <ProductModel url={modelUrl} />
         {editor && <EditorGizmo editor={editor} settings={sceneSettings} />}
       </Suspense>
-      <ProductCamera initialView={sceneSettings.cameraView ?? null} onViewChange={onCameraViewChange} />
+      <ProductCamera initialView={sceneSettings.cameraView ?? null} onViewChange={onCameraViewChange} preserveRawFraming={matchPublishedView} />
     </Canvas>
   )
 }
