@@ -26,6 +26,7 @@ function SceneCalibration({ settings }) {
 
 function EditorGizmo({ editor, settings }) {
   const targetRef = useRef()
+  const latestRef = useRef(null)
 
   if (!editor?.selection) return null
 
@@ -43,16 +44,29 @@ function EditorGizmo({ editor, settings }) {
     scale = plane.scale
   }
 
-  const pushTransform = () => {
+  const readTransform = () => {
     const object = targetRef.current
-    if (!object) return
-    editor.onTransform?.({
+    if (!object) return null
+    return {
       type,
       id,
       position: object.position.toArray(),
       rotation: [object.rotation.x, object.rotation.y, object.rotation.z],
       scale: object.scale.toArray(),
-    })
+    }
+  }
+
+  const preview = () => {
+    const change = readTransform()
+    if (!change) return
+    latestRef.current = change
+    editor.onPreviewTransform?.(change)
+  }
+
+  const commit = () => {
+    const change = latestRef.current ?? readTransform()
+    if (change) editor.onTransform?.(change)
+    latestRef.current = null
   }
 
   return (
@@ -61,22 +75,14 @@ function EditorGizmo({ editor, settings }) {
       mode={editor.mode || 'translate'}
       space="world"
       size={1.4}
-      onObjectChange={pushTransform}
+      onObjectChange={preview}
+      onMouseUp={commit}
     >
-      <mesh
-        ref={targetRef}
-        position={position}
-        rotation={rotation}
-        scale={scale}
-        renderOrder={1000}
-      >
+      <mesh ref={targetRef} position={position} rotation={rotation} scale={scale} renderOrder={1000}>
         {type === 'light' ? <sphereGeometry args={[0.22, 20, 20]} /> : <boxGeometry args={[1, 1, 0.06]} />}
         <meshBasicMaterial
           color={type === 'light' ? (id === 'shadow' ? '#ff5a00' : '#ffcc33') : '#4f7cff'}
-          transparent
-          opacity={0.95}
-          depthTest={false}
-          depthWrite={false}
+          transparent opacity={0.95} depthTest={false} depthWrite={false}
         />
       </mesh>
     </TransformControls>
