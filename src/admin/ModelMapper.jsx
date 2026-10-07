@@ -1,5 +1,5 @@
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import product from '../data/products/product.example.json'
 import {
   buildProductMappingDraft,
@@ -37,6 +37,7 @@ export default function ModelMapper({ onSignOut }) {
   const [sceneSelection, setSceneSelection] = useState({ type: 'light', id: 'shadow' })
   const [sceneTransformMode, setSceneTransformMode] = useState('translate')
   const [currentCameraView, setCurrentCameraView] = useState(null)
+  const captureCameraView = useCallback((view) => setCurrentCameraView(view), [])
   const [materialGroups, setMaterialGroups] = useState(() =>
     Object.entries(product.materialGroups ?? {}).map(([id, group]) => ({
       id,
@@ -992,7 +993,7 @@ export default function ModelMapper({ onSignOut }) {
       {activeSection === 'scene' && (
         <section className="admin__scene-editor">
           <div className="admin__scene-preview">
-            <ConfiguratorScene matchPublishedView onCameraViewChange={setCurrentCameraView} editor={{
+            <ConfiguratorScene matchPublishedView onCameraViewChange={captureCameraView} editor={{
               selection: sceneSelection,
               mode: sceneTransformMode,
               onPreviewTransform: () => {},
@@ -1015,11 +1016,15 @@ export default function ModelMapper({ onSignOut }) {
                   setSaveStatus('Déplace d’abord légèrement la vue 3D, puis réessaie.')
                   return
                 }
-                const next = { ...sceneSettings, cameraView: currentCameraView }
+                const cameraView = {
+                  position: currentCameraView.position.map(Number),
+                  target: currentCameraView.target.map(Number),
+                }
+                const next = { ...sceneSettings, cameraView }
                 setSceneSettings(next)
                 persistConfigurationPatch({ scene: next })
-                setSaveStatus('Vue initiale du configurateur enregistrée ✓')
-              }}>Définir comme vue initiale</button>
+                setSaveStatus('Vue du configurateur enregistrée ✓')
+              }}>Enregistrer la vue</button>
               <div className="admin__scene-toolrow">
                 <button type="button" className={sceneTransformMode === 'translate' ? 'is-active' : ''} onClick={() => setSceneTransformMode('translate')}>Déplacer</button>
                 <button type="button" className={sceneTransformMode === 'rotate' ? 'is-active' : ''} onClick={() => setSceneTransformMode('rotate')}>Rotation</button>
