@@ -51,11 +51,6 @@ function EditorGizmo({ editor, settings }) {
       mode={editor.mode || 'translate'}
       space="world"
       size={1.4}
-      onObjectChange={() => {
-        const o = targetRef.current
-        if (!o || type !== 'light') return
-        editor.onPreviewTransform?.({ type, id, position: o.position.toArray() })
-      }}
       onMouseUp={commit}
     >
       <mesh ref={targetRef} position={position} rotation={rotation} scale={scale} renderOrder={1000}>
@@ -69,7 +64,6 @@ function EditorGizmo({ editor, settings }) {
 export default function ConfiguratorScene({ sceneOverride = null, editor = null }) {
   const [modelUrl, setModelUrl] = useState(FALLBACK_MODEL_URL)
   const [publishedScene, setPublishedScene] = useState(null)
-  const [editorPreview, setEditorPreview] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -88,7 +82,7 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null 
     return () => { cancelled = true }
   }, [])
 
-  const sceneSettings = { ...DEFAULT_SCENE_SETTINGS, ...(publishedScene ?? {}), ...(sceneOverride ?? {}), ...(editorPreview ?? {}) }
+  const sceneSettings = { ...DEFAULT_SCENE_SETTINGS, ...(publishedScene ?? {}), ...(sceneOverride ?? {}) }
 
   return (
     <Canvas
@@ -107,19 +101,7 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null 
         <SceneCalibration settings={sceneSettings} />
         <StudioLighting settings={sceneSettings} />
         <ProductModel url={modelUrl} />
-        {editor && <EditorGizmo editor={{
-          ...editor,
-          onPreviewTransform: (change) => {
-            if (change.type === 'light') {
-              setEditorPreview({ [change.id + 'Position']: change.position })
-              editor.onPreviewTransform?.(change)
-            }
-          },
-          onTransform: (change) => {
-            if (change.type === 'light') setEditorPreview(null)
-            editor.onTransform?.(change)
-          },
-        }} settings={sceneSettings} />}
+        {editor && <EditorGizmo editor={editor} settings={sceneSettings} />}
       </Suspense>
       <ProductCamera />
     </Canvas>
