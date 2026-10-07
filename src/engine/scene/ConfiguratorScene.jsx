@@ -88,7 +88,30 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null 
     return () => { cancelled = true }
   }, [])
 
-  const sceneSettings = { ...DEFAULT_SCENE_SETTINGS, ...(publishedScene ?? {}), ...(sceneOverride ?? {}) }
+  const publishedWithoutLegacyLightRig = publishedScene
+    ? {
+        ...publishedScene,
+        // Lighting placement now comes from the code-defined studio rig.
+        // Older saved back-office positions were overriding every lighting adjustment.
+        keyPosition: undefined,
+        fillPosition: undefined,
+        rimPosition: undefined,
+        topPosition: undefined,
+        shadowPosition: undefined,
+      }
+    : null
+  const sceneSettings = {
+    ...DEFAULT_SCENE_SETTINGS,
+    ...(publishedWithoutLegacyLightRig ?? {}),
+    ...(sceneOverride ?? {}),
+  }
+  if (!sceneOverride) {
+    sceneSettings.keyPosition = DEFAULT_SCENE_SETTINGS.keyPosition
+    sceneSettings.fillPosition = DEFAULT_SCENE_SETTINGS.fillPosition
+    sceneSettings.rimPosition = DEFAULT_SCENE_SETTINGS.rimPosition
+    sceneSettings.topPosition = DEFAULT_SCENE_SETTINGS.topPosition
+    sceneSettings.shadowPosition = DEFAULT_SCENE_SETTINGS.shadowPosition
+  }
 
   return (
     <Canvas
