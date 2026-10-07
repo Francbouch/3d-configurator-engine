@@ -13,7 +13,7 @@ function LoadedProduct({ url }) {
   const materialGltf = useGLTF(MASTER_MATERIAL_LIBRARY_URL)
   const selectedMaterials = useConfiguratorStore((state) => state.selectedMaterials)
   const animationProgress = useConfiguratorStore((state) => state.animationProgress)
-  const [publishedParts, setPublishedParts] = useState(null)
+  const [publishedConfig, setPublishedConfig] = useState(null)
   const animationTime = useRef(0)
   const animationAction = useRef(null)
 
@@ -29,7 +29,7 @@ function LoadedProduct({ url }) {
     let cancelled = false
     fetch(`${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=configuration&limit=1`, { headers: supabaseHeaders() })
       .then((response) => response.ok ? response.json() : [])
-      .then((rows) => { if (!cancelled) setPublishedParts(rows?.[0]?.configuration?.parts ?? null) })
+      .then((rows) => { if (!cancelled) setPublishedConfig(rows?.[0]?.configuration ?? null) })
       .catch((error) => console.warn('Unable to load published part mapping', error))
     return () => { cancelled = true }
   }, [])
@@ -40,16 +40,19 @@ function LoadedProduct({ url }) {
   )
 
   useEffect(() => {
-    Object.entries(selectedMaterials).forEach(([groupId, materialId]) => {
+    const parts = publishedConfig?.parts ?? product.model?.parts ?? []
+    const groups = Array.isArray(publishedConfig?.materialGroups) ? publishedConfig.materialGroups : []
+
+    groups.forEach((group) => {
+      const materialId = selectedMaterials[group.id] || group.materialId
       const material = materialLibrary.get(materialId)
-      const mappedParts = (publishedParts ?? product.model?.parts ?? [])
-        .filter((part) => part.group === groupId)
+      const mappedParts = parts.filter((part) => part.group === group.id)
 
       if (material && mappedParts.length) {
         applyMaterialToParts(model, mappedParts, material)
       }
     })
-  }, [materialLibrary, model, publishedParts, selectedMaterials])
+  }, [materialLibrary, model, publishedConfig, selectedMaterials])
 
   useEffect(() => {
     if (!mixer || !animationClip) return undefined
