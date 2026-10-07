@@ -4,14 +4,12 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useConfiguratorStore } from '../../configurator/state/configuratorStore'
 import product from '../../data/products/product.example.json'
-import { applyMaterialToParts, applyMaterialToUngroupedParts, buildMaterialLibrary } from '../materials/MaterialEngine'
-import { MASTER_MATERIAL_LIBRARY_URL } from '../materials/MasterMaterialLibrary'
+import { applyMaterialToParts } from '../materials/MaterialEngine'
 import { SUPABASE_PROJECT_URL, supabaseHeaders } from '../../admin/AdminAuth'
 
 function LoadedProduct({ url }) {
   const productGltf = useGLTF(url)
-  const materialGltf = useGLTF(MASTER_MATERIAL_LIBRARY_URL)
-  const selectedMaterials = useConfiguratorStore((state) => state.selectedMaterials)
+   const selectedMaterials = useConfiguratorStore((state) => state.selectedMaterials)
   const animationProgress = useConfiguratorStore((state) => state.animationProgress)
   const [publishedConfig, setPublishedConfig] = useState(null)
   const animationTime = useRef(0)
@@ -34,34 +32,52 @@ function LoadedProduct({ url }) {
     return () => { cancelled = true }
   }, [])
 
-  const materialLibrary = useMemo(
-    () => buildMaterialLibrary(materialGltf.scene),
-    [materialGltf.scene]
-  )
+  const configuredMaterials = useMemo(() => {
+    const records = Array.isArray(publishedConfig?.materials) ? publishedConfig.materials : []
+    const library = new Map()
+    const textureLoader = new THREE.TextureLoader()
+
+    records.forEach((record) => {
+      let material
+      if (record?.source?.imageUrl) {
+        const texture = textureLoader.load(record.source.imageUrl)
+        texture.colorSpace = THREE.SRGBColorSpace
+        texture.flipY = false
+        texture.wrapS = THREE.RepeatWrapping
+        texture.wrapT = THREE.RepeatWrapping
+        texture.needsUpdate = true
+        material = new THREE.MeshStandardMaterial({
+          map: texture,
+          color: 0xffffff,
+          roughness: 0.8,
+          metalness: 0,
+        })
+      } else {
+        material = new THREE.MeshStandardMaterial({
+          color: new THREE.Color(record?.color || '#000000'),
+          roughness: 0.8,
+          metalness: 0,
+        })
+      }
+      material.name = record.id
+      library.set(record.id, material)
+    })
+    return library
+  }, [publishedConfig])
 
   useEffect(() => {
-    const parts = publishedConfig?.parts ?? product.model?.parts ?? []
+    const parts = publishedConfig?.parts ?? []
     const groups = Array.isArray(publishedConfig?.materialGroups) ? publishedConfig.materialGroups : []
 
     groups.forEach((group) => {
+      // The group's back-office material is the default. A client selection in the
+      // configurator overrides it only for that group.
       const materialId = selectedMaterials[group.id] || group.materialId
-      const material = materialLibrary.get(materialId)
+      const material = configuredMaterials.get(materialId)
       const mappedParts = parts.filter((part) => part.group === group.id)
-
-      if (material && mappedParts.length) {
-        applyMaterialToParts(model, mappedParts, material)
-      }
+      if (material && mappedParts.length) applyMaterialToParts(model, mappedParts, material)
     })
-
-    const blackMaterial =
-      materialLibrary.get('BLC11') ??
-      materialLibrary.get('Noir') ??
-      materialLibrary.get('noir')
-
-    if (blackMaterial) {
-      applyMaterialToUngroupedParts(model, parts, blackMaterial)
-    }
-  }, [materialLibrary, model, publishedConfig, selectedMaterials])
+  }, [configuredMaterials, model, publishedConfig, selectedMaterials])
 
   useEffect(() => {
     if (!mixer || !animationClip) return undefined
