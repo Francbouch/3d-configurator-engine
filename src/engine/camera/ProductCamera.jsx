@@ -31,6 +31,18 @@ export default function ProductCamera({ initialView = null, onViewChange = null 
         virtualHeight,
       )
     }
+    // Public configurator framing compensation: shift the camera viewport
+    // slightly left so the furniture appears a little farther right on screen.
+    // This changes only the view, never the model position.
+    if (savedAspect > 0 && currentAspect > 0) {
+      const fullWidth = 10000
+      const fullHeight = fullWidth / savedAspect
+      const viewportWidth = fullHeight * currentAspect
+      const centeredX = (fullWidth - viewportWidth) / 2
+      const horizontalNudge = fullWidth * -0.025
+      camera.setViewOffset(fullWidth, fullHeight, centeredX + horizontalNudge, 0, viewportWidth, fullHeight)
+    }
+
     camera.updateProjectionMatrix()
     controlsRef.current.update()
     if (onViewChange) {
