@@ -8,8 +8,20 @@ export function getGroupMaterials({
 }) {
   const activeMaterials = materials.filter((material) => material.active !== false)
   const group = product.materialGroups?.[groupId]
-  if (!group) return []
+  if (!group) return activeMaterials
 
+  // Dynamic back-office groups expose every active material by default.
+  // A ruleGraph restriction is applied only when a connected cause is active.
+  if (product.ruleGraph) {
+    return getRuleGraphAllowedMaterials({
+      groupId,
+      selected,
+      materials: activeMaterials,
+      ruleGraph: product.ruleGraph,
+    })
+  }
+
+  // Legacy/static product configuration keeps its older collection/rule behavior.
   const collectionIds = group.allowedCollectionIds ?? []
   let candidates = activeMaterials
 
@@ -22,18 +34,11 @@ export function getGroupMaterials({
     candidates = activeMaterials.filter((material) => allowedIds.has(material.id))
   }
 
-  const legacyAllowed = getAllowedMaterials({
+  return getAllowedMaterials({
     groupId,
     selected,
     materials: candidates,
     rules: product.rules ?? [],
-  })
-
-  return getRuleGraphAllowedMaterials({
-    groupId,
-    selected,
-    materials: legacyAllowed,
-    ruleGraph: product.ruleGraph,
   })
 }
 
