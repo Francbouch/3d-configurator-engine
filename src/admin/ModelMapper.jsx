@@ -978,16 +978,25 @@ export default function ModelMapper({ onSignOut }) {
       {activeSection === 'scene' && (
         <section className="admin__scene-editor">
           <div className="admin__scene-preview">
-            <ConfiguratorScene sceneOverride={sceneSettings} editor={{ selection: sceneSelection, mode: sceneTransformMode, onTransform: (change) => {
-              let next
-              if (change.type === 'light') {
-                next = { ...sceneSettings, [change.id + 'Position']: change.position }
-              } else {
-                next = { ...sceneSettings, planes: (sceneSettings.planes ?? []).map((p) => p.id === change.id ? { ...p, position: change.position, rotation: change.rotation, scale: change.scale } : p) }
-              }
-              setSceneSettings(next)
-              persistConfigurationPatch({ scene: next })
-            } }} />
+            <ConfiguratorScene sceneOverride={sceneSettings} editor={{
+              selection: sceneSelection,
+              mode: sceneTransformMode,
+              onPreviewTransform: (change) => {
+                setSceneSettings((current) => {
+                  if (change.type === 'light') return { ...current, [change.id + 'Position']: change.position }
+                  return { ...current, planes: (current.planes ?? []).map((p) => p.id === change.id ? { ...p, position: change.position, rotation: change.rotation, scale: change.scale } : p) }
+                })
+              },
+              onTransform: (change) => {
+                setSceneSettings((current) => {
+                  const next = change.type === 'light'
+                    ? { ...current, [change.id + 'Position']: change.position }
+                    : { ...current, planes: (current.planes ?? []).map((p) => p.id === change.id ? { ...p, position: change.position, rotation: change.rotation, scale: change.scale } : p) }
+                  persistConfigurationPatch({ scene: next })
+                  return next
+                })
+              },
+            }} />
           </div>
           <div className="admin__scene-controls">
             <div className="admin__scene-tools">
