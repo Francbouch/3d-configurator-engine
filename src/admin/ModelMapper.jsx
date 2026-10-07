@@ -149,9 +149,9 @@ export default function ModelMapper({ onSignOut }) {
           MASTER_MATERIAL_LIBRARY_URL,
           (materialGltf) => {
             if (cancelled) return
-            const published = materialRecordsFromScene(materialGltf.scene)
+            const published = Array.isArray(publishedConfig?.materials) ? publishedConfig.materials : []
             setPublishedMaterials(published)
-            setMaterials(materialRecordsFromScene(materialGltf.scene, Array.isArray(baseline?.materials) ? baseline.materials : []))
+            setMaterials(Array.isArray(baseline?.materials) ? baseline.materials : [])
           },
           undefined,
           (error) => {
