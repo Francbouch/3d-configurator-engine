@@ -26,6 +26,8 @@ export default function ModelMapper({ onSignOut }) {
   const [uploadedModelFile, setUploadedModelFile] = useState(null)
   const [materials, setMaterials] = useState([])
   const [publishedMaterials, setPublishedMaterials] = useState([])
+  const [materialImageFiles, setMaterialImageFiles] = useState({})
+  const [isTextureDragOver, setIsTextureDragOver] = useState(false)
   const [activeSection, setActiveSection] = useState('model')
   const [rules, setRules] = useState(product.rules ?? [])
   const [modules, setModules] = useState(product.modules ?? [])
@@ -57,9 +59,7 @@ export default function ModelMapper({ onSignOut }) {
     materials.forEach((material) => {
       if (!material.id?.trim()) errors.push('Chaque matériau doit avoir un identifiant.')
       if (!material.name?.trim()) errors.push(`Le matériau "${material.id || 'sans id'}" doit avoir un nom.`)
-      if (material.active !== false && !material.source?.materialName?.trim()) {
-        errors.push(`Le matériau "${material.name || material.id}" n’a pas de matériau source GLB.`)
-      }
+
       if (!Number.isFinite(Number(material.priceAdjustment ?? 0))) {
         errors.push(`Le prix du matériau "${material.name || material.id}" doit être un nombre.`)
       }
@@ -219,6 +219,57 @@ export default function ModelMapper({ onSignOut }) {
     event.target.value = ''
   }
 
+  function materialNameFromFile(fileName) {
+    return fileName.replace(/\.(png|jpe?g)$/i, '').trim() || 'Nouveau matériau'
+  }
+
+  function materialIdFromFile(fileName, suffix = '') {
+    const base = materialNameFromFile(fileName).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'material'
+    return `${base}-${Date.now()}${suffix}`
+  }
+
+  function addTextureFiles(fileList) {
+    const files = Array.from(fileList ?? []).filter((file) => /^image\/(png|jpeg)$/.test(file.type) || /\.(png|jpe?g)$/i.test(file.name))
+    if (!files.length) {
+      setSaveStatus('Ajoute des images PNG ou JPEG.')
+      return
+    }
+    const created = files.map((file, index) => {
+      const id = materialIdFromFile(file.name, `-${index}`)
+      setMaterialImageFiles((current) => ({ ...current, [id]: file }))
+      return {
+        id,
+        name: materialNameFromFile(file.name),
+        code: '',
+        manufacturer: '',
+        category: 'decor',
+        active: true,
+        priceAdjustment: 0,
+        source: { type: 'image', fileName: file.name, imagePath: '', imageUrl: URL.createObjectURL(file) },
+      }
+    })
+    setMaterials((current) => [...current, ...created])
+    setSaveStatus(`${created.length} matériau${created.length > 1 ? 'x' : ''} créé${created.length > 1 ? 's' : ''} à partir des images.`)
+  }
+
+  function handleTextureDrop(event) {
+    event.preventDefault()
+    setIsTextureDragOver(false)
+    addTextureFiles(event.dataTransfer.files)
+  }
+
+  function replaceMaterialImage(index, file) {
+    if (!file || !(/^image\/(png|jpeg)$/.test(file.type) || /\.(png|jpe?g)$/i.test(file.name))) {
+      setSaveStatus('L’image source doit être un PNG ou JPEG.')
+      return
+    }
+    const material = materials[index]
+    setMaterialImageFiles((current) => ({ ...current, [material.id]: file }))
+    updateMaterial(index, {
+      source: { type: 'image', fileName: file.name, imagePath: '', imageUrl: URL.createObjectURL(file) },
+    })
+  }
+
   function addMaterial() {
     const id = `material-${Date.now()}`
     setMaterials((current) => [
@@ -230,7 +281,7 @@ export default function ModelMapper({ onSignOut }) {
         manufacturer: '',
         category: 'decor',
         active: true,
-        source: { type: 'glb-material', materialName: id },
+        source: { type: 'image', fileName: '', imagePath: '', imageUrl: '' },
       },
     ])
     setSaveStatus('')
@@ -648,6 +699,16 @@ export default function ModelMapper({ onSignOut }) {
 
       {activeSection === 'materials' && (
         <section className="admin__materials">
+          <div
+            className={isTextureDragOver ? 'admin__texture-drop is-dragging' : 'admin__texture-drop'}
+            onDragOver={(event) => { event.preventDefault(); setIsTextureDragOver(true) }}
+            onDragLeave={() => setIsTextureDragOver(false)}
+            onDrop={handleTextureDrop}
+          >
+            <strong>Importer des textures</strong>
+            <span>Glissez-déposez plusieurs images PNG ou JPEG ici. Une image = un nouveau matériau.</span>
+            <label className="admin__upload"><input type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" multiple onChange={(event) => { addTextureFiles(event.target.files); event.target.value = '' }} /><span>Choisir des images</span></label>
+          </div>
           <div className="admin__pricing-title">
             <div>
               <strong>Bibliothèque de matériaux</strong>
@@ -656,14 +717,18 @@ export default function ModelMapper({ onSignOut }) {
             <button type="button" onClick={addMaterial}>+ Ajouter un matériau</button>
           </div>
           <div className="admin__materials-head">
-            <span>Nom</span><span>Code</span><span>Fabricant</span><span>Matériau 3D source</span><span>Prix</span><span>Actif</span><span>Actions</span>
+            <span>Nom</span><span>Code</span><span>Fabricant</span><span>Image source</span><span>Prix</span><span>Actif</span><span>Actions</span>
           </div>
           {materials.map((material, index) => (
             <div className="admin__material-row" key={material.id}>
               <input value={material.name ?? ''} onChange={(e) => updateMaterial(index, { name: e.target.value })} />
               <input placeholder="L000K" value={material.code ?? ''} onChange={(e) => updateMaterial(index, { code: e.target.value })} />
               <input placeholder="Fabricant" value={material.manufacturer ?? ''} onChange={(e) => updateMaterial(index, { manufacturer: e.target.value })} />
-              <input placeholder="Nom dans le GLB" value={material.source?.materialName ?? ''} onChange={(e) => updateMaterial(index, { source: { ...(material.source ?? {}), type: 'glb-material', materialName: e.target.value } })} />
+              <label className="admin__source-image">
+                {material.source?.imageUrl ? <img src={material.source.imageUrl} alt="" /> : <span>Aucune image</span>}
+                <input type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" onChange={(e) => { replaceMaterialImage(index, e.target.files?.[0]); e.target.value = '' }} />
+                <small>{material.source?.fileName || 'Remplacer'}</small>
+              </label>
               <div className="admin__money"><input aria-label={`Prix du matériau ${material.name}`} type="number" step="1" value={material.priceAdjustment ?? 0} onChange={(e) => updateMaterial(index, { priceAdjustment: Number(e.target.value) })} /><span>$ CAD</span></div>
               <label className="admin__toggle"><input type="checkbox" checked={material.active !== false} onChange={(e) => updateMaterial(index, { active: e.target.checked })} /><span>{material.active !== false ? 'Oui' : 'Non'}</span></label>
               <div className="admin__material-actions"><button type="button" className="admin__icon-button" onClick={() => duplicateMaterial(index)} aria-label="Dupliquer le matériau">＋</button><button type="button" className="admin__remove" onClick={() => removeMaterial(index)} aria-label="Supprimer le matériau">×</button></div>
