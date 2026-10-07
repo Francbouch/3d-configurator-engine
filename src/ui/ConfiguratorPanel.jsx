@@ -62,7 +62,7 @@ export default function ConfiguratorPanel() {
     }
   }, [publishedConfig])
   const publishedGroups = Array.isArray(publishedConfig?.materialGroups) ? publishedConfig.materialGroups : []
-  const dynamicGroups = publishedGroups.length ? publishedGroups : localGroups
+  const dynamicGroups = localGroups.length ? localGroups : publishedGroups
   const sections = dynamicGroups
     .filter((group) => group.role === 'modifiable')
     .map((group) => ({ id: group.id, label: group.name || 'Groupe', defaultMaterialId: group.materialId }))
