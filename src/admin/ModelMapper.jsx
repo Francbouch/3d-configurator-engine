@@ -971,22 +971,13 @@ export default function ModelMapper({ onSignOut }) {
 
       {activeSection === 'rules' && (
         <section className="admin__rules">
-          <div className="admin__pricing-title"><div><strong>Règles de compatibilité</strong><small>Contrôlez les combinaisons proposées au client sans toucher au code.</small></div></div>
-          {rules.map((rule, index) => (
-            <div className="admin__rule-card" key={rule.id ?? index}>
-              <div className="admin__rule-top">
-                <div><strong>{rule.id}</strong><small>Cible : {product.materialGroups?.[rule.targetGroup]?.label ?? rule.targetGroup}</small></div>
-                <label className="admin__toggle"><input type="checkbox" checked={rule.enabled !== false} onChange={(e) => updateRule(index, { enabled: e.target.checked })} /><span>{rule.enabled !== false ? 'Active' : 'Inactive'}</span></label>
-              </div>
-              <div className="admin__rule-materials">
-                {materials.map((material) => {
-                  const checked = (rule.allow?.materialIds ?? []).includes(material.id)
-                  return <label key={material.id} className={checked ? 'is-selected' : ''}><input type="checkbox" checked={checked} onChange={() => toggleRuleMaterial(index, material.id)} /><span>{material.name}<small>{material.code}</small></span></label>
-                })}
-              </div>
-              {(rule.allow?.selectedFromGroups ?? []).length > 0 && <p className="admin__rule-note">Autorise aussi le matériau choisi dans : {rule.allow.selectedFromGroups.map((id) => product.materialGroups?.[id]?.label ?? id).join(', ')}</p>}
+          <div className="admin__pricing-title">
+            <div>
+              <strong>Règles</strong>
+              <small>Nouvelle architecture à définir.</small>
             </div>
-          ))}
+          </div>
+          <div className="admin__empty">Aucune règle configurée pour le moment.</div>
         </section>
       )}
 
