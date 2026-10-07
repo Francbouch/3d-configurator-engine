@@ -1,7 +1,7 @@
 import { Canvas, useThree } from '@react-three/fiber'
 import { Suspense, useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { TransformControls } from '@react-three/drei'
+import { TransformControls, useHelper } from '@react-three/drei'
 import ProductCamera from '../camera/ProductCamera'
 import StudioLighting, { DEFAULT_SCENE_SETTINGS } from '../lighting/StudioLighting'
 import ProductModel from '../model/ProductModel'
@@ -25,27 +25,56 @@ function SceneCalibration({ settings }) {
 }
 
 function EditorGizmo({ editor, settings }) {
-  const ref = useRef()
+  const objectRef = useRef()
   if (!editor?.selection) return null
+
   const { type, id } = editor.selection
-  let position = [0,0,0], rotation = [0,0,0], scale = [1,1,1]
+  let position = [0, 0, 0]
+  let rotation = [0, 0, 0]
+  let scale = [1, 1, 1]
+
   if (type === 'light') position = settings[id + 'Position'] ?? position
   if (type === 'plane') {
-    const p = (settings.planes ?? []).find((item) => item.id === id)
-    if (!p) return null
-    position = p.position; rotation = p.rotation; scale = p.scale
+    const plane = (settings.planes ?? []).find((item) => item.id === id)
+    if (!plane) return null
+    position = plane.position
+    rotation = plane.rotation
+    scale = plane.scale
   }
+
   const commit = () => {
-    const o = ref.current
-    if (!o) return
-    editor.onTransform?.({ type, id, position: o.position.toArray(), rotation: [o.rotation.x,o.rotation.y,o.rotation.z], scale: o.scale.toArray() })
+    const object = objectRef.current
+    if (!object) return
+    editor.onTransform?.({
+      type,
+      id,
+      position: object.position.toArray(),
+      rotation: [object.rotation.x, object.rotation.y, object.rotation.z],
+      scale: object.scale.toArray(),
+    })
   }
-  return <TransformControls mode={editor.mode || 'translate'} onMouseUp={commit}>
-    <mesh ref={ref} position={position} rotation={rotation} scale={scale}>
-      {type === 'light' ? <sphereGeometry args={[0.11,16,16]} /> : <boxGeometry args={[1,1,0.04]} />}
-      <meshBasicMaterial color={type === 'light' ? '#ffb347' : '#5b8cff'} transparent opacity={0.45} depthTest={false} />
-    </mesh>
-  </TransformControls>
+
+  return (
+    <TransformControls
+      mode={editor.mode || 'translate'}
+      onObjectChange={commit}
+      size={1.15}
+    >
+      <group ref={objectRef} position={position} rotation={rotation} scale={scale}>
+        {type === 'light' ? (
+          <mesh>
+            <sphereGeometry args={[0.16, 20, 20]} />
+            <meshBasicMaterial color={id === 'shadow' ? '#ff7a00' : '#ffd166'} depthTest={false} />
+          </mesh>
+        ) : (
+          <mesh>
+            <boxGeometry args={[1, 1, 0.04]} />
+            <meshBasicMaterial color="#5b8cff" transparent opacity={0.45} depthTest={false} />
+          </mesh>
+        )}
+      </group>
+    </TransformControls>
+  )
 }
 
 export default function ConfiguratorScene({ sceneOverride = null, editor = null }) {
