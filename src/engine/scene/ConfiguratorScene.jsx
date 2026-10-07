@@ -26,7 +26,6 @@ function SceneCalibration({ settings }) {
 
 function EditorGizmo({ editor, settings }) {
   const targetRef = useRef()
-  const [target, setTarget] = useState(null)
 
   if (!editor?.selection) return null
 
@@ -57,13 +56,15 @@ function EditorGizmo({ editor, settings }) {
   }
 
   return (
-    <>
+    <TransformControls
+      key={'transform-' + type + '-' + id + '-' + (editor.mode || 'translate')}
+      mode={editor.mode || 'translate'}
+      space="world"
+      size={1.4}
+      onObjectChange={commit}
+    >
       <mesh
-        key={'editor-target-' + type + '-' + id}
-        ref={(node) => {
-          targetRef.current = node
-          if (node && node !== target) setTarget(node)
-        }}
+        ref={targetRef}
         position={position}
         rotation={rotation}
         scale={scale}
@@ -73,23 +74,12 @@ function EditorGizmo({ editor, settings }) {
         <meshBasicMaterial
           color={type === 'light' ? (id === 'shadow' ? '#ff5a00' : '#ffcc33') : '#4f7cff'}
           transparent
-          opacity={0.9}
+          opacity={0.95}
           depthTest={false}
           depthWrite={false}
         />
       </mesh>
-      {target && (
-        <TransformControls
-          key={'editor-controls-' + type + '-' + id + '-' + (editor.mode || 'translate')}
-          object={target}
-          mode={editor.mode || 'translate'}
-          space="world"
-          size={1.5}
-          enabled
-          onObjectChange={commit}
-        />
-      )}
-    </>
+    </TransformControls>
   )
 }
 
