@@ -10,7 +10,6 @@ import { formatPrice } from '../configurator/pricing/PricingUtils'
 import { resolveAssetUrl } from '../engine/assets/resolveAssetUrl'
 import { clearAdminDraft, loadAdminDraft, saveAdminDraft } from './AdminDraftStore'
 import { loadAdminSession, SUPABASE_PROJECT_URL, supabaseHeaders } from './AdminAuth'
-import { MASTER_MATERIAL_LIBRARY_URL, materialRecordsFromScene } from '../engine/materials/MasterMaterialLibrary'
 
 const MODEL_URL = resolveAssetUrl(product.model?.url)
 
@@ -144,21 +143,22 @@ export default function ModelMapper({ onSignOut }) {
             : product.pricing?.adjustments ?? [],
         )
         setModelName(typeof baseline?.name === 'string' ? baseline.name : product.name)
-        const materialLoader = new GLTFLoader()
-        materialLoader.load(
-          MASTER_MATERIAL_LIBRARY_URL,
-          (materialGltf) => {
-            if (cancelled) return
-            const published = Array.isArray(publishedConfig?.materials) ? publishedConfig.materials : []
-            setPublishedMaterials(published)
-            setMaterials(Array.isArray(baseline?.materials) ? baseline.materials : [])
-          },
-          undefined,
-          (error) => {
-            console.error('Unable to load master material GLB in back-office', error)
-            setLoadError('Impossible de charger cubes textures test.glb.')
-          },
-        )
+        // The material library is image-driven only. Never seed it from the legacy GLB.
+        // Also ignore legacy material records that do not have an uploaded image source.
+        const imageMaterials = Array.isArray(baseline?.materials)
+          ? baseline.materials.filter((material) =>
+              material?.source?.type === 'image' &&
+              Boolean(material.source?.imagePath || material.source?.imageUrl),
+            )
+          : []
+        const publishedImageMaterials = Array.isArray(publishedConfig?.materials)
+          ? publishedConfig.materials.filter((material) =>
+              material?.source?.type === 'image' &&
+              Boolean(material.source?.imagePath || material.source?.imageUrl),
+            )
+          : []
+        setPublishedMaterials(publishedImageMaterials)
+        setMaterials(imageMaterials)
         setRules(Array.isArray(baseline?.rules) ? baseline.rules : product.rules ?? [])
         setModules(Array.isArray(baseline?.modules) ? baseline.modules : product.modules ?? [])
         setDisplayPrice(baseline?.pricing?.displayPrice ?? (product.pricing?.displayPrice === true))
