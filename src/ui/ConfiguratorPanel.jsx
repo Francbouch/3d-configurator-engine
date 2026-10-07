@@ -9,6 +9,8 @@ import MaterialPreview from './MaterialPreview'
 import { MASTER_MATERIAL_LIBRARY_URL, materialRecordsFromScene } from '../engine/materials/MasterMaterialLibrary'
 import { SUPABASE_PROJECT_URL, supabaseHeaders } from '../admin/AdminAuth'
 
+const CONFIGURATOR_DRAFT_KEY = `configurator-admin-draft:${product.id}`
+
 export default function ConfiguratorPanel() {
   const [openSection, setOpenSection] = useState(null)
   const [publishedConfig, setPublishedConfig] = useState(null)
@@ -50,17 +52,20 @@ export default function ConfiguratorPanel() {
   const price = calculatePrice(runtimeProduct.pricing, selectedMaterials, modules, selectedModules)
   const showPrice = runtimeProduct.pricing?.displayPrice === true
 
+  const localGroups = useMemo(() => {
+    try {
+      const raw = window.localStorage.getItem(CONFIGURATOR_DRAFT_KEY)
+      const draft = raw ? JSON.parse(raw) : null
+      return Array.isArray(draft?.materialGroups) ? draft.materialGroups : []
+    } catch {
+      return []
+    }
+  }, [publishedConfig])
   const publishedGroups = Array.isArray(publishedConfig?.materialGroups) ? publishedConfig.materialGroups : []
-  const fallbackGroups = Object.entries(product.materialGroups ?? {}).map(([id, group]) => ({
-    id,
-    name: group.label ?? id,
-    materialId: group.defaultMaterialId ?? '',
-    role: 'modifiable',
-  }))
-  const dynamicGroups = publishedGroups.length ? publishedGroups : fallbackGroups
+  const dynamicGroups = publishedGroups.length ? publishedGroups : localGroups
   const sections = dynamicGroups
     .filter((group) => group.role === 'modifiable')
-    .map((group) => ({ id: group.id, label: group.name, defaultMaterialId: group.materialId }))
+    .map((group) => ({ id: group.id, label: group.name || 'Groupe', defaultMaterialId: group.materialId }))
 
   return (
     <aside className="panel">
