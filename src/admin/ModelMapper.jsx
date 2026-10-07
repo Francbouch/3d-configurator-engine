@@ -1,5 +1,5 @@
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import product from '../data/products/product.example.json'
 import {
   buildProductMappingDraft,
@@ -33,6 +33,10 @@ export default function ModelMapper({ onSignOut }) {
   const [rules, setRules] = useState(product.rules ?? [])
   const [ruleBlocks, setRuleBlocks] = useState([])
   const [isRuleAddMenuOpen, setIsRuleAddMenuOpen] = useState(false)
+  const [ruleConnections, setRuleConnections] = useState([])
+  const [pendingRuleConnection, setPendingRuleConnection] = useState(null)
+  const ruleCanvasRef = useRef(null)
+  const ruleDragRef = useRef(null)
   const [modules, setModules] = useState(product.modules ?? [])
   const [displayPrice, setDisplayPrice] = useState(product.pricing?.displayPrice !== false)
   const [sceneSettings, setSceneSettings] = useState({ ...DEFAULT_SCENE_SETTINGS })
@@ -468,6 +472,7 @@ export default function ModelMapper({ onSignOut }) {
         type,
         groupIds: [],
         materialId: '',
+        position: { x: 28 + (current.length % 3) * 350, y: 36 + Math.floor(current.length / 3) * 260 },
       },
     ])
     setIsRuleAddMenuOpen(false)
@@ -488,6 +493,66 @@ export default function ModelMapper({ onSignOut }) {
           : [...selected, groupId],
       }
     }))
+  }
+
+  function beginRuleBlockDrag(event, block) {
+    if (event.button !== 0 || event.target.closest('input, select, button, label, .admin__relation-port')) return
+    const canvas = ruleCanvasRef.current
+    if (!canvas) return
+    const rect = canvas.getBoundingClientRect()
+    const position = block.position ?? { x: 20, y: 20 }
+    ruleDragRef.current = {
+      id: block.id,
+      offsetX: event.clientX - rect.left + canvas.scrollLeft - position.x,
+      offsetY: event.clientY - rect.top + canvas.scrollTop - position.y,
+    }
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+  }
+
+  function moveRuleBlock(event) {
+    const drag = ruleDragRef.current
+    const canvas = ruleCanvasRef.current
+    if (!drag || !canvas) return
+    const rect = canvas.getBoundingClientRect()
+    const x = Math.max(0, event.clientX - rect.left + canvas.scrollLeft - drag.offsetX)
+    const y = Math.max(0, event.clientY - rect.top + canvas.scrollTop - drag.offsetY)
+    updateRuleBlock(drag.id, { position: { x, y } })
+  }
+
+  function endRuleBlockDrag() {
+    ruleDragRef.current = null
+  }
+
+  function handleRulePortClick(block) {
+    if (!pendingRuleConnection) {
+      setPendingRuleConnection(block.id)
+      return
+    }
+    if (pendingRuleConnection === block.id) {
+      setPendingRuleConnection(null)
+      return
+    }
+    const source = ruleBlocks.find((item) => item.id === pendingRuleConnection)
+    if (!source || source.type === block.type) {
+      setPendingRuleConnection(block.id)
+      return
+    }
+    const causeId = source.type === 'cause' ? source.id : block.id
+    const effectId = source.type === 'effect' ? source.id : block.id
+    setRuleConnections((current) => current.some((connection) => connection.causeId === causeId && connection.effectId === effectId)
+      ? current
+      : [...current, { id: `${causeId}->${effectId}`, causeId, effectId }])
+    setPendingRuleConnection(null)
+  }
+
+  function ruleNodeCenter(block, side) {
+    const width = 320
+    const height = 220
+    const position = block.position ?? { x: 0, y: 0 }
+    return {
+      x: position.x + (side === 'right' ? width : 0),
+      y: position.y + height / 2,
+    }
   }
 
   function updateRule(index, patch) {
@@ -1024,17 +1089,46 @@ export default function ModelMapper({ onSignOut }) {
             </div>
           </div>
 
-          <div className="admin__relation-canvas">
+          <div
+            className="admin__relation-canvas"
+            ref={ruleCanvasRef}
+            onPointerMove={moveRuleBlock}
+            onPointerUp={endRuleBlockDrag}
+            onPointerCancel={endRuleBlockDrag}
+          >
             {ruleBlocks.length === 0 && (
               <div className="admin__relation-empty">
                 Utilisez le bouton + pour ajouter une cause ou un effet.
               </div>
             )}
 
+            <svg className="admin__relation-lines" aria-hidden="true">
+              {ruleConnections.map((connection) => {
+                const cause = ruleBlocks.find((block) => block.id === connection.causeId)
+                const effect = ruleBlocks.find((block) => block.id === connection.effectId)
+                if (!cause || !effect) return null
+                const from = ruleNodeCenter(cause, 'right')
+                const to = ruleNodeCenter(effect, 'left')
+                const bend = Math.max(70, Math.abs(to.x - from.x) * 0.45)
+                return (
+                  <path
+                    key={connection.id}
+                    d={`M ${from.x} ${from.y} C ${from.x + bend} ${from.y}, ${to.x - bend} ${to.y}, ${to.x} ${to.y}`}
+                  />
+                )
+              })}
+            </svg>
+
             {ruleBlocks.map((block) => (
-              <article className={`admin__relation-node admin__relation-node--${block.type}`} key={block.id}>
+              <article
+                className={`admin__relation-node admin__relation-node--${block.type}`}
+                key={block.id}
+                style={{ left: block.position?.x ?? 20, top: block.position?.y ?? 20 }}
+                onPointerDown={(event) => beginRuleBlockDrag(event, block)}
+              >
                 <div className="admin__relation-node-title">
                   <strong>{block.type === 'cause' ? 'Cause' : 'Effet'}</strong>
+                  <small>Glisser pour déplacer</small>
                 </div>
 
                 <div className="admin__relation-field">
@@ -1069,10 +1163,15 @@ export default function ModelMapper({ onSignOut }) {
                   </select>
                 </label>
 
-                <div className="admin__relation-port" aria-hidden="true" />
+                <button
+                  type="button"
+                  className={`admin__relation-port ${pendingRuleConnection === block.id ? 'is-pending' : ''}`}
+                  aria-label={`Connecter le bloc ${block.type === 'cause' ? 'cause' : 'effet'}`}
+                  title="Cliquer pour connecter"
+                  onClick={() => handleRulePortClick(block)}
+                />
               </article>
-            ))}
-          </div>
+            ))}          </div>
         </section>
       )}
 
