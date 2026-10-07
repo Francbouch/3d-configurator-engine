@@ -56,7 +56,8 @@ export default function ConfiguratorPanel() {
 
   const modules = (runtimeProduct.modules ?? []).filter((module) => module.enabled !== false && module.model?.url)
   const price = calculatePrice(runtimeProduct.pricing, selectedMaterials, modules, selectedModules)
-  const showPrice = runtimeProduct.pricing?.displayPrice === true
+  const furniturePrice = Number(runtimeProduct.pricing?.basePrice ?? 0)
+  const showPrice = Number.isFinite(furniturePrice)
 
   useEffect(() => {
     const readGroups = () => {
@@ -193,9 +194,9 @@ export default function ConfiguratorPanel() {
       )}
 
       {showPrice && (
-        <div className="panel__price">
-          <span>Prix</span>
-          <strong>{formatPrice(price.total, price.currency)}</strong>
+        <div className="panel__price panel__price--floating">
+          <span>Prix du meuble</span>
+          <strong>{formatPrice(furniturePrice, runtimeProduct.pricing?.currency ?? 'CAD')}</strong>
         </div>
       )}
     </aside>
