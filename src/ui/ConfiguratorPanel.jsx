@@ -34,7 +34,6 @@ export default function ConfiguratorPanel() {
   const runtimeMaterialGroups = Object.fromEntries(dynamicGroups.map((group) => [
     group.id,
     {
-      ...(product.materialGroups?.[group.id] ?? {}),
       label: group.name || group.id,
       defaultMaterialId: group.materialId || null,
     },
