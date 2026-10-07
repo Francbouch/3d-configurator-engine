@@ -1417,8 +1417,12 @@ export default function ModelMapper({ onSignOut }) {
               <label><span>Objet sélectionné</span><select value={sceneSelection ? sceneSelection.type + ':' + sceneSelection.id : ''} onChange={(e) => {
                 const [type,id] = e.target.value.split(':'); setSceneSelection({ type, id })
               }}>
-                <optgroup label="Ombre au sol">
-                  <option value="light:shadow">Lumière d’ombre — position manuelle</option>
+                <optgroup label="Lumières studio">
+                  <option value="light:key">Lumière principale</option>
+                  <option value="light:fill">Lumière de remplissage</option>
+                  <option value="light:rim">Contre-jour / contour</option>
+                  <option value="light:top">Lumière du dessus</option>
+                  <option value="light:shadow">Lumière d’ombre</option>
                 </optgroup>
                 {(sceneSettings.planes ?? []).length > 0 && <optgroup label="Planes">{(sceneSettings.planes ?? []).map((p,i) => <option key={p.id} value={'plane:' + p.id}>{p.name || 'Plane ' + (i+1)}</option>)}</optgroup>}
               </select></label>
