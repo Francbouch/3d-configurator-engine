@@ -96,24 +96,27 @@ export default function ModelMapper({ onSignOut }) {
 
     const loader = new GLTFLoader()
 
-    async function loadPublishedModelUrl() {
+    async function loadPublishedPublication() {
       try {
         const response = await fetch(
-          `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=model_path&limit=1`,
+          `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=model_path,configuration&limit=1`,
           { headers: supabaseHeaders() },
         )
-        if (!response.ok) return MODEL_URL
+        if (!response.ok) return { modelUrl: MODEL_URL, configuration: null }
         const rows = await response.json()
-        const modelPath = rows?.[0]?.model_path
-        return modelPath
-          ? `${SUPABASE_PROJECT_URL}/storage/v1/object/public/models/${encodeURI(modelPath)}`
-          : MODEL_URL
+        const publication = rows?.[0]
+        const modelPath = publication?.model_path
+        return {
+          modelUrl: modelPath
+            ? `${SUPABASE_PROJECT_URL}/storage/v1/object/public/models/${encodeURI(modelPath)}`
+            : MODEL_URL,
+          configuration: publication?.configuration ?? null,
+        }
       } catch {
-        return MODEL_URL
+        return { modelUrl: MODEL_URL, configuration: null }
       }
     }
-
-    loadPublishedModelUrl().then((activeModelUrl) => loader.load(
+    loadPublishedPublication().then(({ modelUrl: activeModelUrl, configuration: publishedConfig }) => loader.load(
       activeModelUrl,
       (gltf) => {
         if (cancelled) return
@@ -123,6 +126,7 @@ export default function ModelMapper({ onSignOut }) {
           product.model?.parts ?? [],
         )
         const saved = loadAdminDraft(product.id)
+        const baseline = saved ?? publishedConfig ?? {}
 
         setDraft(nextDraft)
         const restoredDraft = Array.isArray(saved?.parts)
@@ -130,16 +134,16 @@ export default function ModelMapper({ onSignOut }) {
           : nextDraft
         setParts(restoredDraft.parts)
         setBasePrice(
-          Number.isFinite(saved?.pricing?.basePrice)
-            ? saved.pricing.basePrice
+          Number.isFinite(baseline?.pricing?.basePrice)
+            ? baseline.pricing.basePrice
             : product.pricing?.basePrice ?? 0,
         )
         setAdjustments(
-          Array.isArray(saved?.pricing?.adjustments)
-            ? saved.pricing.adjustments
+          Array.isArray(baseline?.pricing?.adjustments)
+            ? baseline.pricing.adjustments
             : product.pricing?.adjustments ?? [],
         )
-        setModelName(typeof saved?.name === 'string' ? saved.name : product.name)
+        setModelName(typeof baseline?.name === 'string' ? baseline.name : product.name)
         const materialLoader = new GLTFLoader()
         materialLoader.load(
           MASTER_MATERIAL_LIBRARY_URL,
@@ -147,7 +151,7 @@ export default function ModelMapper({ onSignOut }) {
             if (cancelled) return
             const published = materialRecordsFromScene(materialGltf.scene)
             setPublishedMaterials(published)
-            setMaterials(materialRecordsFromScene(materialGltf.scene, Array.isArray(saved?.materials) ? saved.materials : []))
+            setMaterials(materialRecordsFromScene(materialGltf.scene, Array.isArray(baseline?.materials) ? baseline.materials : []))
           },
           undefined,
           (error) => {
@@ -155,11 +159,12 @@ export default function ModelMapper({ onSignOut }) {
             setLoadError('Impossible de charger cubes textures test.glb.')
           },
         )
-        setRules(Array.isArray(saved?.rules) ? saved.rules : product.rules ?? [])
-        setModules(Array.isArray(saved?.modules) ? saved.modules : product.modules ?? [])
-        setDisplayPrice(saved?.pricing?.displayPrice ?? (product.pricing?.displayPrice === true))
-        if (Array.isArray(saved?.materialGroups)) setMaterialGroups(saved.materialGroups)
+        setRules(Array.isArray(baseline?.rules) ? baseline.rules : product.rules ?? [])
+        setModules(Array.isArray(baseline?.modules) ? baseline.modules : product.modules ?? [])
+        setDisplayPrice(baseline?.pricing?.displayPrice ?? (product.pricing?.displayPrice === true))
+        if (Array.isArray(baseline?.materialGroups)) setMaterialGroups(baseline.materialGroups)
         if (saved) setSaveStatus('Brouillon local restauré')
+        else if (publishedConfig) setSaveStatus('Configuration publiée restaurée')
       },
       undefined,
       (error) => {
