@@ -375,6 +375,7 @@ export default function ModelMapper({ onSignOut }) {
         manufacturer: '',
         category: 'decor',
         active: true,
+        color: '#000000',
         source: { type: 'image', fileName: '', imagePath: '', imageUrl: '' },
       },
     ])
@@ -896,18 +897,21 @@ export default function ModelMapper({ onSignOut }) {
             <button type="button" onClick={addMaterial}>+ Ajouter un matériau</button>
           </div>
           <div className="admin__materials-head">
-            <span>Nom</span><span>Code</span><span>Fabricant</span><span>Image source</span><span>Prix</span><span>Actif</span><span>Actions</span>
+            <span>Nom</span><span>Code</span><span>Fabricant</span><span>Source</span><span>Prix</span><span>Actif</span><span>Actions</span>
           </div>
           {materials.map((material, index) => (
             <div className="admin__material-row" key={material.id}>
               <input value={material.name ?? ''} onChange={(e) => updateMaterial(index, { name: e.target.value })} />
               <input placeholder="L000K" value={material.code ?? ''} onChange={(e) => updateMaterial(index, { code: e.target.value })} />
               <input placeholder="Fabricant" value={material.manufacturer ?? ''} onChange={(e) => updateMaterial(index, { manufacturer: e.target.value })} />
-              <label className="admin__source-image">
-                {material.source?.imageUrl ? <img src={material.source.imageUrl} alt="" /> : <span>Aucune image</span>}
-                <input type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" onChange={(e) => { replaceMaterialImage(index, e.target.files?.[0]); e.target.value = '' }} />
-                <small>{material.source?.fileName || 'Remplacer'}</small>
-              </label>
+              <div className="admin__material-source">
+                <input className="admin__color-source" aria-label={`Couleur du matériau ${material.name}`} type="color" value={material.color || '#000000'} onChange={(e) => updateMaterial(index, { color: e.target.value })} />
+                <label className="admin__source-image">
+                  {material.source?.imageUrl ? <img src={material.source.imageUrl} alt="" /> : <span>Image</span>}
+                  <input type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" onChange={(e) => { replaceMaterialImage(index, e.target.files?.[0]); e.target.value = '' }} />
+                  <small>{material.source?.fileName || 'Ajouter'}</small>
+                </label>
+              </div>
               <div className="admin__money"><input aria-label={`Prix du matériau ${material.name}`} type="number" min="0" step="0.01" inputMode="decimal" placeholder="0.00" value={material.priceAdjustment ?? ''} onChange={(e) => updateMaterial(index, { priceAdjustment: e.target.value === '' ? '' : e.target.value })} onBlur={(e) => updateMaterial(index, { priceAdjustment: e.target.value === '' ? '' : Number(e.target.value).toFixed(2) })} /><span>$</span></div>
               <label className="admin__toggle"><input type="checkbox" checked={material.active !== false} onChange={(e) => updateMaterial(index, { active: e.target.checked })} /><span>{material.active !== false ? 'Oui' : 'Non'}</span></label>
               <div className="admin__material-actions"><button type="button" className="admin__icon-button" onClick={() => duplicateMaterial(index)} aria-label="Dupliquer le matériau">＋</button><button type="button" className="admin__remove" onClick={() => removeMaterial(index)} aria-label="Supprimer le matériau">×</button></div>
