@@ -25,7 +25,7 @@ export const DEFAULT_SCENE_SETTINGS = Object.freeze({
   planes: [],
 })
 
-export default function StudioLighting({ settings = {} }) {
+export default function StudioLighting({ settings = {}, externalShadowLight = false }) {
   const s = { ...DEFAULT_SCENE_SETTINGS, ...settings }
   const shadowLightRef = useRef()
   const shadowTargetRef = useRef()
@@ -44,24 +44,28 @@ export default function StudioLighting({ settings = {} }) {
       {/* RectAreaLight gives the broad studio reflection; a dedicated directional light controls only the projected shadow. */}
       <rectAreaLight position={s.keyPosition} rotation={[-0.72, 0.55, 0.38]} width={5.5} height={7} intensity={s.keyIntensity} color="#fffdf8" />
       <object3D ref={shadowTargetRef} position={[0, 0.8, 0]} />
-      <directionalLight
-        ref={shadowLightRef}
-        position={s.shadowPosition}
-        intensity={Math.max(0.35, s.keyIntensity * 0.22)}
-        color="#fffdf8"
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-        shadow-camera-left={-4}
-        shadow-camera-right={4}
-        shadow-camera-top={5}
-        shadow-camera-bottom={-3}
-        shadow-camera-near={0.1}
-        shadow-camera-far={30}
-        shadow-bias={s.shadowBias}
-        shadow-normalBias={s.shadowNormalBias}
-        shadow-radius={s.shadowRadius}
-      />
+      {!externalShadowLight && (
+        <>
+          <directionalLight
+            ref={shadowLightRef}
+            position={s.shadowPosition}
+            intensity={Math.max(0.35, s.keyIntensity * 0.22)}
+            color="#fffdf8"
+            castShadow
+            shadow-mapSize-width={2048}
+            shadow-mapSize-height={2048}
+            shadow-camera-left={-4}
+            shadow-camera-right={4}
+            shadow-camera-top={5}
+            shadow-camera-bottom={-3}
+            shadow-camera-near={0.1}
+            shadow-camera-far={30}
+            shadow-bias={s.shadowBias}
+            shadow-normalBias={s.shadowNormalBias}
+            shadow-radius={s.shadowRadius}
+          />
+        </>
+      )}
       <rectAreaLight position={s.fillPosition} rotation={[-0.25, -0.82, -0.2]} width={4} height={6} intensity={s.fillIntensity} color="#f7faff" />
       <rectAreaLight position={s.rimPosition} rotation={[0.1, 0.15, 0]} width={3} height={5.5} intensity={s.rimIntensity} color="#ffffff" />
       <rectAreaLight position={s.topPosition} rotation={[-Math.PI / 2, 0, 0]} width={5} height={4} intensity={s.topIntensity} color="#ffffff" />
