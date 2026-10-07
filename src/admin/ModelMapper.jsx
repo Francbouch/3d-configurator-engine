@@ -34,6 +34,7 @@ export default function ModelMapper({ onSignOut }) {
   const [ruleBlocks, setRuleBlocks] = useState([])
   const [isRuleAddMenuOpen, setIsRuleAddMenuOpen] = useState(false)
   const [ruleConnections, setRuleConnections] = useState([])
+  const [ruleLayoutVersion, setRuleLayoutVersion] = useState(0)
   const [pendingRuleConnection, setPendingRuleConnection] = useState(null)
   const ruleCanvasRef = useRef(null)
   const ruleDragRef = useRef(null)
@@ -46,6 +47,21 @@ export default function ModelMapper({ onSignOut }) {
   const [sceneTransformMode, setSceneTransformMode] = useState('translate')
   const [currentCameraView, setCurrentCameraView] = useState(null)
   const captureCameraView = useCallback((view) => setCurrentCameraView(view), [])
+  useEffect(() => {
+    if (activeSection !== 'rules' || ruleBlocks.length === 0) return undefined
+    let frame2 = 0
+    const frame1 = requestAnimationFrame(() => {
+      frame2 = requestAnimationFrame(() => setRuleLayoutVersion((version) => version + 1))
+    })
+    const handleResize = () => setRuleLayoutVersion((version) => version + 1)
+    window.addEventListener('resize', handleResize)
+    return () => {
+      cancelAnimationFrame(frame1)
+      cancelAnimationFrame(frame2)
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [activeSection, ruleBlocks.length, ruleConnections.length])
+
   const [materialGroups, setMaterialGroups] = useState(() =>
     Object.entries(product.materialGroups ?? {}).map(([id, group]) => ({
       id,
@@ -1207,7 +1223,7 @@ export default function ModelMapper({ onSignOut }) {
               </div>
             )}
 
-            <svg className="admin__relation-lines" aria-hidden="true">
+            <svg className="admin__relation-lines" aria-hidden="true" data-layout-version={ruleLayoutVersion}>
               {ruleConnections.map((connection) => {
                 const cause = ruleBlocks.find((block) => block.id === connection.causeId)
                 const effect = ruleBlocks.find((block) => block.id === connection.effectId)
