@@ -31,6 +31,8 @@ export default function ModelMapper({ onSignOut }) {
   const [isTextureDragOver, setIsTextureDragOver] = useState(false)
   const [activeSection, setActiveSection] = useState('model')
   const [rules, setRules] = useState(product.rules ?? [])
+  const [ruleBlocks, setRuleBlocks] = useState([])
+  const [isRuleAddMenuOpen, setIsRuleAddMenuOpen] = useState(false)
   const [modules, setModules] = useState(product.modules ?? [])
   const [displayPrice, setDisplayPrice] = useState(product.pricing?.displayPrice !== false)
   const [sceneSettings, setSceneSettings] = useState({ ...DEFAULT_SCENE_SETTINGS })
@@ -456,6 +458,36 @@ export default function ModelMapper({ onSignOut }) {
     updateModule(index, { glbFileName: file.name })
     setSaveStatus(`${file.name} prêt à être associé au module.`)
     event.target.value = ''
+  }
+
+  function addRuleBlock(type) {
+    setRuleBlocks((current) => [
+      ...current,
+      {
+        id: `${type}-${Date.now()}`,
+        type,
+        groupIds: [],
+        materialId: '',
+      },
+    ])
+    setIsRuleAddMenuOpen(false)
+  }
+
+  function updateRuleBlock(id, patch) {
+    setRuleBlocks((current) => current.map((block) => block.id === id ? { ...block, ...patch } : block))
+  }
+
+  function toggleRuleBlockGroup(id, groupId) {
+    setRuleBlocks((current) => current.map((block) => {
+      if (block.id !== id) return block
+      const selected = block.groupIds ?? []
+      return {
+        ...block,
+        groupIds: selected.includes(groupId)
+          ? selected.filter((value) => value !== groupId)
+          : [...selected, groupId],
+      }
+    }))
   }
 
   function updateRule(index, patch) {
@@ -970,14 +1002,77 @@ export default function ModelMapper({ onSignOut }) {
       )}
 
       {activeSection === 'rules' && (
-        <section className="admin__rules">
-          <div className="admin__pricing-title">
+        <section className="admin__relation-workspace">
+          <div className="admin__relation-header">
             <div>
-              <strong>Règles</strong>
-              <small>Nouvelle architecture à définir.</small>
+              <strong>Relation cause à effet</strong>
+              <small>Créez les causes et les effets. Les connexions entre les blocs seront ajoutées à l’étape suivante.</small>
+            </div>
+            <div className="admin__relation-add">
+              <button
+                type="button"
+                className="admin__relation-plus"
+                aria-label="Ajouter un bloc"
+                onClick={() => setIsRuleAddMenuOpen((open) => !open)}
+              >+</button>
+              {isRuleAddMenuOpen && (
+                <div className="admin__relation-menu">
+                  <button type="button" onClick={() => addRuleBlock('cause')}>Ajouter une cause</button>
+                  <button type="button" onClick={() => addRuleBlock('effect')}>Ajouter un effet</button>
+                </div>
+              )}
             </div>
           </div>
-          <div className="admin__empty">Aucune règle configurée pour le moment.</div>
+
+          <div className="admin__relation-canvas">
+            {ruleBlocks.length === 0 && (
+              <div className="admin__relation-empty">
+                Utilisez le bouton + pour ajouter une cause ou un effet.
+              </div>
+            )}
+
+            {ruleBlocks.map((block) => (
+              <article className={`admin__relation-node admin__relation-node--${block.type}`} key={block.id}>
+                <div className="admin__relation-node-title">
+                  <strong>{block.type === 'cause' ? 'Cause' : 'Effet'}</strong>
+                </div>
+
+                <div className="admin__relation-field">
+                  <span>Groupes</span>
+                  <div className="admin__relation-groups">
+                    {materialGroups.map((group) => {
+                      const selected = (block.groupIds ?? []).includes(group.id)
+                      return (
+                        <label className={selected ? 'is-selected' : ''} key={group.id}>
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={() => toggleRuleBlockGroup(block.id, group.id)}
+                          />
+                          <span>{group.name || group.id}</span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <label className="admin__relation-field">
+                  <span>Matériau</span>
+                  <select
+                    value={block.materialId}
+                    onChange={(event) => updateRuleBlock(block.id, { materialId: event.target.value })}
+                  >
+                    <option value="">Sélectionner un matériau</option>
+                    {materials.map((material) => (
+                      <option key={material.id} value={material.id}>{material.name || material.id}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <div className="admin__relation-port" aria-hidden="true" />
+              </article>
+            ))}
+          </div>
         </section>
       )}
 
