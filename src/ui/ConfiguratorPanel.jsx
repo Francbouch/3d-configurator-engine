@@ -14,6 +14,7 @@ const CONFIGURATOR_DRAFT_KEY = `configurator-admin-draft:${product.id}`
 export default function ConfiguratorPanel() {
   const [openSection, setOpenSection] = useState(null)
   const [publishedConfig, setPublishedConfig] = useState(null)
+  const [localGroups, setLocalGroups] = useState([])
   const materialGltf = useGLTF(MASTER_MATERIAL_LIBRARY_URL)
   const materials = useMemo(() => materialRecordsFromScene(materialGltf.scene), [materialGltf.scene])
   const initializeMaterialCatalog = useConfiguratorStore((state) => state.initializeMaterialCatalog)
@@ -52,15 +53,25 @@ export default function ConfiguratorPanel() {
   const price = calculatePrice(runtimeProduct.pricing, selectedMaterials, modules, selectedModules)
   const showPrice = runtimeProduct.pricing?.displayPrice === true
 
-  const localGroups = useMemo(() => {
-    try {
-      const raw = window.localStorage.getItem(CONFIGURATOR_DRAFT_KEY)
-      const draft = raw ? JSON.parse(raw) : null
-      return Array.isArray(draft?.payload?.materialGroups) ? draft.payload.materialGroups : []
-    } catch {
-      return []
+  useEffect(() => {
+    const readGroups = () => {
+      try {
+        const raw = window.localStorage.getItem(CONFIGURATOR_DRAFT_KEY)
+        const stored = raw ? JSON.parse(raw) : null
+        setLocalGroups(Array.isArray(stored?.payload?.materialGroups) ? stored.payload.materialGroups : [])
+      } catch {
+        setLocalGroups([])
+      }
     }
-  }, [publishedConfig])
+    readGroups()
+    window.addEventListener('storage', readGroups)
+    window.addEventListener('focus', readGroups)
+    return () => {
+      window.removeEventListener('storage', readGroups)
+      window.removeEventListener('focus', readGroups)
+    }
+  }, [])
+
   const publishedGroups = Array.isArray(publishedConfig?.materialGroups) ? publishedConfig.materialGroups : []
   const dynamicGroups = localGroups.length ? localGroups : publishedGroups
   const sections = dynamicGroups
