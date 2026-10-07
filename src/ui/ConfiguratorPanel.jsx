@@ -16,7 +16,11 @@ export default function ConfiguratorPanel() {
   const [publishedConfig, setPublishedConfig] = useState(null)
   const [localGroups, setLocalGroups] = useState([])
   const materialGltf = useGLTF(MASTER_MATERIAL_LIBRARY_URL)
-  const materials = useMemo(() => materialRecordsFromScene(materialGltf.scene), [materialGltf.scene])
+  const legacyMaterials = useMemo(() => materialRecordsFromScene(materialGltf.scene), [materialGltf.scene])
+  const materials = useMemo(() => {
+    const source = Array.isArray(publishedConfig?.materials) ? publishedConfig.materials : legacyMaterials
+    return source.filter((material) => material.active !== false)
+  }, [publishedConfig, legacyMaterials])
   const initializeMaterialCatalog = useConfiguratorStore((state) => state.initializeMaterialCatalog)
   const initializeDynamicGroups = useConfiguratorStore((state) => state.initializeDynamicGroups)
   const selectedMaterials = useConfiguratorStore((state) => state.selectedMaterials)
@@ -98,7 +102,7 @@ export default function ConfiguratorPanel() {
             selected: selectedMaterials,
             materials,
           })
-          const sectionMaterials = dynamicGroups.length ? materials : allowedMaterials
+          const sectionMaterials = dynamicGroups.length ? materials : allowedMaterials.filter((material) => material.active !== false)
 
           return (
             <div className="panel__group" key={section.id}>
