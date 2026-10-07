@@ -34,7 +34,7 @@ export default function ModelMapper({ onSignOut }) {
   const [modules, setModules] = useState(product.modules ?? [])
   const [displayPrice, setDisplayPrice] = useState(product.pricing?.displayPrice !== false)
   const [sceneSettings, setSceneSettings] = useState({ ...DEFAULT_SCENE_SETTINGS })
-  const [sceneSelection, setSceneSelection] = useState({ type: 'light', id: 'key' })
+  const [sceneSelection, setSceneSelection] = useState({ type: 'light', id: 'shadow' })
   const [sceneTransformMode, setSceneTransformMode] = useState('translate')
   const [materialGroups, setMaterialGroups] = useState(() =>
     Object.entries(product.materialGroups ?? {}).map(([id, group]) => ({
@@ -1017,7 +1017,7 @@ export default function ModelMapper({ onSignOut }) {
               }}>+ Ajouter un plane</button>
               {sceneSelection?.type === 'plane' && <button type="button" className="is-danger" onClick={() => {
                 const next = { ...sceneSettings, planes:(sceneSettings.planes ?? []).filter((p) => p.id !== sceneSelection.id) }
-                setSceneSettings(next); setSceneSelection({type:'light',id:'key'}); persistConfigurationPatch({scene:next})
+                setSceneSettings(next); setSceneSelection({type:'light',id:'shadow'}); persistConfigurationPatch({scene:next})
               }}>Supprimer le plane</button>}
             </div>
             <label className="admin__scene-control">
