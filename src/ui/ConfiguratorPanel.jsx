@@ -18,6 +18,7 @@ export default function ConfiguratorPanel() {
   const materialGltf = useGLTF(MASTER_MATERIAL_LIBRARY_URL)
   const materials = useMemo(() => materialRecordsFromScene(materialGltf.scene), [materialGltf.scene])
   const initializeMaterialCatalog = useConfiguratorStore((state) => state.initializeMaterialCatalog)
+  const initializeDynamicGroups = useConfiguratorStore((state) => state.initializeDynamicGroups)
   const selectedMaterials = useConfiguratorStore((state) => state.selectedMaterials)
   const setMaterial = useConfiguratorStore((state) => state.setMaterial)
   const selectedModules = useConfiguratorStore((state) => state.selectedModules)
@@ -77,6 +78,10 @@ export default function ConfiguratorPanel() {
   const sections = dynamicGroups
     .filter((group) => group.role === 'modifiable')
     .map((group) => ({ id: group.id, label: group.name || 'Groupe', defaultMaterialId: group.materialId }))
+
+  useEffect(() => {
+    initializeDynamicGroups(dynamicGroups)
+  }, [dynamicGroups, initializeDynamicGroups])
 
   return (
     <aside className="panel">
