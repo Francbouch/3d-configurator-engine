@@ -1,4 +1,4 @@
-import { ContactShadows, Environment, Lightformer } from '@react-three/drei'
+import { Environment, Lightformer } from '@react-three/drei'
 
 export const DEFAULT_SCENE_SETTINGS = Object.freeze({
   background: '#f7f7f5',
@@ -54,8 +54,6 @@ export default function StudioLighting({ settings = {} }) {
         <Lightformer form="rect" intensity={3.4} position={[3, 3, -5]} rotation={[0, 0.15, 0]} scale={[3, 6, 1]} />
         <Lightformer form="rect" intensity={1.7} position={[-2, 6, -1]} rotation={[Math.PI / 2, 0, 0]} scale={[6, 4, 1]} />
       </Environment>
-      {/* Transparent contact shadow: no grey floor surface, only the shadow itself. */}
-      <ContactShadows position={[0, s.groundY, 0]} opacity={s.shadowOpacity} scale={12} blur={s.shadowBlur} far={5} resolution={1024} frames={1} />
       {(s.planes ?? []).map((plane) => (
         <mesh key={plane.id} position={plane.position} rotation={plane.rotation} scale={plane.scale} receiveShadow castShadow>
           <planeGeometry args={[1, 1]} />
