@@ -55,7 +55,14 @@ export default function ConfiguratorPanel() {
   }, [initializeMaterialCatalog, materials])
 
   const modules = (runtimeProduct.modules ?? []).filter((module) => module.enabled !== false && module.model?.url)
-  const price = calculatePrice(runtimeProduct.pricing, selectedMaterials, modules, selectedModules)
+  const basePrice = Number(runtimeProduct.pricing?.basePrice ?? 0)
+  const chargedMaterialIds = [...new Set(Object.values(selectedMaterials).filter(Boolean))]
+  const materialSupplement = chargedMaterialIds.reduce((total, materialId) => {
+    const material = materials.find((item) => item.id === materialId)
+    const amount = Number(material?.priceAdjustment ?? 0)
+    return total + (Number.isFinite(amount) && amount > 0 ? amount : 0)
+  }, 0)
+  const price = basePrice + materialSupplement
   const showPrice = runtimeProduct.pricing?.displayPrice === true && Number.isFinite(price)
 
   useEffect(() => {
@@ -82,6 +89,15 @@ export default function ConfiguratorPanel() {
   const sections = dynamicGroups
     .filter((group) => group.role === 'modifiable')
     .map((group) => ({ id: group.id, label: group.name || 'Groupe', defaultMaterialId: group.materialId }))
+
+  const paidMaterialOwner = {}
+  sections.forEach((section) => {
+    const materialId = selectedMaterials[section.id] || section.defaultMaterialId
+    const material = materials.find((item) => item.id === materialId)
+    if (materialId && Number(material?.priceAdjustment ?? 0) > 0 && !paidMaterialOwner[materialId]) {
+      paidMaterialOwner[materialId] = section.id
+    }
+  })
 
   useEffect(() => {
     initializeDynamicGroups(dynamicGroups)
@@ -133,9 +149,10 @@ export default function ConfiguratorPanel() {
                       </span>
                       <span className="material-chip__meta">
                         <span className="material-chip__name">{material.name}</span>
-                        {Number(material.priceAdjustment ?? 0) > 0 && (
-                          <small className="material-chip__price">+{Number(material.priceAdjustment).toFixed(2)}$</small>
-                        )}
+                        {Number(material.priceAdjustment ?? 0) > 0 &&
+                          (!chargedMaterialIds.includes(material.id) || paidMaterialOwner[material.id] === section.id) && (
+                            <small className="material-chip__price">+{Number(material.priceAdjustment).toFixed(2)}$</small>
+                          )}
                       </span>
                     </button>
                   ))}
