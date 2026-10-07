@@ -336,3 +336,8 @@ body:has(.admin) { overflow: hidden; }
 .admin__source-image>span{font-size:11px;color:#999}
 .admin__source-image input{display:none}
 .admin__source-image small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#666}
+
+/* Material price: keep numeric input behavior without browser stepper arrows. */
+.admin__money input[type="number"]{-moz-appearance:textfield;appearance:textfield}
+.admin__money input[type="number"]::-webkit-outer-spin-button,
+.admin__money input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
