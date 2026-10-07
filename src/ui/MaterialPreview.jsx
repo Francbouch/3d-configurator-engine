@@ -51,6 +51,7 @@ async function renderPreview(name) {
 }
 export default function MaterialPreview({ material }) {
   const ref = useRef(null)
+  if (material.source?.imageUrl) return <img src={material.source.imageUrl} alt="" />
   useEffect(() => {
     if (material.thumbnail || !material.source?.materialName) return
     let active = true
