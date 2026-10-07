@@ -474,6 +474,49 @@ export default function ModelMapper({ onSignOut }) {
     }
   }
 
+  async function importPbrBatch(fileList) {
+    const files = Array.from(fileList ?? []).filter(file => /\.(png|jpe?g)$/i.test(file.name))
+    const session = loadAdminSession()
+    if (!session?.access_token) { setSaveStatus('Reconnecte-toi au back-office.'); return }
+    const normalize = value => String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')
+    const kindOf = name => /normal/i.test(name) ? 'normal' : /roughness/i.test(name) ? 'roughness' : /bump|displacement|height/i.test(name) ? 'bump' : null
+    const matched = []
+    const ignored = []
+    for (const file of files) {
+      const kind = kindOf(file.name)
+      const candidates = materials.filter(material => {
+        const code = normalize(material.code)
+        return code.length >= 4 && normalize(file.name).includes(code)
+      })
+      if (!kind || candidates.length !== 1) { ignored.push(file.name); continue }
+      matched.push({ file, kind, material: candidates[0] })
+    }
+    if (!matched.length) { setSaveStatus('Aucune correspondance unique trouvée. Vérifie les codes des matériaux et les noms des fichiers.'); return }
+    if (!window.confirm(`Importer ${matched.length} maps PBR pour ${new Set(matched.map(x => x.material.id)).size} matériaux ? ${ignored.length} fichier(s) ignoré(s).`)) return
+    try {
+      setSaveStatus(`Importation de ${matched.length} maps PBR…`)
+      const next = materials.map(material => ({ ...material, pbr: { ...(material.pbr ?? {}) } }))
+      for (const { file, kind, material } of matched) {
+        const ext = /\.jpe?g$/i.test(file.name) ? 'jpg' : 'png'
+        const safeId = material.id.replace(/[^a-zA-Z0-9._-]+/g, '-')
+        const path = `${product.id}/materials/${safeId}-${kind}-${Date.now()}-${Math.random().toString(36).slice(2,7)}.${ext}`
+        const response = await fetch(`${SUPABASE_PROJECT_URL}/storage/v1/object/models/${encodeURI(path)}`, {
+          method: 'POST',
+          headers: { ...supabaseHeaders(session.access_token, file.type || (ext === 'png' ? 'image/png' : 'image/jpeg')), 'x-upsert': 'true' },
+          body: file,
+        })
+        if (!response.ok) throw new Error(`Importation impossible : ${file.name}`)
+        const url = `${SUPABASE_PROJECT_URL}/storage/v1/object/public/models/${path.split('/').map(encodeURIComponent).join('/')}`
+        const target = next.find(item => item.id === material.id)
+        target.pbr[kind === 'normal' ? 'normalUrl' : kind === 'roughness' ? 'roughnessUrl' : 'bumpUrl'] = url
+      }
+      await persistConfigurationPatch({ materials: next })
+      setMaterials(next)
+      saveAdminDraft(product.id, { ...(loadAdminDraft(product.id) ?? buildDraftPayload()), materials: next })
+      setSaveStatus(`${matched.length} maps PBR importées ✓${ignored.length ? ` — ${ignored.length} fichiers ignorés` : ''}`)
+    } catch (error) { setSaveStatus(error instanceof Error ? error.message : 'Importation impossible.') }
+  }
+
   function removeMaterial(index) {
     const nextMaterials = materials.filter((_, i) => i !== index)
     setMaterials(nextMaterials)
@@ -1179,6 +1222,14 @@ export default function ModelMapper({ onSignOut }) {
 
       {activeSection === 'materials' && (
         <section className="admin__materials">
+          <div className="admin__card" style={{ marginBottom: 16 }}>
+            <strong>Importation PBR en lot</strong>
+            <p style={{ fontSize: 12, margin: '6px 0' }}>Sélectionne ensemble les fichiers Normal, Roughness et Displacement/Bump. Association automatique selon le code du matériau (ex. L581K). Les fichiers non reconnus sont ignorés.</p>
+            <label className="admin__upload">
+              <input type="file" multiple accept=".png,.jpg,.jpeg,image/png,image/jpeg" onChange={(e) => { importPbrBatch(e.target.files); e.target.value = '' }} />
+              <span>Importer les maps PBR en lot</span>
+            </label>
+          </div>
           <div
             className={isTextureDragOver ? 'admin__texture-drop is-dragging' : 'admin__texture-drop'}
             onDragOver={(event) => { event.preventDefault(); setIsTextureDragOver(true) }}
