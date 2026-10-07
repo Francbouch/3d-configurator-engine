@@ -499,7 +499,45 @@ export default function ModelMapper({ onSignOut }) {
 
       if (!modelPath) throw new Error('Choisis d’abord le GLB à publier.')
 
+      const uploadedImagePaths = {}
+      for (const material of materials) {
+        const imageFile = materialImageFiles[material.id]
+        if (!imageFile) continue
+        const extension = imageFile.name.toLowerCase().endsWith('.png') ? 'png' : 'jpg'
+        const safeId = material.id.replace(/[^a-zA-Z0-9._-]+/g, '-')
+        const imagePath = `${product.id}/materials/${safeId}-${Date.now()}.${extension}`
+        const uploadImage = await fetch(
+          `${SUPABASE_PROJECT_URL}/storage/v1/object/models/${encodeURI(imagePath)}`,
+          {
+            method: 'POST',
+            headers: {
+              ...supabaseHeaders(session.access_token, imageFile.type || (extension === 'png' ? 'image/png' : 'image/jpeg')),
+              'x-upsert': 'true',
+            },
+            body: imageFile,
+          },
+        )
+        if (!uploadImage.ok) {
+          const detail = await uploadImage.text()
+          throw new Error(`Upload texture impossible (${material.name}): ${detail}`)
+        }
+        uploadedImagePaths[material.id] = imagePath
+      }
+
       const payload = buildDraftPayload()
+      payload.materials = payload.materials.map((material) => {
+        const imagePath = uploadedImagePaths[material.id] || material.source?.imagePath
+        if (!imagePath) return material
+        return {
+          ...material,
+          source: {
+            type: 'image',
+            fileName: material.source?.fileName ?? '',
+            imagePath,
+            imageUrl: `${SUPABASE_PROJECT_URL}/storage/v1/object/public/models/${imagePath.split('/').map(encodeURIComponent).join('/')}`,
+          },
+        }
+      })
       payload.animations = product.animations
       const publication = {
         product_id: product.id,
@@ -538,6 +576,7 @@ export default function ModelMapper({ onSignOut }) {
       saveAdminDraft(product.id, payload)
       setUploadedModelFile(null)
       setUploadedModelName('')
+      setMaterialImageFiles({})
       setSaveStatus('Publié ✓ Le site client utilise maintenant ce GLB.')
     } catch (error) {
       console.error(error)
