@@ -20,6 +20,7 @@ export const DEFAULT_SCENE_SETTINGS = Object.freeze({
   fillPosition: [-4.5, 3.8, 3.2],
   rimPosition: [3.2, 3.8, -4.8],
   topPosition: [0, 7.5, 0.4],
+  shadowPosition: [4.8, 5.8, 5.2],
   planes: [],
 })
 
@@ -31,7 +32,7 @@ export default function StudioLighting({ settings = {} }) {
       {/* RectAreaLight gives the broad studio reflection; a shadow-only directional companion creates real mesh/self shadows. */}
       <rectAreaLight position={s.keyPosition} rotation={[-0.72, 0.55, 0.38]} width={5.5} height={7} intensity={s.keyIntensity} color="#fffdf8" />
       <directionalLight
-        position={s.keyPosition}
+        position={s.shadowPosition}
         intensity={Math.max(0.35, s.keyIntensity * 0.22)}
         color="#fffdf8"
         castShadow
