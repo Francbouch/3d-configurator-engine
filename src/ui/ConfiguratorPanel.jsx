@@ -55,15 +55,6 @@ export default function ConfiguratorPanel() {
   }, [initializeMaterialCatalog, materials])
 
   const modules = (runtimeProduct.modules ?? []).filter((module) => module.enabled !== false && module.model?.url)
-  const basePrice = Number(runtimeProduct.pricing?.basePrice ?? 0)
-  const chargedMaterialIds = [...new Set(Object.values(selectedMaterials).filter(Boolean))]
-  const materialSupplement = chargedMaterialIds.reduce((total, materialId) => {
-    const material = materials.find((item) => item.id === materialId)
-    const amount = Number(material?.priceAdjustment ?? 0)
-    return total + (Number.isFinite(amount) && amount > 0 ? amount : 0)
-  }, 0)
-  const price = basePrice + materialSupplement
-  const showPrice = runtimeProduct.pricing?.displayPrice === true && Number.isFinite(price)
 
   useEffect(() => {
     const readGroups = () => {
@@ -90,14 +81,26 @@ export default function ConfiguratorPanel() {
     .filter((group) => group.role === 'modifiable')
     .map((group) => ({ id: group.id, label: group.name || 'Groupe', defaultMaterialId: group.materialId }))
 
+  const effectiveSelections = sections.map((section) => ({
+    sectionId: section.id,
+    materialId: selectedMaterials[section.id] || section.defaultMaterialId || null,
+  }))
+  const chargedMaterialIds = [...new Set(effectiveSelections.map((item) => item.materialId).filter(Boolean))]
   const paidMaterialOwner = {}
-  sections.forEach((section) => {
-    const materialId = selectedMaterials[section.id] || section.defaultMaterialId
+  effectiveSelections.forEach(({ sectionId, materialId }) => {
     const material = materials.find((item) => item.id === materialId)
     if (materialId && Number(material?.priceAdjustment ?? 0) > 0 && !paidMaterialOwner[materialId]) {
-      paidMaterialOwner[materialId] = section.id
+      paidMaterialOwner[materialId] = sectionId
     }
   })
+  const basePrice = Number(runtimeProduct.pricing?.basePrice ?? 0)
+  const materialSupplement = chargedMaterialIds.reduce((total, materialId) => {
+    const material = materials.find((item) => item.id === materialId)
+    const amount = Number(material?.priceAdjustment ?? 0)
+    return total + (Number.isFinite(amount) && amount > 0 ? amount : 0)
+  }, 0)
+  const price = basePrice + materialSupplement
+  const showPrice = Number.isFinite(price)
 
   useEffect(() => {
     initializeDynamicGroups(dynamicGroups)
