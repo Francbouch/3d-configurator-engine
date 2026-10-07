@@ -34,6 +34,8 @@ export default function ModelMapper({ onSignOut }) {
   const [modules, setModules] = useState(product.modules ?? [])
   const [displayPrice, setDisplayPrice] = useState(product.pricing?.displayPrice !== false)
   const [sceneSettings, setSceneSettings] = useState({ ...DEFAULT_SCENE_SETTINGS })
+  const [sceneSelection, setSceneSelection] = useState({ type: 'light', id: 'key' })
+  const [sceneTransformMode, setSceneTransformMode] = useState('translate')
   const [materialGroups, setMaterialGroups] = useState(() =>
     Object.entries(product.materialGroups ?? {}).map(([id, group]) => ({
       id,
@@ -976,9 +978,54 @@ export default function ModelMapper({ onSignOut }) {
       {activeSection === 'scene' && (
         <section className="admin__scene-editor">
           <div className="admin__scene-preview">
-            <ConfiguratorScene sceneOverride={sceneSettings} />
+            <ConfiguratorScene sceneOverride={sceneSettings} editor={{ selection: sceneSelection, mode: sceneTransformMode, onTransform: (change) => {
+              let next
+              if (change.type === 'light') {
+                next = { ...sceneSettings, [change.id + 'Position']: change.position }
+              } else {
+                next = { ...sceneSettings, planes: (sceneSettings.planes ?? []).map((p) => p.id === change.id ? { ...p, position: change.position, rotation: change.rotation, scale: change.scale } : p) }
+              }
+              setSceneSettings(next)
+              persistConfigurationPatch({ scene: next })
+            } }} />
           </div>
           <div className="admin__scene-controls">
+            <div className="admin__scene-tools">
+              <strong>Éditeur 3D</strong>
+              <div className="admin__scene-toolrow">
+                <button type="button" className={sceneTransformMode === 'translate' ? 'is-active' : ''} onClick={() => setSceneTransformMode('translate')}>Déplacer</button>
+                <button type="button" className={sceneTransformMode === 'rotate' ? 'is-active' : ''} onClick={() => setSceneTransformMode('rotate')}>Rotation</button>
+                <button type="button" className={sceneTransformMode === 'scale' ? 'is-active' : ''} onClick={() => setSceneTransformMode('scale')}>Échelle</button>
+              </div>
+              <label><span>Objet sélectionné</span><select value={sceneSelection ? sceneSelection.type + ':' + sceneSelection.id : ''} onChange={(e) => {
+                const [type,id] = e.target.value.split(':'); setSceneSelection({ type, id })
+              }}>
+                <optgroup label="Lumières">
+                  <option value="light:key">Lumière principale</option>
+                  <option value="light:fill">Lumière de remplissage</option>
+                  <option value="light:rim">Contre-jour</option>
+                  <option value="light:top">Lumière du dessus</option>
+                </optgroup>
+                {(sceneSettings.planes ?? []).length > 0 && <optgroup label="Planes">{(sceneSettings.planes ?? []).map((p,i) => <option key={p.id} value={'plane:' + p.id}>{p.name || 'Plane ' + (i+1)}</option>)}</optgroup>}
+              </select></label>
+              <button type="button" onClick={() => {
+                const id = 'plane-' + Date.now()
+                const plane = { id, name: 'Mur ' + ((sceneSettings.planes ?? []).length + 1), position:[0,1,-2], rotation:[0,0,0], scale:[4,3,1], color:'#eeeeec' }
+                const next = { ...sceneSettings, planes:[...(sceneSettings.planes ?? []), plane] }
+                setSceneSettings(next); setSceneSelection({type:'plane',id}); persistConfigurationPatch({scene:next})
+              }}>+ Ajouter un plane</button>
+              {sceneSelection?.type === 'plane' && <button type="button" className="is-danger" onClick={() => {
+                const next = { ...sceneSettings, planes:(sceneSettings.planes ?? []).filter((p) => p.id !== sceneSelection.id) }
+                setSceneSettings(next); setSceneSelection({type:'light',id:'key'}); persistConfigurationPatch({scene:next})
+              }}>Supprimer le plane</button>}
+            </div>
+            <label className="admin__scene-control">
+              <span>Hauteur du sol / ombre<strong>{Number(sceneSettings.groundY ?? -1.02).toFixed(2)}</strong></span>
+              <input type="range" min="-3" max="1" step="0.01" value={sceneSettings.groundY ?? -1.02} onChange={(event) => {
+                const next = { ...sceneSettings, groundY:Number(event.target.value) }
+                setSceneSettings(next); persistConfigurationPatch({scene:next})
+              }} />
+            </label>
             <div className="admin__pricing-title">
               <div><strong>Scène React Three Fiber</strong><small>Les changements sont visibles en direct et enregistrés automatiquement dans le configurateur.</small></div>
               <button type="button" onClick={() => {
