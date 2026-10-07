@@ -67,7 +67,7 @@ function EditorGizmo({ editor, settings }) {
   )
 }
 
-export default function ConfiguratorScene({ sceneOverride = null, editor = null, onCameraViewChange = null }) {
+export default function ConfiguratorScene({ sceneOverride = null, editor = null, onCameraViewChange = null, matchPublishedView = false }) {
   const [modelUrl, setModelUrl] = useState(FALLBACK_MODEL_URL)
   const [publishedScene, setPublishedScene] = useState(null)
 
@@ -100,12 +100,13 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null,
         shadowPosition: undefined,
       }
     : null
+  const effectiveOverride = matchPublishedView ? null : sceneOverride
   const sceneSettings = {
     ...DEFAULT_SCENE_SETTINGS,
     ...(publishedWithoutLegacyLightRig ?? {}),
-    ...(sceneOverride ?? {}),
+    ...(effectiveOverride ?? {}),
   }
-  if (!sceneOverride) {
+  if (!effectiveOverride) {
     sceneSettings.keyPosition = DEFAULT_SCENE_SETTINGS.keyPosition
     sceneSettings.fillPosition = DEFAULT_SCENE_SETTINGS.fillPosition
     sceneSettings.rimPosition = DEFAULT_SCENE_SETTINGS.rimPosition
@@ -130,7 +131,7 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null,
         <SceneCalibration settings={sceneSettings} />
         <StudioLighting settings={sceneSettings} />
         <ProductModel url={modelUrl} />
-        {editor && <EditorGizmo editor={editor} settings={sceneSettings} />}
+        {editor && !matchPublishedView && <EditorGizmo editor={editor} settings={sceneSettings} />}
       </Suspense>
       <ProductCamera initialView={sceneSettings.cameraView ?? null} onViewChange={onCameraViewChange} />
     </Canvas>
