@@ -1,4 +1,4 @@
-import { getAllowedMaterials } from '../rules/RulesEngine'
+import { getAllowedMaterials, getRuleGraphAllowedMaterials } from '../rules/RulesEngine'
 
 export function getGroupMaterials({
   product,
@@ -22,11 +22,18 @@ export function getGroupMaterials({
     candidates = activeMaterials.filter((material) => allowedIds.has(material.id))
   }
 
-  return getAllowedMaterials({
+  const legacyAllowed = getAllowedMaterials({
     groupId,
     selected,
     materials: candidates,
     rules: product.rules ?? [],
+  })
+
+  return getRuleGraphAllowedMaterials({
+    groupId,
+    selected,
+    materials: legacyAllowed,
+    ruleGraph: product.ruleGraph,
   })
 }
 
