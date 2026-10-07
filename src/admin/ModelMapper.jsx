@@ -8,7 +8,6 @@ import {
 } from '../configurator/model/ProductMapping'
 import { formatPrice } from '../configurator/pricing/PricingUtils'
 import { resolveAssetUrl } from '../engine/assets/resolveAssetUrl'
-import { clearAdminDraft, loadAdminDraft, saveAdminDraft } from './AdminDraftStore'
 import { loadAdminSession, SUPABASE_PROJECT_URL, supabaseHeaders } from './AdminAuth'
 import ConfiguratorScene from '../engine/scene/ConfiguratorScene'
 import { DEFAULT_SCENE_SETTINGS } from '../engine/lighting/StudioLighting'
@@ -135,23 +134,12 @@ export default function ModelMapper({ onSignOut }) {
           gltf.scene,
           product.model?.parts ?? [],
         )
-        const saved = loadAdminDraft(product.id)
-        // Supabase is the durable source of truth. A stale local draft must never
-        // hide materials that were already uploaded and stored remotely.
-        const baseline = publishedConfig
-          ? {
-              ...(saved ?? {}),
-              ...publishedConfig,
-              materials: Array.isArray(publishedConfig.materials)
-                ? publishedConfig.materials
-                : (saved?.materials ?? []),
-              pricing: publishedConfig.pricing ?? saved?.pricing,
-            }
-          : (saved ?? {})
+        // Supabase is the single source of truth for the back-office.
+        const baseline = publishedConfig ?? {}
 
         setDraft(nextDraft)
-        const restoredDraft = Array.isArray(saved?.parts)
-          ? buildProductMappingDraft(gltf.scene, saved.parts)
+        const restoredDraft = Array.isArray(publishedConfig?.parts)
+          ? buildProductMappingDraft(gltf.scene, publishedConfig.parts)
           : nextDraft
         setParts(restoredDraft.parts)
         setBasePrice(
@@ -178,8 +166,7 @@ export default function ModelMapper({ onSignOut }) {
         setDisplayPrice(baseline?.pricing?.displayPrice ?? (product.pricing?.displayPrice !== false))
         setSceneSettings({ ...DEFAULT_SCENE_SETTINGS, ...(baseline?.scene ?? {}) })
         if (Array.isArray(baseline?.materialGroups)) setMaterialGroups(baseline.materialGroups)
-        if (saved) setSaveStatus('Brouillon local restauré')
-        else if (publishedConfig) setSaveStatus('Configuration publiée restaurée')
+        if (publishedConfig) setSaveStatus('Configuration Supabase chargée')
       },
       undefined,
       (error) => {
@@ -306,8 +293,6 @@ export default function ModelMapper({ onSignOut }) {
     setMaterials(storedMaterials)
     setPublishedMaterials(storedMaterials)
     setMaterialImageFiles({})
-    const local = loadAdminDraft(product.id) ?? buildDraftPayload()
-    saveAdminDraft(product.id, { ...local, materials: storedMaterials })
     return storedMaterials
   }
 
@@ -384,8 +369,6 @@ export default function ModelMapper({ onSignOut }) {
     }
     setMaterials((current) => {
       const next = [...current, material]
-      const local = loadAdminDraft(product.id) ?? buildDraftPayload()
-      saveAdminDraft(product.id, { ...local, materials: next })
       persistConfigurationPatch({ materials: next })
       return next
     })
@@ -395,8 +378,6 @@ export default function ModelMapper({ onSignOut }) {
   function updateMaterial(index, patch) {
     setMaterials((current) => {
       const next = current.map((material, i) => (i === index ? { ...material, ...patch } : material))
-      const local = loadAdminDraft(product.id) ?? buildDraftPayload()
-      saveAdminDraft(product.id, { ...local, materials: next })
       persistConfigurationPatch({ materials: next })
       return next
     })
@@ -531,8 +512,6 @@ export default function ModelMapper({ onSignOut }) {
 
   function persistGroups(nextGroups) {
     setMaterialGroups(nextGroups)
-    const current = loadAdminDraft(product.id) ?? buildDraftPayload()
-    saveAdminDraft(product.id, { ...current, materialGroups: nextGroups })
     publishGroups(nextGroups)
   }
 
@@ -599,8 +578,6 @@ export default function ModelMapper({ onSignOut }) {
     setParts((current) => {
       const next = current.map((part, i) => (i === index ? { ...part, ...patch } : part))
       const persisted = toProductParts({ parts: next })
-      const local = loadAdminDraft(product.id) ?? buildDraftPayload()
-      saveAdminDraft(product.id, { ...local, parts: persisted })
       persistConfigurationPatch({ parts: persisted })
       return next
     })
@@ -723,8 +700,6 @@ export default function ModelMapper({ onSignOut }) {
         const detail = await response.text()
         throw new Error(`Publication impossible: ${detail}`)
       }
-
-      saveAdminDraft(product.id, payload)
       setUploadedModelFile(null)
       setUploadedModelName('')
       setMaterialImageFiles({})
@@ -733,45 +708,6 @@ export default function ModelMapper({ onSignOut }) {
       console.error(error)
       setSaveStatus(error instanceof Error ? error.message : 'Publication impossible.')
     }
-  }
-
-  function saveDraft() {
-    const ok = saveAdminDraft(product.id, {
-      parts: toProductParts({ parts }),
-      materialGroups,
-      name: modelName.trim(),
-      materials,
-      modules,
-      rules,
-      pricing: {
-        currency: product.pricing?.currency ?? 'CAD',
-        basePrice,
-        adjustments,
-        displayPrice,
-      },
-    })
-
-    setSaveStatus(ok ? 'Brouillon enregistré sur cet appareil' : 'Échec de l’enregistrement')
-  }
-
-  function resetDraft() {
-    clearAdminDraft(product.id)
-    const source = draft
-    if (source) {
-      setDraft(source)
-      setParts(source.parts ?? [])
-    }
-    setModelName(product.name)
-    setUploadedModelName('')
-    setUploadedModelFile(null)
-    setBasePrice(product.pricing?.basePrice ?? 0)
-    setAdjustments(product.pricing?.adjustments ?? [])
-    setMaterials(publishedMaterials)
-    setRules(product.rules ?? [])
-    setModules(product.modules ?? [])
-    setDisplayPrice(product.pricing?.displayPrice !== false)
-    setMaterialGroups(Object.entries(product.materialGroups ?? {}).map(([id, group]) => ({ id, name: group.label ?? id, materialId: group.defaultMaterialId ?? '', role: 'modifiable' })))
-    setSaveStatus('Brouillon local réinitialisé à la version publiée')
   }
 
   if (loadError) {
@@ -843,14 +779,10 @@ export default function ModelMapper({ onSignOut }) {
             onChange={(event) => {
               const name = event.target.value
               setModelName(name)
-              const local = loadAdminDraft(product.id) ?? buildDraftPayload()
-              saveAdminDraft(product.id, { ...local, name })
             }}
             onBlur={(event) => {
               const name = event.target.value.trim()
               setModelName(name)
-              const local = loadAdminDraft(product.id) ?? buildDraftPayload()
-              saveAdminDraft(product.id, { ...local, name })
               persistConfigurationPatch({ name })
               setSaveStatus('Nom du meuble enregistré automatiquement')
             }}
@@ -865,334 +797,16 @@ export default function ModelMapper({ onSignOut }) {
 
       <section className="admin__draftbar">
         <div>
-          <strong>Brouillon local</strong>
-          <small>
-            Les changements restent séparés du configurateur publié jusqu’à la future étape Publier.
-          </small>
+          <strong>Configurateur connecté</strong>
+          <small>Les modifications sont enregistrées directement dans Supabase.</small>
           {saveStatus && <span className="admin__save-status">{saveStatus}</span>}
         </div>
         <div className="admin__draft-actions">
-          <button type="button" className="admin__secondary" onClick={resetDraft}>
-            Réinitialiser
-          </button>
-          <button type="button" onClick={saveDraft} disabled={!canSave}>
-            Enregistrer
-          </button>
-          <button
-            type="button"
-            className="admin__publish"
-            disabled={!publishReady}
-            title={publishReady ? 'Configuration prête à être publiée' : 'Enregistrez les nouveaux fichiers 3D avant publication'}
-            onClick={publishConfiguration}
-          >
-            Publier
+          <button type="button" className="admin__publish" disabled={!publishReady} onClick={publishConfiguration}>
+            Publier le GLB
           </button>
         </div>
       </section>
-
-      {(adminErrors.length > 0 || validation.warnings.length > 0) && (
-        <section className="admin__validation">
-          {adminErrors.map((message) => (
-            <p className="is-error" key={message}>{message}</p>
-          ))}
-          {validation.warnings.map((message) => (
-            <p key={message}>{message}</p>
-          ))}
-        </section>
-      )}
-
-      {activeSection === 'materials' && (
-        <section className="admin__materials">
-          <div
-            className={isTextureDragOver ? 'admin__texture-drop is-dragging' : 'admin__texture-drop'}
-            onDragOver={(event) => { event.preventDefault(); setIsTextureDragOver(true) }}
-            onDragLeave={() => setIsTextureDragOver(false)}
-            onDrop={handleTextureDrop}
-          >
-            <strong>Importer des textures</strong>
-            <span>Glissez-déposez plusieurs images PNG ou JPEG ici. Une image = un nouveau matériau.</span>
-            <label className="admin__upload"><input type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" multiple onChange={(event) => { addTextureFiles(event.target.files); event.target.value = '' }} /><span>Choisir des images</span></label>
-          </div>
-          <div className="admin__pricing-title">
-            <div>
-              <strong>Bibliothèque de matériaux</strong>
-              <small>Matériaux disponibles pour les groupes du configurateur.</small>
-            </div>
-            <button type="button" onClick={addMaterial}>+ Ajouter un matériau</button>
-          </div>
-          <div className="admin__materials-head">
-            <span>Nom</span><span>Code</span><span>Fabricant</span><span>Source</span><span>Prix</span><span>Actif</span><span>Actions</span>
-          </div>
-          {materials.map((material, index) => (
-            <div className="admin__material-row" key={material.id}>
-              <input value={material.name ?? ''} onChange={(e) => updateMaterial(index, { name: e.target.value })} />
-              <input placeholder="L000K" value={material.code ?? ''} onChange={(e) => updateMaterial(index, { code: e.target.value })} />
-              <input placeholder="Fabricant" value={material.manufacturer ?? ''} onChange={(e) => updateMaterial(index, { manufacturer: e.target.value })} />
-              <div className="admin__material-source">
-                <input className="admin__color-source" aria-label={`Couleur du matériau ${material.name}`} type="color" value={material.color || '#000000'} onChange={(e) => updateMaterial(index, { color: e.target.value })} />
-                <label className="admin__source-image">
-                  {material.source?.imageUrl ? <img src={material.source.imageUrl} alt="" /> : <span>Image</span>}
-                  <input type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" onChange={(e) => { replaceMaterialImage(index, e.target.files?.[0]); e.target.value = '' }} />
-                  <small>{material.source?.fileName || 'Ajouter'}</small>
-                </label>
-              </div>
-              <div className="admin__money"><input aria-label={`Prix du matériau ${material.name}`} type="number" min="0" step="0.01" inputMode="decimal" placeholder="0.00" value={material.priceAdjustment ?? ''} onChange={(e) => updateMaterial(index, { priceAdjustment: e.target.value === '' ? '' : e.target.value })} onBlur={(e) => updateMaterial(index, { priceAdjustment: e.target.value === '' ? '' : Number(e.target.value).toFixed(2) })} /><span>$</span></div>
-              <label className="admin__toggle"><input type="checkbox" checked={material.active !== false} onChange={(e) => updateMaterial(index, { active: e.target.checked })} /><span>{material.active !== false ? 'Oui' : 'Non'}</span></label>
-              <div className="admin__material-actions"><button type="button" className="admin__icon-button" onClick={() => duplicateMaterial(index)} aria-label="Dupliquer le matériau">＋</button><button type="button" className="admin__remove" onClick={() => removeMaterial(index)} aria-label="Supprimer le matériau">×</button></div>
-            </div>
-          ))}
-        </section>
-      )}
-
-      {activeSection === 'modules' && (
-        <section className="admin__modules">
-          <div className="admin__pricing-title">
-            <div><strong>Options et modules 3D</strong><small>Ajoutez des éléments qui apparaîtront directement sur le meuble du client.</small></div>
-            <button type="button" onClick={addModule}>+ Ajouter une option</button>
-          </div>
-          {modules.length === 0 && <div className="admin__empty">Aucune option configurée.</div>}
-          {modules.map((module, index) => (
-            <div className="admin__module-card" key={module.id}>
-              <div className="admin__module-top">
-                <input aria-label="Nom de l'option" value={module.name} onChange={(e) => updateModule(index, { name: e.target.value })} />
-                <label className="admin__toggle"><input type="checkbox" checked={module.enabled !== false} onChange={(e) => updateModule(index, { enabled: e.target.checked })} /><span>{module.enabled !== false ? 'Active' : 'Inactive'}</span></label>
-                <button type="button" className="admin__remove" onClick={() => removeModule(index)} aria-label="Supprimer l'option">×</button>
-              </div>
-              <div className="admin__module-grid">
-                <label><span>Fichier 3D du module</span><div className="admin__module-file"><strong>{module.glbFileName || 'Aucun fichier'}</strong><label className="admin__upload"><input type="file" accept=".glb,model/gltf-binary" onChange={(e) => handleModuleGlb(index, e)} /><span>Choisir</span></label></div></label>
-                <label><span>Position d’assemblage</span><input placeholder="Ex. rangement_droite" value={module.anchor} onChange={(e) => updateModule(index, { anchor: e.target.value })} /></label>
-                <label><span>Supplément</span><div className="admin__money"><input type="number" min="0" step="1" value={module.price} onChange={(e) => updateModule(index, { price: Number(e.target.value) })} /><span>$ CAD</span></div></label>
-                <label><span>Matériaux</span><select value={module.materialGroup} onChange={(e) => updateModule(index, { materialGroup: e.target.value })}><option value="">Fixe / aucun</option>{groupIds.map((id) => <option key={id} value={id}>{product.materialGroups?.[id]?.label ?? id}</option>)}</select></label>
-              </div>
-            </div>
-          ))}
-        </section>
-      )}
-
-      {activeSection === 'rules' && (
-        <section className="admin__rules">
-          <div className="admin__pricing-title"><div><strong>Règles de compatibilité</strong><small>Contrôlez les combinaisons proposées au client sans toucher au code.</small></div></div>
-          {rules.map((rule, index) => (
-            <div className="admin__rule-card" key={rule.id ?? index}>
-              <div className="admin__rule-top">
-                <div><strong>{rule.id}</strong><small>Cible : {product.materialGroups?.[rule.targetGroup]?.label ?? rule.targetGroup}</small></div>
-                <label className="admin__toggle"><input type="checkbox" checked={rule.enabled !== false} onChange={(e) => updateRule(index, { enabled: e.target.checked })} /><span>{rule.enabled !== false ? 'Active' : 'Inactive'}</span></label>
-              </div>
-              <div className="admin__rule-materials">
-                {materials.map((material) => {
-                  const checked = (rule.allow?.materialIds ?? []).includes(material.id)
-                  return <label key={material.id} className={checked ? 'is-selected' : ''}><input type="checkbox" checked={checked} onChange={() => toggleRuleMaterial(index, material.id)} /><span>{material.name}<small>{material.code}</small></span></label>
-                })}
-              </div>
-              {(rule.allow?.selectedFromGroups ?? []).length > 0 && <p className="admin__rule-note">Autorise aussi le matériau choisi dans : {rule.allow.selectedFromGroups.map((id) => product.materialGroups?.[id]?.label ?? id).join(', ')}</p>}
-            </div>
-          ))}
-        </section>
-      )}
-
-      {activeSection === 'scene' && (
-        <section className="admin__scene-editor">
-          <div className="admin__scene-preview">
-            <ConfiguratorScene matchPublishedView onCameraViewChange={captureCameraView} editor={{
-              selection: sceneSelection,
-              mode: sceneTransformMode,
-              onPreviewTransform: () => {},
-              onTransform: (change) => {
-                setSceneSettings((current) => {
-                  const next = change.type === 'light'
-                    ? { ...current, [change.id + 'Position']: change.position }
-                    : { ...current, planes: (current.planes ?? []).map((p) => p.id === change.id ? { ...p, position: change.position, rotation: change.rotation, scale: change.scale } : p) }
-                  persistConfigurationPatch({ scene: next })
-                  return next
-                })
-              },
-            }} />
-          </div>
-          <div className="admin__scene-controls">
-            <div className="admin__scene-tools">
-              <strong>Éditeur 3D</strong>
-              <button type="button" onClick={() => {
-                if (!currentCameraView) {
-                  setSaveStatus('Déplace d’abord légèrement la vue 3D, puis réessaie.')
-                  return
-                }
-                const cameraView = {
-                  position: currentCameraView.position.map(Number),
-                  target: currentCameraView.target.map(Number),
-                }
-                const next = { ...sceneSettings, cameraView }
-                setSceneSettings(next)
-                persistConfigurationPatch({ scene: next })
-                setSaveStatus('Vue du configurateur enregistrée ✓')
-              }}>Enregistrer la vue</button>
-              <div className="admin__scene-toolrow">
-                <button type="button" className={sceneTransformMode === 'translate' ? 'is-active' : ''} onClick={() => setSceneTransformMode('translate')}>Déplacer</button>
-                <button type="button" className={sceneTransformMode === 'rotate' ? 'is-active' : ''} onClick={() => setSceneTransformMode('rotate')}>Rotation</button>
-                <button type="button" className={sceneTransformMode === 'scale' ? 'is-active' : ''} onClick={() => setSceneTransformMode('scale')}>Échelle</button>
-              </div>
-              <label><span>Objet sélectionné</span><select value={sceneSelection ? sceneSelection.type + ':' + sceneSelection.id : ''} onChange={(e) => {
-                const [type,id] = e.target.value.split(':'); setSceneSelection({ type, id })
-              }}>
-                <optgroup label="Ombre au sol">
-                  <option value="light:shadow">Lumière d’ombre — position manuelle</option>
-                </optgroup>
-                {(sceneSettings.planes ?? []).length > 0 && <optgroup label="Planes">{(sceneSettings.planes ?? []).map((p,i) => <option key={p.id} value={'plane:' + p.id}>{p.name || 'Plane ' + (i+1)}</option>)}</optgroup>}
-              </select></label>
-              <button type="button" onClick={() => {
-                const id = 'plane-' + Date.now()
-                const plane = { id, name: 'Mur ' + ((sceneSettings.planes ?? []).length + 1), position:[0,1,-2], rotation:[0,0,0], scale:[4,3,1], color:'#eeeeec' }
-                const next = { ...sceneSettings, planes:[...(sceneSettings.planes ?? []), plane] }
-                setSceneSettings(next); setSceneSelection({type:'plane',id}); persistConfigurationPatch({scene:next})
-              }}>+ Ajouter un plane</button>
-              {sceneSelection?.type === 'plane' && <button type="button" className="is-danger" onClick={() => {
-                const next = { ...sceneSettings, planes:(sceneSettings.planes ?? []).filter((p) => p.id !== sceneSelection.id) }
-                setSceneSettings(next); setSceneSelection({type:'light',id:'shadow'}); persistConfigurationPatch({scene:next})
-              }}>Supprimer le plane</button>}
-            </div>
-            <label className="admin__scene-control">
-              <span>Hauteur du sol / ombre<strong>{Number(sceneSettings.groundY ?? -1.02).toFixed(2)}</strong></span>
-              <input type="range" min="-3" max="1" step="0.01" value={sceneSettings.groundY ?? -1.02} onChange={(event) => {
-                const next = { ...sceneSettings, groundY:Number(event.target.value) }
-                setSceneSettings(next); persistConfigurationPatch({scene:next})
-              }} />
-            </label>
-            <div className="admin__pricing-title">
-              <div><strong>Scène React Three Fiber</strong><small>Les changements sont visibles en direct et enregistrés automatiquement dans le configurateur.</small></div>
-              <button type="button" onClick={() => {
-                const next = { ...DEFAULT_SCENE_SETTINGS }
-                setSceneSettings(next)
-                persistConfigurationPatch({ scene: next })
-                setSaveStatus('Scène réinitialisée')
-              }}>Réinitialiser</button>
-            </div>
-            {[
-              ['exposure','Exposition',0.4,1.8,0.02],
-              ['environmentIntensity','HDR / environnement',0,2,0.02],
-              ['hemisphereIntensity','Lumière ambiante',0,1.5,0.02],
-              ['keyIntensity','Lumière principale',0,10,0.1],
-              ['fillIntensity','Lumière de remplissage',0,10,0.1],
-              ['rimIntensity','Contre-jour / contour',0,10,0.1],
-              ['topIntensity','Lumière du dessus',0,10,0.1],
-              ['shadowOpacity','Intensité ombre de contact',0,1,0.01],
-              ['shadowBlur','Douceur ombre de contact',0.5,8,0.1],
-              ['shadowRadius','Douceur ombres projetées',0,12,0.25],
-              ['shadowStrength','Intensité ombrage au sol',0,1,0.01],
-            ].map(([key,label,min,max,step]) => (
-              <label className="admin__scene-control" key={key}>
-                <span>{label}<strong>{Number(sceneSettings[key]).toFixed(2)}</strong></span>
-                <input type="range" min={min} max={max} step={step} value={sceneSettings[key]} onChange={(event) => {
-                  const next = { ...sceneSettings, [key]: Number(event.target.value) }
-                  setSceneSettings(next)
-                  persistConfigurationPatch({ scene: next })
-                  setSaveStatus('Scène enregistrée automatiquement')
-                }} />
-              </label>
-            ))}
-            <label className="admin__scene-control admin__scene-color">
-              <span>Couleur du fond</span>
-              <input type="color" value={sceneSettings.background} onChange={(event) => {
-                const next = { ...sceneSettings, background: event.target.value }
-                setSceneSettings(next)
-                persistConfigurationPatch({ scene: next })
-              }} />
-            </label>
-          </div>
-        </section>
-      )}
-
-      {activeSection === 'pricing' && <>
-<section className="admin__pricing">
-        <div>
-          <strong>Prix de base</strong>
-          <small>Le moteur ajoutera ensuite les suppléments selon la configuration.</small>
-        </div>
-        <label className="admin__toggle">
-          <input
-            type="checkbox"
-            checked={displayPrice}
-            onChange={(event) => {
-              const nextDisplayPrice = event.target.checked
-              setDisplayPrice(nextDisplayPrice)
-              const pricing = {
-                currency: product.pricing?.currency ?? 'CAD',
-                basePrice,
-                adjustments,
-                displayPrice: nextDisplayPrice,
-              }
-              const local = loadAdminDraft(product.id) ?? buildDraftPayload()
-              saveAdminDraft(product.id, { ...local, pricing })
-              persistConfigurationPatch({ pricing })
-              setSaveStatus(nextDisplayPrice ? 'Prix visible enregistré' : 'Prix masqué enregistré')
-            }}
-          />
-          <span>{displayPrice ? 'Prix visible sur le site' : 'Prix masqué sur le site'}</span>
-        </label>
-        <label>
-          <input
-            type="number"
-            min="0"
-            step="1"
-            value={basePrice}
-            onChange={(event) => {
-              const nextPrice = Number(event.target.value)
-              setBasePrice(nextPrice)
-              const pricing = {
-                currency: product.pricing?.currency ?? 'CAD',
-                basePrice: nextPrice,
-                adjustments,
-                displayPrice,
-              }
-              const local = loadAdminDraft(product.id) ?? buildDraftPayload()
-              saveAdminDraft(product.id, { ...local, pricing })
-              persistConfigurationPatch({ pricing })
-              setSaveStatus('Prix enregistré automatiquement')
-            }}
-          />
-          <span>$ CAD</span>
-        </label>
-      </section>
-
-      <section className="admin__pricing-list">
-        <div className="admin__pricing-title">
-          <div>
-            <strong>Suppléments</strong>
-            <small>Options, matériaux ou dimensions pourront utiliser ces ajustements.</small>
-          </div>
-          <button type="button" onClick={addAdjustment}>+ Ajouter</button>
-        </div>
-
-        {adjustments.length === 0 && (
-          <div className="admin__empty">Aucun supplément configuré.</div>
-        )}
-
-        {adjustments.map((item, index) => (
-          <div className="admin__price-row" key={item.id}>
-            <input
-              placeholder="Nom du supplément"
-              value={item.label}
-              onChange={(event) => updateAdjustment(index, { label: event.target.value })}
-            />
-            <input
-              type="number"
-              step="1"
-              value={item.amount}
-              onChange={(event) =>
-                updateAdjustment(index, { amount: Number(event.target.value) })
-              }
-            />
-            <span>{formatPrice(item.amount, product.pricing?.currency)}</span>
-            <button
-              type="button"
-              className="admin__remove"
-              onClick={() => removeAdjustment(index)}
-              aria-label="Supprimer le supplément"
-            >
-              ×
-            </button>
-          </div>
-        ))}
-      </section>
-      </>}
 
       {activeSection === 'model' && <section className="admin__card admin__groups-card">
         <div className="admin__pricing-title">
