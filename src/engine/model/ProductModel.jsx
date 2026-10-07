@@ -15,7 +15,16 @@ function LoadedProduct({ url }) {
   const animationTime = useRef(0)
   const animationAction = useRef(null)
 
-  const model = useMemo(() => productGltf.scene.clone(true), [productGltf.scene])
+  const model = useMemo(() => {
+    const clone = productGltf.scene.clone(true)
+    clone.traverse((object) => {
+      if (object.isMesh) {
+        object.castShadow = true
+        object.receiveShadow = true
+      }
+    })
+    return clone
+  }, [productGltf.scene])
   const animation = product.animations?.open
   const animationClip = useMemo(() => {
     if (!animation?.enabled) return null
