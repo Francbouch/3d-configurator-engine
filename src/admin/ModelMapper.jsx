@@ -838,7 +838,13 @@ export default function ModelMapper({ onSignOut }) {
             aria-label="Nom du meuble"
             placeholder="Nom du meuble"
             value={modelName}
-            onChange={(event) => setModelName(event.target.value)}
+            onChange={(event) => {
+              const name = event.target.value
+              setModelName(name)
+              const local = loadAdminDraft(product.id) ?? buildDraftPayload()
+              saveAdminDraft(product.id, { ...local, name })
+              persistConfigurationPatch({ name })
+            }}
           />
           <label className="admin__upload">
             <input type="file" accept=".glb,model/gltf-binary" onChange={handleModelUpload} />
