@@ -1211,11 +1211,19 @@ export default function ModelMapper({ onSignOut }) {
                   <input type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" onChange={(e) => { replaceMaterialImage(index, e.target.files?.[0]); e.target.value = '' }} />
                   <small>{material.source?.fileName || 'Ajouter'}</small>
                 </label>
-              </div>
-              <div className="admin__pbr-maps">
-                <label>Normal<input type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" onChange={(e) => { uploadMaterialPbrMap(index, 'normal', e.target.files?.[0]); e.target.value = '' }} /><small>{material.pbr?.normalUrl ? '✓' : '+'}</small></label>
-                <label>Roughness<input type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" onChange={(e) => { uploadMaterialPbrMap(index, 'roughness', e.target.files?.[0]); e.target.value = '' }} /><small>{material.pbr?.roughnessUrl ? '✓' : '+'}</small></label>
-                <label>Bump<input type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" onChange={(e) => { uploadMaterialPbrMap(index, 'bump', e.target.files?.[0]); e.target.value = '' }} /><small>{material.pbr?.bumpUrl ? '✓' : '+'}</small></label>
+                <div className="admin__pbr-maps">
+                  {[
+                    ['normal', 'N', 'Normal', material.pbr?.normalUrl],
+                    ['roughness', 'R', 'Roughness', material.pbr?.roughnessUrl],
+                    ['bump', 'B', 'Bump', material.pbr?.bumpUrl],
+                  ].map(([kind, short, title, url]) => (
+                    <label key={kind} className="admin__pbr-mini" title={title + (url ? ' — importé' : ' — importer')}>
+                      <span>{short}{url ? ' ✓' : ' +'}</span>
+                      <input type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" aria-label={`Importer ${title} pour ${material.name}`} onChange={(e) => { uploadMaterialPbrMap(index, kind, e.target.files?.[0]); e.target.value = '' }} />
+                    </label>
+                  ))}
+                </div>
+
               </div>
               <div className="admin__money"><input aria-label={`Prix du matériau ${material.name}`} type="number" min="0" step="0.01" inputMode="decimal" placeholder="0.00" value={material.priceAdjustment ?? ''} onChange={(e) => updateMaterial(index, { priceAdjustment: e.target.value === '' ? '' : e.target.value })} onBlur={(e) => updateMaterial(index, { priceAdjustment: e.target.value === '' ? '' : Number(e.target.value).toFixed(2) })} /><span>$</span></div>
               <label className="admin__toggle"><input type="checkbox" checked={material.active !== false} onChange={(e) => updateMaterial(index, { active: e.target.checked })} /><span>{material.active !== false ? 'Oui' : 'Non'}</span></label>
