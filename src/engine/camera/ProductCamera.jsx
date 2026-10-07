@@ -11,6 +11,26 @@ export default function ProductCamera({ initialView = null, onViewChange = null 
     if (!initialView || !controlsRef.current) return
     if (Array.isArray(initialView.position)) camera.position.fromArray(initialView.position)
     if (Array.isArray(initialView.target)) controlsRef.current.target.fromArray(initialView.target)
+
+    // A saved back-office view can come from a different canvas aspect ratio.
+    // Preserve the exact visual framing by adjusting the camera view offset
+    // rather than changing its world-space position/target.
+    camera.clearViewOffset?.()
+    const savedAspect = Number(initialView.aspect)
+    const currentAspect = Number(camera.aspect)
+    if (savedAspect > 0 && currentAspect > 0 && Math.abs(savedAspect - currentAspect) > 0.0001) {
+      const virtualWidth = 10000
+      const virtualHeight = virtualWidth / savedAspect
+      const currentWidth = virtualHeight * currentAspect
+      camera.setViewOffset(
+        virtualWidth,
+        virtualHeight,
+        (virtualWidth - currentWidth) / 2,
+        0,
+        currentWidth,
+        virtualHeight,
+      )
+    }
     camera.updateProjectionMatrix()
     controlsRef.current.update()
     if (onViewChange) {
