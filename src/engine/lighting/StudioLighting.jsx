@@ -12,7 +12,9 @@ export const DEFAULT_SCENE_SETTINGS = Object.freeze({
   shadowOpacity: 0.24,
   shadowBlur: 3.2,
   shadowRadius: 5,
-  shadowBias: -0.0005,
+  shadowBias: -0.00015,
+  shadowNormalBias: 0.012,
+  shadowStrength: 0.7,
   groundY: -1.02,
   keyPosition: [4.8, 5.8, 5.2],
   fillPosition: [-4.5, 3.8, 3.2],
@@ -30,19 +32,19 @@ export default function StudioLighting({ settings = {} }) {
       <rectAreaLight position={s.keyPosition} rotation={[-0.72, 0.55, 0.38]} width={5.5} height={7} intensity={s.keyIntensity} color="#fffdf8" />
       <directionalLight
         position={s.keyPosition}
-        intensity={Math.max(0.15, s.keyIntensity * 0.16)}
+        intensity={Math.max(0.35, s.keyIntensity * 0.22)}
         color="#fffdf8"
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
-        shadow-camera-left={-6}
-        shadow-camera-right={6}
-        shadow-camera-top={7}
-        shadow-camera-bottom={-4}
+        shadow-camera-left={-4}
+        shadow-camera-right={4}
+        shadow-camera-top={5}
+        shadow-camera-bottom={-3}
         shadow-camera-near={0.1}
         shadow-camera-far={30}
         shadow-bias={s.shadowBias}
-        shadow-normalBias={0.025}
+        shadow-normalBias={s.shadowNormalBias}
         shadow-radius={s.shadowRadius}
       />
       <rectAreaLight position={s.fillPosition} rotation={[-0.25, -0.82, -0.2]} width={4} height={6} intensity={s.fillIntensity} color="#f7faff" />
@@ -54,6 +56,11 @@ export default function StudioLighting({ settings = {} }) {
         <Lightformer form="rect" intensity={3.4} position={[3, 3, -5]} rotation={[0, 0.15, 0]} scale={[3, 6, 1]} />
         <Lightformer form="rect" intensity={1.7} position={[-2, 6, -1]} rotation={[Math.PI / 2, 0, 0]} scale={[6, 4, 1]} />
       </Environment>
+      {/* Invisible floor: receives every real shadow without turning the scene into a grey slab. */}
+      <mesh position={[0, s.groundY, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[20, 20]} />
+        <shadowMaterial transparent opacity={s.shadowStrength} depthWrite={false} />
+      </mesh>
       {(s.planes ?? []).map((plane) => (
         <mesh key={plane.id} position={plane.position} rotation={plane.rotation} scale={plane.scale} receiveShadow castShadow>
           <planeGeometry args={[1, 1]} />
