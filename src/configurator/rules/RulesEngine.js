@@ -76,7 +76,8 @@ export function getRuleGraphAllowedMaterials({
   if (!blocks.length || !connections.length) return materials
 
   const blockById = new Map(blocks.map((block) => [block.id, block]))
-  const activeRestrictions = []
+  const activeAllowedIds = new Set()
+  let hasActiveRestriction = false
 
   connections.forEach((connection) => {
     const cause = blockById.get(connection.causeId)
@@ -84,20 +85,28 @@ export function getRuleGraphAllowedMaterials({
     if (!cause || !effect || cause.type !== 'cause' || effect.type !== 'effect') return
     if (!(effect.groupIds ?? []).includes(groupId)) return
 
-    const triggerIds = blockMaterialIds(cause)
-    const causeActive = (cause.groupIds ?? []).some((causeGroupId) =>
-      triggerIds.includes(selected[causeGroupId]),
-    )
-    if (!causeActive) return
+    // Cause blocks intentionally use one group. Reading the first item also
+    // keeps older saved graphs compatible if they still contain several.
+    const causeGroupId = (cause.groupIds ?? [])[0]
+    if (!causeGroupId) return
 
-    activeRestrictions.push(new Set(blockMaterialIds(effect)))
+    const selectedCauseMaterial = selected[causeGroupId]
+    const triggerIds = blockMaterialIds(cause)
+    if (!selectedCauseMaterial || !triggerIds.includes(selectedCauseMaterial)) return
+
+    hasActiveRestriction = true
+    blockMaterialIds(effect).forEach((materialId) => {
+      if (materialId === '__cause_material__') {
+        activeAllowedIds.add(selectedCauseMaterial)
+      } else {
+        activeAllowedIds.add(materialId)
+      }
+    })
   })
 
-  if (!activeRestrictions.length) return materials
+  // No connected Cause is currently active: do not restrict the group at all.
+  if (!hasActiveRestriction) return materials
 
-  // If several active causes point to the same effect group, a material remains
-  // available only when every active rule allows it.
-  return materials.filter((material) =>
-    activeRestrictions.every((allowedIds) => allowedIds.has(material.id)),
-  )
+  // Several active Causes use UNION semantics.
+  return materials.filter((material) => activeAllowedIds.has(material.id))
 }
