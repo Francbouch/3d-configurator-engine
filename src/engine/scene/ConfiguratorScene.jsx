@@ -24,38 +24,88 @@ function SceneCalibration({ settings }) {
   return null
 }
 
-function EditorGizmo({ editor, settings }) {
+function EditableShadowLight({ editor, settings }) {
+  const lightRef = useRef()
   const targetRef = useRef()
-  if (!editor?.selection) return null
+  const selected = editor?.selection?.type === 'light' && editor?.selection?.id === 'shadow'
 
-  const { type, id } = editor.selection
-  let position = [0, 0, 0]
-  let rotation = [0, 0, 0]
-  let scale = [1, 1, 1]
-  if (type === 'light') position = settings[id + 'Position'] ?? position
-  if (type === 'plane') {
-    const plane = (settings.planes ?? []).find((item) => item.id === id)
-    if (!plane) return null
-    position = plane.position; rotation = plane.rotation; scale = plane.scale
+  useEffect(() => {
+    if (!lightRef.current || !targetRef.current) return
+    lightRef.current.target = targetRef.current
+    targetRef.current.updateMatrixWorld()
+    lightRef.current.shadow.needsUpdate = true
+  }, [])
+
+  const commit = () => {
+    const light = lightRef.current
+    if (!light) return
+    light.shadow.needsUpdate = true
+    editor.onTransform?.({
+      type: 'light',
+      id: 'shadow',
+      position: light.position.toArray(),
+      rotation: [light.rotation.x, light.rotation.y, light.rotation.z],
+      scale: light.scale.toArray(),
+    })
   }
 
+  const light = (
+    <directionalLight
+      ref={lightRef}
+      position={settings.shadowPosition}
+      intensity={Math.max(0.35, settings.keyIntensity * 0.22)}
+      color="#fffdf8"
+      castShadow
+      shadow-mapSize-width={2048}
+      shadow-mapSize-height={2048}
+      shadow-camera-left={-4}
+      shadow-camera-right={4}
+      shadow-camera-top={5}
+      shadow-camera-bottom={-3}
+      shadow-camera-near={0.1}
+      shadow-camera-far={30}
+      shadow-bias={settings.shadowBias}
+      shadow-normalBias={settings.shadowNormalBias}
+      shadow-radius={settings.shadowRadius}
+    />
+  )
+
+  return (
+    <>
+      <object3D ref={targetRef} position={[0, 0.8, 0]} />
+      {selected ? (
+        <TransformControls
+          mode={editor.mode || 'translate'}
+          space="world"
+          size={1.4}
+          onObjectChange={() => {
+            if (lightRef.current) lightRef.current.shadow.needsUpdate = true
+          }}
+          onMouseUp={commit}
+        >
+          {light}
+        </TransformControls>
+      ) : light}
+    </>
+  )
+}
+
+function EditorGizmo({ editor, settings }) {
+  const targetRef = useRef()
+  if (!editor?.selection || editor.selection.type === 'light') return null
+  const { type, id } = editor.selection
+  const plane = (settings.planes ?? []).find((item) => item.id === id)
+  if (!plane) return null
   const commit = () => {
     const o = targetRef.current
     if (!o) return
     editor.onTransform?.({ type, id, position:o.position.toArray(), rotation:[o.rotation.x,o.rotation.y,o.rotation.z], scale:o.scale.toArray() })
   }
-
   return (
-    <TransformControls
-      key={'transform-' + type + '-' + id}
-      mode={editor.mode || 'translate'}
-      space="world"
-      size={1.4}
-      onMouseUp={commit}
-    >
-      <mesh ref={targetRef} position={position} rotation={rotation} scale={scale} renderOrder={1000}>
-        {type === 'light' ? <sphereGeometry args={[0.22,20,20]} /> : <boxGeometry args={[1,1,0.06]} />}
-        <meshBasicMaterial color={id === 'shadow' ? '#ff5a00' : '#ffcc33'} transparent opacity={0.95} depthTest={false} depthWrite={false} />
+    <TransformControls mode={editor.mode || 'translate'} space="world" size={1.4} onMouseUp={commit}>
+      <mesh ref={targetRef} position={plane.position} rotation={plane.rotation} scale={plane.scale} renderOrder={1000}>
+        <boxGeometry args={[1,1,0.06]} />
+        <meshBasicMaterial color="#4f7cff" transparent opacity={0.7} depthTest={false} depthWrite={false} />
       </mesh>
     </TransformControls>
   )
@@ -99,7 +149,8 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null 
       <color attach="background" args={[sceneSettings.background]} />
       <Suspense fallback={null}>
         <SceneCalibration settings={sceneSettings} />
-        <StudioLighting settings={sceneSettings} />
+        <StudioLighting settings={sceneSettings} externalShadowLight={Boolean(editor)} />
+        {editor && <EditableShadowLight editor={editor} settings={sceneSettings} />}
         <ProductModel url={modelUrl} />
         {editor && <EditorGizmo editor={editor} settings={sceneSettings} />}
       </Suspense>
