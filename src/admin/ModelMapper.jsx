@@ -1316,7 +1316,17 @@ export default function ModelMapper({ onSignOut }) {
                 <div className="admin__relation-field">
                   <span>Matériaux</span>
                   <div className="admin__relation-materials">
-                    {materials.map((material) => {
+                    {[
+                      ...(block.type === 'effect'
+                        ? [{
+                            id: '__cause_material__',
+                            name: 'Matériau cause',
+                            color: '#f2f2f2',
+                            isCauseMaterialOption: true,
+                          }]
+                        : []),
+                      ...materials.filter((material) => material.active !== false),
+                    ].map((material) => {
                       const selectedIds = Array.isArray(block.materialIds)
                         ? block.materialIds
                         : (block.materialId ? [block.materialId] : [])
@@ -1330,9 +1340,11 @@ export default function ModelMapper({ onSignOut }) {
                           aria-pressed={selected}
                         >
                           <span className="admin__relation-material-preview">
-                            {material.source?.imageUrl
-                              ? <img src={material.source.imageUrl} alt="" />
-                              : <span style={{ background: material.color || '#000000' }} />}
+                            {material.isCauseMaterialOption
+                              ? <span className="admin__relation-cause-material-preview">C</span>
+                              : material.source?.imageUrl
+                                ? <img src={material.source.imageUrl} alt="" />
+                                : <span style={{ background: material.color || '#000000' }} />}
                           </span>
                           <span className="admin__relation-material-name">{material.name || material.id}</span>
                           <span className="admin__relation-material-check">{selected ? '✓' : ''}</span>
