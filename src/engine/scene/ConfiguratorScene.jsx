@@ -26,47 +26,23 @@ function SceneCalibration({ settings }) {
 
 function EditorGizmo({ editor, settings }) {
   const targetRef = useRef()
-  const latestRef = useRef(null)
-
   if (!editor?.selection) return null
 
   const { type, id } = editor.selection
   let position = [0, 0, 0]
   let rotation = [0, 0, 0]
   let scale = [1, 1, 1]
-
   if (type === 'light') position = settings[id + 'Position'] ?? position
   if (type === 'plane') {
     const plane = (settings.planes ?? []).find((item) => item.id === id)
     if (!plane) return null
-    position = plane.position
-    rotation = plane.rotation
-    scale = plane.scale
-  }
-
-  const readTransform = () => {
-    const object = targetRef.current
-    if (!object) return null
-    return {
-      type,
-      id,
-      position: object.position.toArray(),
-      rotation: [object.rotation.x, object.rotation.y, object.rotation.z],
-      scale: object.scale.toArray(),
-    }
-  }
-
-  const preview = () => {
-    const change = readTransform()
-    if (!change) return
-    latestRef.current = change
-    editor.onPreviewTransform?.(change)
+    position = plane.position; rotation = plane.rotation; scale = plane.scale
   }
 
   const commit = () => {
-    const change = latestRef.current ?? readTransform()
-    if (change) editor.onTransform?.(change)
-    latestRef.current = null
+    const o = targetRef.current
+    if (!o) return
+    editor.onTransform?.({ type, id, position:o.position.toArray(), rotation:[o.rotation.x,o.rotation.y,o.rotation.z], scale:o.scale.toArray() })
   }
 
   return (
@@ -75,15 +51,11 @@ function EditorGizmo({ editor, settings }) {
       mode={editor.mode || 'translate'}
       space="world"
       size={1.4}
-      onObjectChange={preview}
       onMouseUp={commit}
     >
       <mesh ref={targetRef} position={position} rotation={rotation} scale={scale} renderOrder={1000}>
-        {type === 'light' ? <sphereGeometry args={[0.22, 20, 20]} /> : <boxGeometry args={[1, 1, 0.06]} />}
-        <meshBasicMaterial
-          color={type === 'light' ? (id === 'shadow' ? '#ff5a00' : '#ffcc33') : '#4f7cff'}
-          transparent opacity={0.95} depthTest={false} depthWrite={false}
-        />
+        {type === 'light' ? <sphereGeometry args={[0.22,20,20]} /> : <boxGeometry args={[1,1,0.06]} />}
+        <meshBasicMaterial color={id === 'shadow' ? '#ff5a00' : '#ffcc33'} transparent opacity={0.95} depthTest={false} depthWrite={false} />
       </mesh>
     </TransformControls>
   )
