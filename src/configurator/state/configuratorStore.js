@@ -62,6 +62,17 @@ export const useConfiguratorStore = create((set) => ({
 
   initializeMaterialCatalog: (materials) => set((state) => ({ materialCatalog: materials, selectedMaterials: Object.keys(state.selectedMaterials).length ? state.selectedMaterials : buildInitialMaterials(materials) })),
 
+  initializeDynamicGroups: (groups = []) =>
+    set((state) => {
+      const selectedMaterials = { ...state.selectedMaterials }
+      groups.forEach((group) => {
+        if (group?.id && group.materialId && !selectedMaterials[group.id]) {
+          selectedMaterials[group.id] = group.materialId
+        }
+      })
+      return { selectedMaterials }
+    }),
+
   setMaterialDirect: (groupId, materialId) =>
     set((state) => ({ selectedMaterials: { ...state.selectedMaterials, [groupId]: materialId } })),
 
