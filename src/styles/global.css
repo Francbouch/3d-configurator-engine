@@ -586,3 +586,27 @@ body:has(.admin) { overflow: hidden; }
   stroke-width: 2.4;
   opacity: .9;
 }
+
+.admin__relation-node-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.admin__relation-delete {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #999;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.admin__relation-delete:hover {
+  background: #f1f1f1;
+  color: #222;
+}
