@@ -155,18 +155,10 @@ export default function ModelMapper({ onSignOut }) {
         setModelName(typeof baseline?.name === 'string' ? baseline.name : product.name)
         // The material library is image-driven only. Never seed it from the legacy GLB.
         // Also ignore legacy material records that do not have an uploaded image source.
-        const imageMaterials = Array.isArray(baseline?.materials)
-          ? baseline.materials.filter((material) =>
-              material?.source?.type === 'image' &&
-              Boolean(material.source?.imagePath || material.source?.imageUrl),
-            )
-          : []
-        const publishedImageMaterials = Array.isArray(publishedConfig?.materials)
-          ? publishedConfig.materials.filter((material) =>
-              material?.source?.type === 'image' &&
-              Boolean(material.source?.imagePath || material.source?.imageUrl),
-            )
-          : []
+        // Keep every back-office material. A material may intentionally use only
+        // its fallback color and therefore does not need an uploaded image.
+        const imageMaterials = Array.isArray(baseline?.materials) ? baseline.materials : []
+        const publishedImageMaterials = Array.isArray(publishedConfig?.materials) ? publishedConfig.materials : []
         setPublishedMaterials(publishedImageMaterials)
         setMaterials(imageMaterials)
         setRules(Array.isArray(baseline?.rules) ? baseline.rules : product.rules ?? [])
@@ -366,20 +358,25 @@ export default function ModelMapper({ onSignOut }) {
 
   function addMaterial() {
     const id = `material-${Date.now()}`
-    setMaterials((current) => [
-      ...current,
-      {
-        id,
-        name: 'Nouveau matériau',
-        code: '',
-        manufacturer: '',
-        category: 'decor',
-        active: true,
-        color: '#000000',
-        source: { type: 'image', fileName: '', imagePath: '', imageUrl: '' },
-      },
-    ])
-    setSaveStatus('')
+    const material = {
+      id,
+      name: 'Nouveau matériau',
+      code: '',
+      manufacturer: '',
+      category: 'decor',
+      active: true,
+      priceAdjustment: 0,
+      color: '#000000',
+      source: { type: 'image', fileName: '', imagePath: '', imageUrl: '' },
+    }
+    setMaterials((current) => {
+      const next = [...current, material]
+      const local = loadAdminDraft(product.id) ?? buildDraftPayload()
+      saveAdminDraft(product.id, { ...local, materials: next })
+      persistConfigurationPatch({ materials: next })
+      return next
+    })
+    setSaveStatus('Nouveau matériau enregistré automatiquement')
   }
 
   function updateMaterial(index, patch) {
