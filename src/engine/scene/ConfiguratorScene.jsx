@@ -118,7 +118,7 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null,
     <Canvas
       shadows={{ type: THREE.PCFSoftShadowMap }}
       dpr={[1, 2]}
-      camera={{ position: [4.2, 2.5, 5.2], fov: 34, near: 0.01, far: 100 }}
+      camera={{ position: [-4.35, 2.35, 5.55], fov: 34, near: 0.01, far: 100 }}
       gl={{
         antialias: true,
         alpha: false,
