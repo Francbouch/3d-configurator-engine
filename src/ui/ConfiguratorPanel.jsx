@@ -112,7 +112,10 @@ export default function ConfiguratorPanel() {
                 onClick={() => setOpenSection(isOpen ? null : section.id)}
               >
                 <span>{section.label}</span>
-                <span className="panel__value">{selectedMaterials[section.id]}</span>
+                <span className="panel__value">{
+                  materials.find((material) => material.id === (selectedMaterials[section.id] || section.defaultMaterialId))?.name
+                  ?? ''
+                }</span>
                 <span aria-hidden="true">{isOpen ? '−' : '+'}</span>
               </button>
 
