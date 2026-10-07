@@ -94,6 +94,23 @@ export function validateProductConfig(product, materials = []) {
   })
 
 
+  Object.entries(product?.animations ?? {}).forEach(([animationId, animation]) => {
+    if (animation?.enabled === false) return
+
+    const label = animationId || 'sans id'
+    if (!animation?.clip?.trim()) {
+      errors.push(`L’animation "${label}" doit référencer un clip GLB.`)
+    }
+
+    const closedFrame = Number(animation?.closedFrame)
+    const openFrame = Number(animation?.openFrame)
+    if (!Number.isFinite(closedFrame) || !Number.isFinite(openFrame)) {
+      errors.push(`L’animation "${label}" doit avoir des frames numériques.`)
+    } else if (closedFrame < 0 || openFrame < 0 || closedFrame >= openFrame) {
+      errors.push(`L’animation "${label}" doit respecter 0 ≤ frame fermée < frame ouverte.`)
+    }
+  })
+
   const modules = product?.modules ?? []
   const duplicateModuleIds = modules
     .map((module) => module.id)
