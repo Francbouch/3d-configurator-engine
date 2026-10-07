@@ -843,7 +843,14 @@ export default function ModelMapper({ onSignOut }) {
               setModelName(name)
               const local = loadAdminDraft(product.id) ?? buildDraftPayload()
               saveAdminDraft(product.id, { ...local, name })
+            }}
+            onBlur={(event) => {
+              const name = event.target.value.trim()
+              setModelName(name)
+              const local = loadAdminDraft(product.id) ?? buildDraftPayload()
+              saveAdminDraft(product.id, { ...local, name })
               persistConfigurationPatch({ name })
+              setSaveStatus('Nom du meuble enregistré automatiquement')
             }}
           />
           <label className="admin__upload">
