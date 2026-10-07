@@ -5,6 +5,7 @@ export function getGroupMaterials({
   groupId,
   selected = {},
   materials = [],
+  activeCauseGroupId = null,
 }) {
   const activeMaterials = materials.filter((material) => material.active !== false)
   const group = product.materialGroups?.[groupId]
@@ -18,6 +19,7 @@ export function getGroupMaterials({
       selected,
       materials: activeMaterials,
       ruleGraph: product.ruleGraph,
+      activeCauseGroupId,
     })
   }
 
