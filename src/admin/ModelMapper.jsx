@@ -36,6 +36,7 @@ export default function ModelMapper({ onSignOut }) {
   const [sceneSettings, setSceneSettings] = useState({ ...DEFAULT_SCENE_SETTINGS })
   const [sceneSelection, setSceneSelection] = useState({ type: 'light', id: 'shadow' })
   const [sceneTransformMode, setSceneTransformMode] = useState('translate')
+  const [currentCameraView, setCurrentCameraView] = useState(null)
   const [materialGroups, setMaterialGroups] = useState(() =>
     Object.entries(product.materialGroups ?? {}).map(([id, group]) => ({
       id,
@@ -991,7 +992,7 @@ export default function ModelMapper({ onSignOut }) {
       {activeSection === 'scene' && (
         <section className="admin__scene-editor">
           <div className="admin__scene-preview">
-            <ConfiguratorScene sceneOverride={sceneSettings} editor={{
+            <ConfiguratorScene sceneOverride={sceneSettings} onCameraViewChange={setCurrentCameraView} editor={{
               selection: sceneSelection,
               mode: sceneTransformMode,
               onPreviewTransform: () => {},
@@ -1009,6 +1010,16 @@ export default function ModelMapper({ onSignOut }) {
           <div className="admin__scene-controls">
             <div className="admin__scene-tools">
               <strong>Éditeur 3D</strong>
+              <button type="button" onClick={() => {
+                if (!currentCameraView) {
+                  setSaveStatus('Déplace d’abord légèrement la vue 3D, puis réessaie.')
+                  return
+                }
+                const next = { ...sceneSettings, cameraView: currentCameraView }
+                setSceneSettings(next)
+                persistConfigurationPatch({ scene: next })
+                setSaveStatus('Vue initiale du configurateur enregistrée ✓')
+              }}>Définir comme vue initiale</button>
               <div className="admin__scene-toolrow">
                 <button type="button" className={sceneTransformMode === 'translate' ? 'is-active' : ''} onClick={() => setSceneTransformMode('translate')}>Déplacer</button>
                 <button type="button" className={sceneTransformMode === 'rotate' ? 'is-active' : ''} onClick={() => setSceneTransformMode('rotate')}>Rotation</button>
