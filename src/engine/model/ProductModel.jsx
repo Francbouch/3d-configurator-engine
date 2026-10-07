@@ -65,9 +65,10 @@ function LoadedProduct({ url }) {
       material = new THREE.MeshStandardMaterial({
         map,
         color: map ? 0xffffff : new THREE.Color(record?.color || '#000000'),
-        roughness: Number(record?.pbr?.roughness ?? 0.55),
+        roughness: Math.max(0, Math.min(1, 1 - (1 - Number(record?.pbr?.roughness ?? 0.55)) * Number(record?.pbr?.roughnessIntensity ?? 1))),
         metalness: Number(record?.pbr?.metalness ?? 0),
         normalMap,
+        normalScale: new THREE.Vector2(Number(record?.pbr?.normalIntensity ?? 1), Number(record?.pbr?.normalIntensity ?? 1)),
         roughnessMap,
         bumpMap,
         bumpScale: Number(record?.pbr?.bumpScale ?? 0.035),
