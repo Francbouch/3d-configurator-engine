@@ -1404,6 +1404,7 @@ export default function ModelMapper({ onSignOut }) {
             <div style={{ display: 'grid', gap: 14, paddingTop: 16 }}>
               {[
                 ['exposure', 'Exposition', 0.35, 1.5, 0.01, 0.78],
+                ['materialRoughness', 'Rugosité des matériaux (roughness)', 0, 1, 0.01, 0.48],
                 ['studioEnvironment', 'Environnement HDR', 0, 1.5, 0.01, 0.48],
                 ['studioDirectional', 'Lumière principale (ombres)', 0, 4, 0.05, 1.45],
                 ['studioKey', 'Softbox principale', 0, 5, 0.05, 2.35],
