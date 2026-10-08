@@ -110,7 +110,17 @@ function LoadedProduct({ url }) {
     animationAction.current = action
     mixer.update(0)
 
+    // Wait until the GLB and its animation are ready, then let the closed model
+    // settle visually before the one-time opening presentation.
+    const autoOpenTimer = window.setTimeout(() => {
+      const state = useConfiguratorStore.getState()
+      if (!state.autoOpenCancelled && state.animationProgress === 0) {
+        useConfiguratorStore.setState({ animationProgress: 1, autoOpenCancelled: true })
+      }
+    }, 1100)
+
     return () => {
+      window.clearTimeout(autoOpenTimer)
       animationAction.current = null
       mixer.stopAllAction()
     }
