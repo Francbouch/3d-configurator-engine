@@ -1404,7 +1404,6 @@ export default function ModelMapper({ onSignOut }) {
             <div style={{ display: 'grid', gap: 14, paddingTop: 16 }}>
               {[
                 ['exposure', 'Exposition', 0.35, 1.5, 0.01, 0.78],
-                ['materialRoughness', 'Rugosité des matériaux (roughness)', 0, 1, 0.01, 0.48],
                 ['studioEnvironment', 'Environnement HDR', 0, 1.5, 0.01, 0.48],
                 ['studioDirectional', 'Lumière principale (ombres)', 0, 4, 0.05, 1.45],
                 ['studioKey', 'Softbox principale', 0, 5, 0.05, 2.35],
@@ -1425,6 +1424,32 @@ export default function ModelMapper({ onSignOut }) {
                     onChange={(event) => setSceneSettings((current) => ({ ...current, [key]: Number(event.target.value) }))} />
                 </label>
               ))}
+            </div>
+          </div>
+          <div className="admin__card">
+            <div className="admin__pricing-title">
+              <div>
+                <strong>Texture</strong>
+                <small>Régle la finition des matériaux indépendamment de l’éclairage. Le rendu change immédiatement dans l’aperçu.</small>
+              </div>
+              <button type="button" onClick={() => {
+                setSaveStatus('Enregistrement de la texture…')
+                persistConfigurationPatch({ scene: sceneSettings })
+                  .then(() => setSaveStatus('Texture enregistrée ✓ — recharge le configurateur'))
+                  .catch((error) => setSaveStatus(error instanceof Error ? error.message : 'Enregistrement impossible.'))
+              }}>Enregistrer la texture</button>
+            </div>
+            <div style={{ display: 'grid', gap: 8, paddingTop: 16 }}>
+              <label style={{ display: 'grid', gap: 6 }}>
+                <span style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                  <span>Rugosité des matériaux (roughness)</span>
+                  <strong>{Number(sceneSettings.materialRoughness ?? 0.48).toFixed(2)}</strong>
+                </span>
+                <input type="range" min="0" max="1" step="0.01"
+                  value={sceneSettings.materialRoughness ?? 0.48}
+                  onChange={(event) => setSceneSettings((current) => ({ ...current, materialRoughness: Number(event.target.value) }))} />
+                <small>0 = brillant · 1 = mat</small>
+              </label>
             </div>
           </div>
           <div className="admin__card">
