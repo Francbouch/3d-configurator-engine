@@ -15,6 +15,16 @@ export default function App() {
 
   return (
     <main className="configurator">
+      <nav className="configurator__catalog" aria-label="Collection de meubles">
+        <span className="configurator__catalog-label">COLLECTION</span>
+        <div className="configurator__catalog-tabs">
+          <span className="configurator__catalog-tab is-active" aria-current="page">Lit Cabinet</span>
+          <span className="configurator__catalog-tab is-coming" title="À venir">Bibliothèque</span>
+          <span className="configurator__catalog-tab is-coming" title="À venir">Console</span>
+          <span className="configurator__catalog-tab is-coming" title="À venir">Bureau</span>
+          <span className="configurator__catalog-tab is-coming" title="À venir">Rangement</span>
+        </div>
+      </nav>
       <section className="configurator__viewer" aria-label="Aperçu 3D">
         <ConfiguratorScene />
         <div className="configurator__animation-control">
