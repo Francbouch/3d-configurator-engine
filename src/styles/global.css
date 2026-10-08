@@ -792,3 +792,8 @@ body:has(.admin) { overflow: hidden; }
 .configurator .panel__price--floating strong { font-size: 20px; font-weight: 400; color: #353531; }
 .configurator .panel { padding-bottom: 46px; }
 @media (max-width: 820px) { .configurator .panel__price--floating { width: 100%; margin-top: 28px; } .configurator .panel { padding-bottom: 46px; } }
+
+/* Invisible pricing container: typographic information, not a callout. */
+.configurator .panel__price.panel__price--floating { display: flex; flex-direction: row; align-items: baseline; justify-content: space-between; gap: 16px; position: static; width: 100%; min-width: 0; margin: 30px 0 0; padding: 0; border: none; border-radius: 0; background: transparent; box-shadow: none; backdrop-filter: none; }
+.configurator .panel__price--floating span { font-size: 11px; font-weight: 400; color: #999992; letter-spacing: 0; }
+.configurator .panel__price--floating strong { font-size: 17px; font-weight: 400; color: #666660; letter-spacing: -.015em; }
