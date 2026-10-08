@@ -802,3 +802,10 @@ body:has(.admin) { overflow: hidden; }
 
 /* Match the studio background while the 3D model and finish images initialize. */
 .configurator__viewer .configurator__loading-cover { position: absolute; inset: 0; z-index: 2; background: #f7f7f5; pointer-events: none; }
+
+/* Compact individual material finish controls, kept inside each material row. */
+.admin__material-finish{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px 22px;padding:2px 4px 8px}
+.admin__material-finish-control{display:flex;align-items:center;gap:9px;min-width:180px;flex:1 1 190px;max-width:300px;font-size:11px;color:#555}
+.admin__material-finish-control>span{min-width:106px;display:flex;flex-direction:column;gap:2px}
+.admin__material-finish-control small{font-size:10px;color:#888}
+.admin__material-finish-control input[type="range"]{width:100%;min-width:65px;accent-color:#222}
