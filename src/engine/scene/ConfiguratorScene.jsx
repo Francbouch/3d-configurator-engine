@@ -158,7 +158,7 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null,
       <color attach="background" args={[sceneSettings.background]} />
       <Suspense fallback={null}>
         <SceneCalibration settings={sceneSettings} />
-        <StudioLighting settings={sceneSettings} />
+        <StudioLighting settings={sceneSettings} rotationY={editor ? 0 : Math.PI} />
         <ProductModel url={modelUrl} onReady={() => setModelReady(true)} />
         {editor && <EditorGizmo editor={editor} settings={sceneSettings} />}
       </Suspense>
