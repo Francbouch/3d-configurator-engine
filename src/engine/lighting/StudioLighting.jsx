@@ -13,12 +13,12 @@ export const DEFAULT_SCENE_SETTINGS = Object.freeze({
   fillIntensity: 1.9,
   rimIntensity: 2.3,
   topIntensity: 1.1,
-  shadowOpacity: 0.24,
+  shadowOpacity: 0.1,
   shadowBlur: 3.2,
   shadowRadius: 5,
   shadowBias: -0.00015,
   shadowNormalBias: 0.012,
-  shadowStrength: 0.7,
+  shadowStrength: 0.85,
   groundY: -1.02,
   keyPosition: [4.8, 5.8, -5.2],
   fillPosition: [-4.5, 3.8, -3.2],
@@ -42,7 +42,7 @@ export default function StudioLighting({ settings = {}, externalShadowLight = fa
   }, [s.shadowPosition])
 
   return (
-    <group rotation={[0, Math.PI, 0]}>
+    <>
       {/* Fixed, balanced softboxes: camera orbit does not move the lighting. */}
       <hemisphereLight args={['#ffffff', '#c4c8ce', s.hemisphereIntensity]} />
       <ambientLight intensity={0.08} color="#ffffff" />
@@ -50,8 +50,8 @@ export default function StudioLighting({ settings = {}, externalShadowLight = fa
       {!externalShadowLight && (
         <directionalLight
           ref={shadowLightRef}
-          position={[4.8, 7, 5.5]}
-          intensity={1.2}
+          position={[7.5, 8, 8.5]}
+          intensity={1.75}
           color="#fffdf8"
           castShadow
           shadow-mapSize-width={2048}
@@ -73,7 +73,7 @@ export default function StudioLighting({ settings = {}, externalShadowLight = fa
       <rectAreaLight position={[-5, 3.5, -4]} rotation={[-0.2, -2.35, 0]} width={4} height={6} intensity={s.fillIntensity * 0.7} color="#ffffff" />
       <rectAreaLight position={[0, 7, 0]} rotation={[-Math.PI / 2, 0, 0]} width={6} height={5} intensity={s.topIntensity} color="#ffffff" />
       {/* Procedural HDR environment: broad studio reflections from every side, without an external HDR file. */}
-      <Environment resolution={256} environmentIntensity={s.environmentIntensity} environmentRotation={[0, Math.PI, 0]}>
+      <Environment resolution={256} environmentIntensity={s.environmentIntensity} environmentRotation={[0, 0, 0]}>
         <Lightformer form="rect" intensity={2.5} position={[5, 4, 5]} rotation={[0, Math.PI / 4, 0]} scale={[5, 7, 1]} />
         <Lightformer form="rect" intensity={2} position={[-5, 4, 4]} rotation={[0, -Math.PI / 4, 0]} scale={[4, 7, 1]} />
         <Lightformer form="rect" intensity={2.5} position={[5, 4, -5]} rotation={[0, 3 * Math.PI / 4, 0]} scale={[4, 7, 1]} />
@@ -102,6 +102,6 @@ export default function StudioLighting({ settings = {}, externalShadowLight = fa
           <meshStandardMaterial color={plane.color || '#eeeeec'} roughness={0.9} side={2} />
         </mesh>
       ))}
-    </group>
+    </>
   )
 }
