@@ -7,7 +7,7 @@ import product from '../../data/products/product.example.json'
 import { applyMaterialToParts } from '../materials/MaterialEngine'
 import { SUPABASE_PROJECT_URL, supabaseHeaders } from '../../admin/AdminAuth'
 
-function LoadedProduct({ url, onReady, rotationY = 0, roughness = 0.48 }) {
+function LoadedProduct({ url, onReady, rotationY = 0, roughness = 0.48, materialsOverride = null }) {
   const productGltf = useGLTF(url)
    const selectedMaterials = useConfiguratorStore((state) => state.selectedMaterials)
   const animationProgress = useConfiguratorStore((state) => state.animationProgress)
@@ -60,7 +60,7 @@ function LoadedProduct({ url, onReady, rotationY = 0, roughness = 0.48 }) {
   }, [publishedConfig, onReady])
 
   const configuredMaterials = useMemo(() => {
-    const records = Array.isArray(publishedConfig?.materials) ? publishedConfig.materials : []
+    const records = Array.isArray(materialsOverride) ? materialsOverride : (Array.isArray(publishedConfig?.materials) ? publishedConfig.materials : [])
     const library = new Map()
     const textureLoader = new THREE.TextureLoader()
 
@@ -96,7 +96,7 @@ function LoadedProduct({ url, onReady, rotationY = 0, roughness = 0.48 }) {
       library.set(record.id, material)
     })
     return library
-  }, [publishedConfig])
+  }, [publishedConfig, materialsOverride])
 
   useEffect(() => {
     const parts = publishedConfig?.parts ?? []
@@ -112,21 +112,25 @@ function LoadedProduct({ url, onReady, rotationY = 0, roughness = 0.48 }) {
     })
   }, [configuredMaterials, model, publishedConfig, selectedMaterials])
 
-  // Apply the live roughness control to both mapped materials and any original GLB surfaces.
-  // Updating the actual Three.js material property makes reflections respond immediately.
+  // Per-material sliders override the global scene roughness only above zero.
+  // A zero/absent slider means inherit the global value (or default metalness).
   useEffect(() => {
-    const value = THREE.MathUtils.clamp(Number(roughness) || 0, 0, 1)
+    const globalRoughness = THREE.MathUtils.clamp(Number(roughness ?? 0.48), 0, 1)
+    const records = Array.isArray(materialsOverride) ? materialsOverride : (publishedConfig?.materials ?? [])
+    const overrides = new Map(records.map((record) => [record.id, record]))
     model.traverse((object) => {
       if (!object.isMesh) return
-      const materials = Array.isArray(object.material) ? object.material : [object.material]
-      materials.forEach((material) => {
-        if (material && 'roughness' in material) {
-          material.roughness = value
-          material.needsUpdate = true
-        }
+      const list = Array.isArray(object.material) ? object.material : [object.material]
+      list.forEach((material) => {
+        if (!material) return
+        const record = overrides.get(material.name)
+        const localRoughness = Number(record?.roughness ?? 0)
+        const localMetalness = Number(record?.metalness ?? 0)
+        if ('roughness' in material) material.roughness = localRoughness > 0 ? THREE.MathUtils.clamp(localRoughness, 0, 1) : globalRoughness
+        if ('metalness' in material) material.metalness = localMetalness > 0 ? THREE.MathUtils.clamp(localMetalness, 0, 1) : 0
       })
     })
-  }, [model, roughness, configuredMaterials, selectedMaterials, publishedConfig])
+  }, [model, roughness, configuredMaterials, selectedMaterials, publishedConfig, materialsOverride])
 
   useEffect(() => {
     if (!mixer || !animationClip) return undefined
@@ -200,5 +204,5 @@ function LoadedProduct({ url, onReady, rotationY = 0, roughness = 0.48 }) {
 
 export default function ProductModel({ url, onReady, rotationY = 0, roughness = 0.48 }) {
   if (!url) return null
-  return <LoadedProduct url={url} onReady={onReady} rotationY={rotationY} roughness={roughness} />
+  return <LoadedProduct url={url} onReady={onReady} rotationY={rotationY} roughness={roughness} materialsOverride={materialsOverride} />
 }
