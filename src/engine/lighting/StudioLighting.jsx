@@ -28,7 +28,7 @@ export const DEFAULT_SCENE_SETTINGS = Object.freeze({
   planes: [],
 })
 
-export default function StudioLighting({ settings = {}, externalShadowLight = false, rotationY = 0 }) {
+export default function StudioLighting({ settings = {}, externalShadowLight = false }) {
   const s = { ...DEFAULT_SCENE_SETTINGS, ...settings }
   const shadowLightRef = useRef()
   const shadowTargetRef = useRef()
@@ -43,8 +43,6 @@ export default function StudioLighting({ settings = {}, externalShadowLight = fa
 
   return (
     <>
-      {/* Rotate the entire lighting rig around the world vertical (Y) axis. */}
-      <group rotation={[0, rotationY, 0]}>
       {/* Fixed, balanced softboxes: camera orbit does not move the lighting. */}
       <hemisphereLight args={['#ffffff', '#c4c8ce', s.hemisphereIntensity]} />
       <ambientLight intensity={0.08} color="#ffffff" />
@@ -74,9 +72,8 @@ export default function StudioLighting({ settings = {}, externalShadowLight = fa
       <rectAreaLight position={[4.5, 3.5, -5]} rotation={[-0.2, 2.35, 0]} width={4} height={6} intensity={s.rimIntensity} color="#ffffff" />
       <rectAreaLight position={[-5, 3.5, -4]} rotation={[-0.2, -2.35, 0]} width={4} height={6} intensity={s.fillIntensity * 0.7} color="#ffffff" />
       <rectAreaLight position={[0, 7, 0]} rotation={[-Math.PI / 2, 0, 0]} width={6} height={5} intensity={s.topIntensity} color="#ffffff" />
-      </group>
       {/* Procedural HDR environment: broad studio reflections from every side, without an external HDR file. */}
-      <Environment resolution={256} environmentIntensity={s.environmentIntensity} environmentRotation={[0, rotationY, 0]}>
+      <Environment resolution={256} environmentIntensity={s.environmentIntensity} environmentRotation={[0, 0, 0]}>
         <Lightformer form="rect" intensity={2.5} position={[5, 4, 5]} rotation={[0, Math.PI / 4, 0]} scale={[5, 7, 1]} />
         <Lightformer form="rect" intensity={2} position={[-5, 4, 4]} rotation={[0, -Math.PI / 4, 0]} scale={[4, 7, 1]} />
         <Lightformer form="rect" intensity={2.5} position={[5, 4, -5]} rotation={[0, 3 * Math.PI / 4, 0]} scale={[4, 7, 1]} />
