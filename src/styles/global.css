@@ -732,3 +732,12 @@ body:has(.admin) { overflow: hidden; }
 .configurator .panel__price { border-top-color: #e3e3dd; }
 .configurator .panel__price strong { font-family: 'Jost', 'Helvetica Neue', Arial, sans-serif; font-weight: 400; letter-spacing: -.025em; }
 @media (max-width: 820px) { .configurator .panel { padding: 32px 26px 40px; } .configurator .panel h1 { font-size: 35px; } }
+
+/* Client material cards: balanced square swatch and dedicated text/price rows. */
+.configurator .material-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
+.configurator .material-chip { display: grid; grid-template-columns: 46px minmax(0, 1fr); align-items: center; gap: 10px; min-height: 76px; padding: 10px; min-width: 0; text-align: center; }
+.configurator .material-chip__preview { width: 46px; height: 46px; flex: none; border-radius: 5px; aspect-ratio: 1; }
+.configurator .material-chip__meta { position: static; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px; width: 100%; min-width: 0; height: auto; min-height: 46px; padding: 0; text-align: center; }
+.configurator .material-chip__name { display: block; width: 100%; min-width: 0; font-size: 11.5px; font-weight: 500; line-height: 1.35; letter-spacing: -.01em; white-space: normal; overflow-wrap: break-word; hyphens: auto; }
+.configurator .material-chip__price { position: static; display: block; width: 100%; margin: 0; font-size: 10px; font-weight: 400; line-height: 1.3; letter-spacing: 0; color: #777770; text-align: center; }
+@media (max-width: 420px) { .configurator .material-chip { grid-template-columns: 40px minmax(0, 1fr); gap: 7px; padding: 8px; min-height: 68px; } .configurator .material-chip__preview { width: 40px; height: 40px; } .configurator .material-chip__name { font-size: 10.5px; } }
