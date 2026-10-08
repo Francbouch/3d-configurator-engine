@@ -1174,7 +1174,7 @@ export default function ModelMapper({ onSignOut }) {
               <div className="admin__material-source">
                 <input className="admin__color-source" aria-label={`Couleur du matériau ${material.name}`} type="color" value={material.color || '#000000'} onChange={(e) => updateMaterial(index, { color: e.target.value })} />
                 <label className="admin__source-image">
-                  {material.source?.imageUrl ? <img src={material.source.imageUrl} alt="" /> : <span>Image</span>}
+                  {material.source?.imageUrl ? <img src={material.source.imageUrl} alt="" /> : <span className="admin__material-color-preview" style={{ backgroundColor: material.color || '#000000' }} aria-label={`Aperçu couleur ${material.name}`} />}
                   <input type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" onChange={(e) => { replaceMaterialImage(index, e.target.files?.[0]); e.target.value = '' }} />
                   <small>{material.source?.fileName || 'Ajouter'}</small>
                 </label>
