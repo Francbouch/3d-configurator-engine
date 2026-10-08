@@ -438,90 +438,6 @@ export default function ModelMapper({ onSignOut }) {
     setSaveStatus('')
   }
 
-  async function uploadMaterialPbrMap(index, kind, file) {
-    if (!file) return
-    const session = loadAdminSession()
-    if (!session?.access_token) {
-      setSaveStatus('Session expirée. Reconnecte-toi au back-office.')
-      return
-    }
-    const material = materials[index]
-    if (!material?.id) return
-    try {
-      setSaveStatus(`Upload ${kind}…`)
-      const extension = file.name.toLowerCase().endsWith('.jpg') || file.name.toLowerCase().endsWith('.jpeg') ? 'jpg' : 'png'
-      const safeId = material.id.replace(/[^a-zA-Z0-9._-]+/g, '-')
-      const path = `${product.id}/materials/${safeId}-${kind}-${Date.now()}.${extension}`
-      const upload = await fetch(`${SUPABASE_PROJECT_URL}/storage/v1/object/models/${encodeURI(path)}`, {
-        method: 'POST',
-        headers: {
-          ...supabaseHeaders(session.access_token, file.type || (extension === 'png' ? 'image/png' : 'image/jpeg')),
-          'x-upsert': 'true',
-        },
-        body: file,
-      })
-      if (!upload.ok) throw new Error('Upload impossible.')
-      const url = `${SUPABASE_PROJECT_URL}/storage/v1/object/public/models/${path.split('/').map(encodeURIComponent).join('/')}`
-      const key = kind === 'normal' ? 'normalUrl' : kind === 'roughness' ? 'roughnessUrl' : 'bumpUrl'
-      const nextMaterials = materials.map((item, i) => i === index
-        ? { ...item, pbr: { roughness: 0.55, metalness: 0, bumpScale: 0.035, ...(item.pbr ?? {}), [key]: url } }
-        : item)
-      setMaterials(nextMaterials)
-      await persistConfigurationPatch({ materials: nextMaterials })
-      setSaveStatus(`${kind} enregistré ✓`)
-    } catch (error) {
-      setSaveStatus(error instanceof Error ? error.message : 'Upload impossible.')
-    }
-  }
-
-  async function applyPbrMapToAll(kind, file) {
-    if (!file || !materials.length) return
-    const session = loadAdminSession()
-    if (!session?.access_token) { setSaveStatus('Reconnecte-toi au back-office.'); return }
-    const title = kind === 'normal' ? 'Normal' : kind === 'roughness' ? 'Roughness' : 'Bump'
-    if (!window.confirm(`Appliquer cette map ${title} à tous les ${materials.length} matériaux ? Les maps ${title} existantes seront remplacées.`)) return
-    try {
-      setSaveStatus(`Importation de la map ${title}…`)
-      const ext = /\.jpe?g$/i.test(file.name) ? 'jpg' : 'png'
-      const path = `${product.id}/materials/shared-${kind}-${Date.now()}.${ext}`
-      const upload = await fetch(`${SUPABASE_PROJECT_URL}/storage/v1/object/models/${encodeURI(path)}`, {
-        method: 'POST',
-        headers: { ...supabaseHeaders(session.access_token, file.type || (ext === 'png' ? 'image/png' : 'image/jpeg')), 'x-upsert': 'true' },
-        body: file,
-      })
-      if (!upload.ok) throw new Error(`Importation de la map ${title} impossible.`)
-      const url = `${SUPABASE_PROJECT_URL}/storage/v1/object/public/models/${path.split('/').map(encodeURIComponent).join('/')}`
-      const key = kind === 'normal' ? 'normalUrl' : kind === 'roughness' ? 'roughnessUrl' : 'bumpUrl'
-      const next = materials.map(material => ({
-        ...material,
-        pbr: { ...(material.pbr ?? {}), [key]: url },
-      }))
-      await persistConfigurationPatch({ materials: next })
-      setMaterials(next)
-      saveAdminDraft(product.id, { ...(loadAdminDraft(product.id) ?? buildDraftPayload()), materials: next })
-      setSaveStatus(`Map ${title} appliquée aux ${next.length} matériaux ✓`)
-    } catch (error) { setSaveStatus(error instanceof Error ? error.message : 'Importation impossible.') }
-  }
-
-  function setGlobalPbrIntensity(kind, value) {
-    const key = kind === 'normal' ? 'normalIntensity' : kind === 'roughness' ? 'roughnessIntensity' : 'bumpScale'
-    const next = materials.map(material => ({
-      ...material,
-      pbr: { ...(material.pbr ?? {}), [key]: Number(value) },
-    }))
-    setMaterials(next)
-    const local = loadAdminDraft(product.id) ?? buildDraftPayload()
-    saveAdminDraft(product.id, { ...local, materials: next })
-  }
-
-  async function saveGlobalPbrIntensity() {
-    try {
-      setSaveStatus('Enregistrement des intensités PBR…')
-      await persistConfigurationPatch({ materials })
-      setSaveStatus('Intensités PBR enregistrées ✓')
-    } catch (error) { setSaveStatus(error instanceof Error ? error.message : 'Enregistrement impossible.') }
-  }
-
   function removeMaterial(index) {
     const nextMaterials = materials.filter((_, i) => i !== index)
     setMaterials(nextMaterials)
@@ -1227,47 +1143,6 @@ export default function ModelMapper({ onSignOut }) {
 
       {activeSection === 'materials' && (
         <section className="admin__materials">
-          <div className="admin__card" style={{ marginBottom: 16 }}>
-            <strong>Maps PBR communes à tous les matériaux</strong>
-            <p style={{ fontSize: 12, margin: '6px 0' }}>Importe une image par type. Son nom n'a aucune importance : elle sera appliquée à tous les matériaux, en remplaçant uniquement la map du type choisi.</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
-              {[
-                ['normal', 'Normal'],
-                ['roughness', 'Roughness'],
-                ['bump', 'Bump'],
-              ].map(([kind, label]) => (
-                <label className="admin__upload" key={kind}>
-                  <input type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" onChange={(e) => { applyPbrMapToAll(kind, e.target.files?.[0]); e.target.value = '' }} />
-                  <span>Importer {label}</span>
-                </label>
-              ))}
-            </div>
-            <div style={{ display: 'grid', gap: 12, marginTop: 16 }}>
-              {[
-                ['normal', 'Intensité Normal', 'normalIntensity', 1, 0, 2, 0.05],
-                ['roughness', 'Intensité Roughness', 'roughnessIntensity', 1, 0, 2, 0.05],
-                ['bump', 'Intensité Bump', 'bumpScale', 0.035, 0, 0.15, 0.005],
-              ].map(([kind, label, key, fallback, min, max, step]) => {
-                const value = Number(materials[0]?.pbr?.[key] ?? fallback)
-                return (
-                  <label key={kind} style={{ display: 'grid', gap: 4, fontSize: 12 }}>
-                    <span>{label} : <strong>{value.toFixed(3)}</strong></span>
-                    <input type="range" min={min} max={max} step={step} value={value}
-                      disabled={!materials.length}
-                      onChange={(event) => setGlobalPbrIntensity(kind, event.target.value)}
-                      onPointerUp={saveGlobalPbrIntensity}
-                      onKeyUp={saveGlobalPbrIntensity}
-                    />
-                  </label>
-                )
-              })}
-            </div>
-            <button type="button" style={{ marginTop: 12 }} onClick={saveGlobalPbrIntensity}>Enregistrer les intensités</button>
-            <div className="admin__scene-preview" style={{ marginTop: 12 }}>
-              <ConfiguratorScene matchPublishedView previewMaterials={materials} />
-            </div>
-            <small>Prévisualisation en direct : déplace les curseurs pour voir les effets sur le meuble. Enregistre pour les appliquer au site client.</small>
-          </div>
           <div
             className={isTextureDragOver ? 'admin__texture-drop is-dragging' : 'admin__texture-drop'}
             onDragOver={(event) => { event.preventDefault(); setIsTextureDragOver(true) }}
@@ -1300,18 +1175,6 @@ export default function ModelMapper({ onSignOut }) {
                   <input type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" onChange={(e) => { replaceMaterialImage(index, e.target.files?.[0]); e.target.value = '' }} />
                   <small>{material.source?.fileName || 'Ajouter'}</small>
                 </label>
-                <div className="admin__pbr-maps">
-                  {[
-                    ['normal', 'N', 'Normal', material.pbr?.normalUrl],
-                    ['roughness', 'R', 'Roughness', material.pbr?.roughnessUrl],
-                    ['bump', 'B', 'Bump', material.pbr?.bumpUrl],
-                  ].map(([kind, short, title, url]) => (
-                    <label key={kind} className="admin__pbr-mini" title={title + (url ? ' — importé' : ' — importer')}>
-                      <span>{short}{url ? ' ✓' : ' +'}</span>
-                      <input type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" aria-label={`Importer ${title} pour ${material.name}`} onChange={(e) => { uploadMaterialPbrMap(index, kind, e.target.files?.[0]); e.target.value = '' }} />
-                    </label>
-                  ))}
-                </div>
 
               </div>
               <div className="admin__money"><input aria-label={`Prix du matériau ${material.name}`} type="number" min="0" step="0.01" inputMode="decimal" placeholder="0.00" value={material.priceAdjustment ?? ''} onChange={(e) => updateMaterial(index, { priceAdjustment: e.target.value === '' ? '' : e.target.value })} onBlur={(e) => updateMaterial(index, { priceAdjustment: e.target.value === '' ? '' : Number(e.target.value).toFixed(2) })} /><span>$</span></div>
