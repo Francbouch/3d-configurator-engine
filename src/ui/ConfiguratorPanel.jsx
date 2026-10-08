@@ -113,6 +113,9 @@ export default function ConfiguratorPanel() {
     return total + (Number.isFinite(amount) && amount > 0 ? amount : 0)
   }, 0)
   const price = basePrice + materialSupplement
+  const discount = Math.max(0, Number(runtimeProduct.pricing?.discount ?? 0) || 0)
+  const hasDiscount = discount > 0
+  const discountedPrice = Math.max(0, basePrice - discount) + materialSupplement
   const showPrice = publishedConfig
     ? publishedConfig?.pricing?.displayPrice === true && Number.isFinite(price)
     : product.pricing?.displayPrice !== false && Number.isFinite(price)
@@ -245,7 +248,14 @@ export default function ConfiguratorPanel() {
       {showPrice && (
         <div className="panel__price panel__price--floating">
           <span>Votre configuration</span>
-          <strong>{formatPrice(price, runtimeProduct.pricing?.currency ?? 'CAD')}</strong>
+          {hasDiscount ? (
+            <div className="panel__discount-prices">
+              <del>{formatPrice(price, runtimeProduct.pricing?.currency ?? 'CAD')}</del>
+              <strong>{formatPrice(discountedPrice, runtimeProduct.pricing?.currency ?? 'CAD')}</strong>
+            </div>
+          ) : (
+            <strong>{formatPrice(price, runtimeProduct.pricing?.currency ?? 'CAD')}</strong>
+          )}
         </div>
       )}
     </aside>
