@@ -741,3 +741,25 @@ body:has(.admin) { overflow: hidden; }
 .configurator .material-chip__name { display: block; width: 100%; min-width: 0; font-size: 11.5px; font-weight: 500; line-height: 1.35; letter-spacing: -.01em; white-space: normal; overflow-wrap: break-word; hyphens: auto; }
 .configurator .material-chip__price { position: static; display: block; width: 100%; margin: 0; font-size: 10px; font-weight: 400; line-height: 1.3; letter-spacing: 0; color: #777770; text-align: center; }
 @media (max-width: 420px) { .configurator .material-chip { grid-template-columns: 40px minmax(0, 1fr); gap: 7px; padding: 8px; min-height: 68px; } .configurator .material-chip__preview { width: 40px; height: 40px; } .configurator .material-chip__name { font-size: 10.5px; } }
+
+/* Quiet collection navigation — client only, placeholders intentionally noninteractive. */
+.configurator { grid-template-rows: 68px minmax(0, 1fr); }
+.configurator__catalog { grid-column: 1 / -1; grid-row: 1; display: flex; align-items: center; gap: 38px; min-width: 0; padding: 0 42px; background: #f7f7f5; border-bottom: 1px solid #e8e8e3; }
+.configurator__catalog-label { flex: none; font-size: 10px; font-weight: 600; letter-spacing: .19em; color: #888880; }
+.configurator__catalog-tabs { display: flex; align-items: stretch; height: 100%; gap: clamp(16px, 2.7vw, 36px); min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.configurator__catalog-tabs::-webkit-scrollbar { display: none; }
+.configurator__catalog-tab { position: relative; display: inline-flex; align-items: center; flex: none; white-space: nowrap; font-size: 12px; font-weight: 500; letter-spacing: .01em; color: #9b9b94; }
+.configurator__catalog-tab.is-active { color: #252522; }
+.configurator__catalog-tab.is-active::after { content: ''; position: absolute; height: 2px; left: 0; right: 0; bottom: 0; background: #292926; }
+.configurator__catalog-tab.is-coming { cursor: default; }
+.configurator__viewer { grid-column: 1; grid-row: 2; min-height: 0; }
+.configurator > .panel { grid-column: 2; grid-row: 2; min-height: 0; }
+@media (max-width: 820px) {
+  .configurator { grid-template-rows: 58px minmax(55dvh, 1fr) auto; }
+  .configurator__catalog { padding: 0 24px; gap: 22px; }
+  .configurator__catalog-label { font-size: 9px; }
+  .configurator__catalog-tabs { gap: 22px; }
+  .configurator__catalog-tab { font-size: 11px; }
+  .configurator__viewer { grid-column: 1; grid-row: 2; }
+  .configurator > .panel { grid-column: 1; grid-row: 3; }
+}
