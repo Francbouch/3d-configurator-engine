@@ -705,3 +705,15 @@ body:has(.admin) { overflow: hidden; }
 .admin__relation-node {
   width: 320px;
 }
+
+/* Unified architectural canvas: client panel and 3D studio share one continuous surface. */
+.configurator { background: #f7f7f5; }
+.configurator__viewer { background: #f7f7f5; }
+.configurator .panel {
+  background: #f7f7f5;
+  border-left: 0;
+  box-shadow: none;
+}
+@media (max-width: 820px) {
+  .configurator .panel { border-top: 0; }
+}
