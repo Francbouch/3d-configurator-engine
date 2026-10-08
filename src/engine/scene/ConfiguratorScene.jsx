@@ -104,41 +104,12 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null,
     return () => { cancelled = true }
   }, [])
 
-  const publishedWithoutLegacyLightRig = publishedScene
-    ? {
-        ...publishedScene,
-        // Client lighting is controlled by the studio preset, not old back-office values.
-        exposure: undefined,
-        environmentIntensity: undefined,
-        hemisphereIntensity: undefined,
-        keyIntensity: undefined,
-        fillIntensity: undefined,
-        rimIntensity: undefined,
-        topIntensity: undefined,
-        // Lighting placement now comes from the code-defined studio rig.
-        // Older saved back-office positions were overriding every lighting adjustment.
-        keyPosition: undefined,
-        fillPosition: undefined,
-        rimPosition: undefined,
-        topPosition: undefined,
-        shadowPosition: undefined,
-      }
-    : null
-  // Keep the public/client scene isolated. Live scene overrides are only
-  // enabled explicitly by the back-office editor.
-  const effectiveOverride = liveEditorPreview ? sceneOverride : (matchPublishedView ? null : sceneOverride)
+  // The admin preview and public viewer share the same published studio settings.
+  // A live admin override previews slider changes without publishing them.
   const sceneSettings = {
     ...DEFAULT_SCENE_SETTINGS,
-    ...(publishedWithoutLegacyLightRig ?? {}),
-    ...(effectiveOverride ?? {}),
-  }
-  if (!effectiveOverride) {
-    for (const key of ['exposure', 'environmentIntensity', 'hemisphereIntensity', 'keyIntensity', 'fillIntensity', 'rimIntensity', 'topIntensity']) sceneSettings[key] = DEFAULT_SCENE_SETTINGS[key]
-    sceneSettings.keyPosition = DEFAULT_SCENE_SETTINGS.keyPosition
-    sceneSettings.fillPosition = DEFAULT_SCENE_SETTINGS.fillPosition
-    sceneSettings.rimPosition = DEFAULT_SCENE_SETTINGS.rimPosition
-    sceneSettings.topPosition = DEFAULT_SCENE_SETTINGS.topPosition
-    sceneSettings.shadowPosition = DEFAULT_SCENE_SETTINGS.shadowPosition
+    ...(publishedScene ?? {}),
+    ...(liveEditorPreview ? (sceneOverride ?? {}) : {}),
   }
 
   return (
