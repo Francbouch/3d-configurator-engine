@@ -1180,6 +1180,19 @@ export default function ModelMapper({ onSignOut }) {
               <div className="admin__money"><input aria-label={`Prix du matériau ${material.name}`} type="number" min="0" step="0.01" inputMode="decimal" placeholder="0.00" value={material.priceAdjustment ?? ''} onChange={(e) => updateMaterial(index, { priceAdjustment: e.target.value === '' ? '' : e.target.value })} onBlur={(e) => updateMaterial(index, { priceAdjustment: e.target.value === '' ? '' : Number(e.target.value).toFixed(2) })} /><span>$</span></div>
               <label className="admin__toggle"><input type="checkbox" checked={material.active !== false} onChange={(e) => updateMaterial(index, { active: e.target.checked })} /><span>{material.active !== false ? 'Oui' : 'Non'}</span></label>
               <div className="admin__material-actions"><button type="button" className="admin__icon-button" onClick={() => duplicateMaterial(index)} aria-label="Dupliquer le matériau">＋</button><button type="button" className="admin__remove" onClick={() => removeMaterial(index)} aria-label="Supprimer le matériau">×</button></div>
+              <div className="admin__material-finish">
+                {[
+                  ['roughness', 'Roughness', '0 = scène'],
+                  ['metalness', 'Metalness', '0 = défaut'],
+                ].map(([key, label, hint]) => (
+                  <label key={key} className="admin__material-finish-control">
+                    <span>{label} <small>{Number(material[key] ?? 0) === 0 ? hint : Number(material[key]).toFixed(2)}</small></span>
+                    <input type="range" min="0" max="1" step="0.01" aria-label={`${label} — ${material.name}`}
+                      value={material[key] ?? 0}
+                      onChange={(event) => updateMaterial(index, { [key]: Number(event.target.value) })} />
+                  </label>
+                ))}
+              </div>
             </div>
           ))}
         </section>
@@ -1385,6 +1398,7 @@ export default function ModelMapper({ onSignOut }) {
               matchPublishedView
               liveEditorPreview
               sceneOverride={sceneSettings}
+              materialsOverride={materials}
               onCameraViewChange={captureCameraView}
             />
           </div>
