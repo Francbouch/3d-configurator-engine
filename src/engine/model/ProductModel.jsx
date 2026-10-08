@@ -7,7 +7,7 @@ import product from '../../data/products/product.example.json'
 import { applyMaterialToParts } from '../materials/MaterialEngine'
 import { SUPABASE_PROJECT_URL, supabaseHeaders } from '../../admin/AdminAuth'
 
-function LoadedProduct({ url }) {
+function LoadedProduct({ url, onReady }) {
   const productGltf = useGLTF(url)
    const selectedMaterials = useConfiguratorStore((state) => state.selectedMaterials)
   const animationProgress = useConfiguratorStore((state) => state.animationProgress)
@@ -37,9 +37,24 @@ function LoadedProduct({ url }) {
     fetch(`${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=configuration&limit=1`, { headers: supabaseHeaders() })
       .then((response) => response.ok ? response.json() : [])
       .then((rows) => { if (!cancelled) setPublishedConfig(rows?.[0]?.configuration ?? null) })
-      .catch((error) => console.warn('Unable to load published part mapping', error))
+      .catch((error) => { console.warn('Unable to load published part mapping', error); if (!cancelled) setPublishedConfig({}) })
     return () => { cancelled = true }
   }, [])
+
+  useEffect(() => {
+    if (!publishedConfig || !onReady) return undefined
+    let cancelled = false
+    const urls = [...new Set((publishedConfig.materials ?? []).map((record) => record?.source?.imageUrl).filter(Boolean))]
+    Promise.all(urls.map((url) => new Promise((resolve) => {
+      const image = new Image()
+      image.onload = resolve
+      image.onerror = resolve
+      image.src = url
+    }))).then(() => {
+      if (!cancelled) onReady()
+    })
+    return () => { cancelled = true }
+  }, [publishedConfig, onReady])
 
   const configuredMaterials = useMemo(() => {
     const records = Array.isArray(publishedConfig?.materials) ? publishedConfig.materials : []
@@ -162,7 +177,7 @@ function LoadedProduct({ url }) {
   )
 }
 
-export default function ProductModel({ url }) {
+export default function ProductModel({ url, onReady }) {
   if (!url) return null
-  return <LoadedProduct url={url} />
+  return <LoadedProduct url={url} onReady={onReady} />
 }
