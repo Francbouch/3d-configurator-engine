@@ -1388,6 +1388,7 @@ export default function ModelMapper({ onSignOut }) {
               onCameraViewChange={captureCameraView}
             />
           </div>
+          <div className="admin__scene-modules">
           <div className="admin__card">
             <div className="admin__pricing-title">
               <div>
@@ -1477,6 +1478,7 @@ export default function ModelMapper({ onSignOut }) {
                   .catch((error) => setSaveStatus(error instanceof Error ? error.message : 'Enregistrement impossible.'))
               }}>Enregistrer la vue</button>
             </div>
+          </div>
           </div>
         </section>
       )}
