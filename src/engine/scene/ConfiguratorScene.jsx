@@ -81,7 +81,7 @@ function EditorGizmo({ editor, settings }) {
   )
 }
 
-export default function ConfiguratorScene({ sceneOverride = null, editor = null, onCameraViewChange = null, matchPublishedView = false, liveEditorPreview = false, previewMaterials = null }) {
+export default function ConfiguratorScene({ sceneOverride = null, editor = null, onCameraViewChange = null, matchPublishedView = false, liveEditorPreview = false }) {
   const [modelUrl, setModelUrl] = useState(FALLBACK_MODEL_URL)
   const [publishedScene, setPublishedScene] = useState(null)
 
@@ -146,7 +146,7 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null,
       <Suspense fallback={null}>
         <SceneCalibration settings={sceneSettings} />
         <StudioLighting settings={sceneSettings} />
-        <ProductModel url={modelUrl} previewMaterials={previewMaterials} />
+        <ProductModel url={modelUrl} />
         {editor && <EditorGizmo editor={editor} settings={sceneSettings} />}
       </Suspense>
       <ProductCamera initialView={sceneSettings.cameraView ?? null} onViewChange={onCameraViewChange} preserveRawFraming={matchPublishedView} />
