@@ -815,3 +815,8 @@ body:has(.admin) { overflow: hidden; }
 .admin__bed-toggle{position:absolute;z-index:5;right:18px;bottom:18px;padding:11px 17px;border:1px solid rgba(255,255,255,.15);border-radius:12px;background:#171717;color:#fff;font:inherit;font-size:12px;font-weight:650;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.12)}
 .admin__bed-toggle:hover{background:#303030}
 .admin__bed-toggle:focus-visible{outline:3px solid #4c8cff;outline-offset:3px}
+
+/* Promotional pricing in the configurator. */
+.configurator .panel__discount-prices{display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+.configurator .panel__discount-prices del{font-size:14px;color:#96968e;font-weight:400;text-decoration:line-through}
+.configurator .panel__discount-prices strong{font-size:20px}
