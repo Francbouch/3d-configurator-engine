@@ -55,17 +55,23 @@ function LoadedProduct({ url }) {
         texture.wrapS = THREE.RepeatWrapping
         texture.wrapT = THREE.RepeatWrapping
         texture.needsUpdate = true
-        material = new THREE.MeshStandardMaterial({
+        material = new THREE.MeshPhysicalMaterial({
           map: texture,
           color: 0xffffff,
-          roughness: 0.8,
+          roughness: 0.48,
           metalness: 0,
+          clearcoat: 0.12,
+          clearcoatRoughness: 0.38,
+          ior: 1.5,
         })
       } else {
-        material = new THREE.MeshStandardMaterial({
+        material = new THREE.MeshPhysicalMaterial({
           color: new THREE.Color(record?.color || '#000000'),
-          roughness: 0.8,
+          roughness: 0.48,
           metalness: 0,
+          clearcoat: 0.12,
+          clearcoatRoughness: 0.38,
+          ior: 1.5,
         })
       }
       material.name = record.id
