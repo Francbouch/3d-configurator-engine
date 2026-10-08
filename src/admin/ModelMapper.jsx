@@ -1383,8 +1383,48 @@ export default function ModelMapper({ onSignOut }) {
           <div className="admin__scene-preview">
             <ConfiguratorScene
               matchPublishedView
+              liveEditorPreview
+              sceneOverride={sceneSettings}
               onCameraViewChange={captureCameraView}
             />
+          </div>
+          <div className="admin__card">
+            <div className="admin__pricing-title">
+              <div>
+                <strong>Éclairage du configurateur</strong>
+                <small>Les curseurs modifient l’aperçu immédiatement. Clique sur Enregistrer l’éclairage pour appliquer les réglages au site client.</small>
+              </div>
+              <button type="button" onClick={() => {
+                setSaveStatus('Enregistrement de l’éclairage…')
+                persistConfigurationPatch({ scene: sceneSettings })
+                  .then(() => setSaveStatus('Éclairage enregistré ✓ — recharge le configurateur'))
+                  .catch((error) => setSaveStatus(error instanceof Error ? error.message : 'Enregistrement impossible.'))
+              }}>Enregistrer l’éclairage</button>
+            </div>
+            <div style={{ display: 'grid', gap: 14, paddingTop: 16 }}>
+              {[
+                ['exposure', 'Exposition', 0.35, 1.5, 0.01, 0.78],
+                ['studioEnvironment', 'Environnement HDR', 0, 1.5, 0.01, 0.48],
+                ['studioDirectional', 'Lumière principale (ombres)', 0, 4, 0.05, 1.45],
+                ['studioKey', 'Softbox principale', 0, 5, 0.05, 2.35],
+                ['studioFill', 'Softbox de remplissage', 0, 5, 0.05, 1.6],
+                ['studioBack', 'Softbox arrière', 0, 5, 0.05, 2.1],
+                ['studioRim', 'Softbox de contour', 0, 5, 0.05, 1.75],
+                ['studioTop', 'Softbox supérieure', 0, 4, 0.05, 1.15],
+                ['studioHemisphere', 'Lumière ambiante du ciel', 0, 2, 0.05, 0.7],
+                ['studioAmbient', 'Lumière ambiante générale', 0, 1, 0.01, 0.16],
+              ].map(([key, label, min, max, step, fallback]) => (
+                <label key={key} style={{ display: 'grid', gap: 6 }}>
+                  <span style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                    <span>{label}</span>
+                    <strong>{Number(sceneSettings[key] ?? fallback).toFixed(2)}</strong>
+                  </span>
+                  <input type="range" min={min} max={max} step={step}
+                    value={sceneSettings[key] ?? fallback}
+                    onChange={(event) => setSceneSettings((current) => ({ ...current, [key]: Number(event.target.value) }))} />
+                </label>
+              ))}
+            </div>
           </div>
           <div className="admin__card">
             <div className="admin__pricing-title">
