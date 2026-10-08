@@ -240,7 +240,7 @@ export default function ConfiguratorPanel() {
 
       {showPrice && (
         <div className="panel__price panel__price--floating">
-          <span>Prix du meuble</span>
+          <span>Votre configuration</span>
           <strong>{formatPrice(price, runtimeProduct.pricing?.currency ?? 'CAD')}</strong>
         </div>
       )}
