@@ -7,7 +7,7 @@ import product from '../../data/products/product.example.json'
 import { applyMaterialToParts } from '../materials/MaterialEngine'
 import { SUPABASE_PROJECT_URL, supabaseHeaders } from '../../admin/AdminAuth'
 
-function LoadedProduct({ url, onReady, rotationY = 0 }) {
+function LoadedProduct({ url, onReady, rotationY = 0, roughness = 0.48 }) {
   const productGltf = useGLTF(url)
    const selectedMaterials = useConfiguratorStore((state) => state.selectedMaterials)
   const animationProgress = useConfiguratorStore((state) => state.animationProgress)
@@ -21,6 +21,9 @@ function LoadedProduct({ url, onReady, rotationY = 0 }) {
       if (object.isMesh) {
         object.castShadow = true
         object.receiveShadow = true
+        // Never mutate GLTFLoader's cached source materials when previewing roughness.
+        if (Array.isArray(object.material)) object.material = object.material.map((material) => material.clone())
+        else if (object.material) object.material = object.material.clone()
       }
     })
     return clone
@@ -109,6 +112,22 @@ function LoadedProduct({ url, onReady, rotationY = 0 }) {
     })
   }, [configuredMaterials, model, publishedConfig, selectedMaterials])
 
+  // Apply the live roughness control to both mapped materials and any original GLB surfaces.
+  // Updating the actual Three.js material property makes reflections respond immediately.
+  useEffect(() => {
+    const value = THREE.MathUtils.clamp(Number(roughness) || 0, 0, 1)
+    model.traverse((object) => {
+      if (!object.isMesh) return
+      const materials = Array.isArray(object.material) ? object.material : [object.material]
+      materials.forEach((material) => {
+        if (material && 'roughness' in material) {
+          material.roughness = value
+          material.needsUpdate = true
+        }
+      })
+    })
+  }, [model, roughness, configuredMaterials, selectedMaterials, publishedConfig])
+
   useEffect(() => {
     if (!mixer || !animationClip) return undefined
     const action = mixer.clipAction(animationClip)
@@ -179,7 +198,7 @@ function LoadedProduct({ url, onReady, rotationY = 0 }) {
   )
 }
 
-export default function ProductModel({ url, onReady, rotationY = 0 }) {
+export default function ProductModel({ url, onReady, rotationY = 0, roughness = 0.48 }) {
   if (!url) return null
-  return <LoadedProduct url={url} onReady={onReady} rotationY={rotationY} />
+  return <LoadedProduct url={url} onReady={onReady} rotationY={rotationY} roughness={roughness} />
 }
