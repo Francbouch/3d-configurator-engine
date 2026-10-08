@@ -6,13 +6,13 @@ RectAreaLightUniformsLib.init()
 
 export const DEFAULT_SCENE_SETTINGS = Object.freeze({
   background: '#f7f7f5',
-  exposure: 1,
-  environmentIntensity: 0.65,
-  hemisphereIntensity: 0.85,
-  keyIntensity: 4.0,
-  fillIntensity: 2.6,
-  rimIntensity: 3.0,
-  topIntensity: 1.5,
+  exposure: 0.78,
+  environmentIntensity: 0.52,
+  hemisphereIntensity: 0.65,
+  keyIntensity: 3.0,
+  fillIntensity: 1.9,
+  rimIntensity: 2.3,
+  topIntensity: 1.1,
   shadowOpacity: 0.24,
   shadowBlur: 3.2,
   shadowRadius: 5,
@@ -45,13 +45,13 @@ export default function StudioLighting({ settings = {}, externalShadowLight = fa
     <>
       {/* Fixed, balanced softboxes: camera orbit does not move the lighting. */}
       <hemisphereLight args={['#ffffff', '#c4c8ce', s.hemisphereIntensity]} />
-      <ambientLight intensity={0.12} color="#ffffff" />
+      <ambientLight intensity={0.08} color="#ffffff" />
       <object3D ref={shadowTargetRef} position={[0, 0.8, 0]} />
       {!externalShadowLight && (
         <directionalLight
           ref={shadowLightRef}
           position={[4.8, 7, 5.5]}
-          intensity={1.65}
+          intensity={1.2}
           color="#fffdf8"
           castShadow
           shadow-mapSize-width={2048}
