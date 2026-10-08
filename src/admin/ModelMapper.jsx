@@ -21,6 +21,7 @@ export default function ModelMapper({ onSignOut }) {
   const [loadError, setLoadError] = useState('')
   const [parts, setParts] = useState([])
   const [basePrice, setBasePrice] = useState(product.pricing?.basePrice ?? 0)
+  const [discount, setDiscount] = useState(product.pricing?.discount ?? 0)
   const [adjustments, setAdjustments] = useState(product.pricing?.adjustments ?? [])
   const [saveStatus, setSaveStatus] = useState('')
   const [modelName, setModelName] = useState(product.name)
@@ -117,6 +118,7 @@ export default function ModelMapper({ onSignOut }) {
       pricing: {
         currency: product.pricing?.currency ?? 'CAD',
         basePrice,
+        discount,
         adjustments,
         displayPrice,
       },
@@ -187,6 +189,7 @@ export default function ModelMapper({ onSignOut }) {
             ? baseline.pricing.basePrice
             : product.pricing?.basePrice ?? 0,
         )
+        setDiscount(Number(baseline?.pricing?.discount ?? 0))
         setAdjustments(
           Array.isArray(baseline?.pricing?.adjustments)
             ? baseline.pricing.adjustments
@@ -989,6 +992,7 @@ export default function ModelMapper({ onSignOut }) {
       pricing: {
         currency: product.pricing?.currency ?? 'CAD',
         basePrice,
+        discount,
         adjustments,
         displayPrice,
       },
@@ -1008,6 +1012,7 @@ export default function ModelMapper({ onSignOut }) {
     setUploadedModelName('')
     setUploadedModelFile(null)
     setBasePrice(product.pricing?.basePrice ?? 0)
+    setDiscount(product.pricing?.discount ?? 0)
     setAdjustments(product.pricing?.adjustments ?? [])
     setMaterials(publishedMaterials)
     setRules(product.rules ?? [])
@@ -1521,6 +1526,7 @@ export default function ModelMapper({ onSignOut }) {
               const pricing = {
                 currency: product.pricing?.currency ?? 'CAD',
                 basePrice,
+                discount,
                 adjustments,
                 displayPrice: nextDisplayPrice,
               }
@@ -1551,6 +1557,34 @@ export default function ModelMapper({ onSignOut }) {
               saveAdminDraft(product.id, { ...local, pricing })
               persistConfigurationPatch({ pricing })
               setSaveStatus('Prix enregistré automatiquement')
+            }}
+          />
+          <span>$ CAD</span>
+        </label>
+      </section>
+
+      <section className="admin__pricing">
+        <div>
+          <strong>Rabais</strong>
+          <small>Montant à déduire du prix de base. Laisser vide ou à 0 pour afficher le prix normal.</small>
+        </div>
+        <label>
+          <input type="number" min="0" step="1" value={discount}
+            aria-label="Montant du rabais"
+            onChange={(event) => {
+              const nextDiscount = Math.max(0, Number(event.target.value) || 0)
+              setDiscount(nextDiscount)
+              const pricing = {
+                currency: product.pricing?.currency ?? 'CAD',
+                basePrice,
+                discount: nextDiscount,
+                adjustments,
+                displayPrice,
+              }
+              const local = loadAdminDraft(product.id) ?? buildDraftPayload()
+              saveAdminDraft(product.id, { ...local, pricing })
+              persistConfigurationPatch({ pricing })
+              setSaveStatus('Rabais enregistré automatiquement')
             }}
           />
           <span>$ CAD</span>
