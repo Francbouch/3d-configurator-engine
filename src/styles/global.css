@@ -775,3 +775,6 @@ body:has(.admin) { overflow: hidden; }
 .configurator .material-chip { text-align: left; }
 .configurator .material-chip__meta { align-items: flex-start; text-align: left; }
 .configurator .material-chip__name, .configurator .material-chip__price { text-align: left; }
+
+/* Seamless collection header: same studio background, no bottom divider. */
+.configurator .configurator__catalog { background: #f7f7f5; border-bottom: none; box-shadow: none; }
