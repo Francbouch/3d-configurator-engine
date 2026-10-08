@@ -105,6 +105,14 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null,
   const publishedWithoutLegacyLightRig = publishedScene
     ? {
         ...publishedScene,
+        // Client lighting is controlled by the studio preset, not old back-office values.
+        exposure: undefined,
+        environmentIntensity: undefined,
+        hemisphereIntensity: undefined,
+        keyIntensity: undefined,
+        fillIntensity: undefined,
+        rimIntensity: undefined,
+        topIntensity: undefined,
         // Lighting placement now comes from the code-defined studio rig.
         // Older saved back-office positions were overriding every lighting adjustment.
         keyPosition: undefined,
@@ -123,6 +131,7 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null,
     ...(effectiveOverride ?? {}),
   }
   if (!effectiveOverride) {
+    for (const key of ['exposure', 'environmentIntensity', 'hemisphereIntensity', 'keyIntensity', 'fillIntensity', 'rimIntensity', 'topIntensity']) sceneSettings[key] = DEFAULT_SCENE_SETTINGS[key]
     sceneSettings.keyPosition = DEFAULT_SCENE_SETTINGS.keyPosition
     sceneSettings.fillPosition = DEFAULT_SCENE_SETTINGS.fillPosition
     sceneSettings.rimPosition = DEFAULT_SCENE_SETTINGS.rimPosition
