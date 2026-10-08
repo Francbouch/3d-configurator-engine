@@ -28,7 +28,7 @@ export const DEFAULT_SCENE_SETTINGS = Object.freeze({
   planes: [],
 })
 
-export default function StudioLighting({ settings = {}, externalShadowLight = false }) {
+export default function StudioLighting({ settings = {}, externalShadowLight = false, premium = false }) {
   const s = { ...DEFAULT_SCENE_SETTINGS, ...settings }
   const shadowLightRef = useRef()
   const shadowTargetRef = useRef()
@@ -40,6 +40,51 @@ export default function StudioLighting({ settings = {}, externalShadowLight = fa
     shadowLightRef.current.shadow?.camera?.updateProjectionMatrix()
     shadowLightRef.current.shadow.needsUpdate = true
   }, [s.shadowPosition])
+
+  if (premium) return (
+    <>
+      {/* Fixed 360-degree product-photo studio: directional contrast with soft neutral fill. */}
+      <hemisphereLight args={['#ffffff', '#d5d8da', 0.7]} />
+      <ambientLight intensity={0.16} color="#ffffff" />
+      <object3D ref={shadowTargetRef} position={[0, 0.8, 0]} />
+      <directionalLight
+        ref={shadowLightRef}
+        position={[6, 9, 5]}
+        intensity={1.45}
+        color="#ffffff"
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-left={-4}
+        shadow-camera-right={4}
+        shadow-camera-top={6}
+        shadow-camera-bottom={-4}
+        shadow-camera-near={0.1}
+        shadow-camera-far={35}
+        shadow-bias={s.shadowBias}
+        shadow-normalBias={s.shadowNormalBias}
+        shadow-radius={5}
+      />
+      <rectAreaLight position={[5, 4.5, 5]} rotation={[-0.4, 0.75, 0]} width={5} height={8} intensity={2.35} color="#ffffff" />
+      <rectAreaLight position={[-5, 3.5, 4]} rotation={[-0.2, -0.8, 0]} width={4} height={7} intensity={1.6} color="#ffffff" />
+      <rectAreaLight position={[-5, 4, -5]} rotation={[-0.3, -2.35, 0]} width={4} height={7} intensity={2.1} color="#ffffff" />
+      <rectAreaLight position={[5, 3.8, -5]} rotation={[-0.25, 2.35, 0]} width={4} height={7} intensity={1.75} color="#ffffff" />
+      <rectAreaLight position={[0, 7, 0]} rotation={[-Math.PI / 2, 0, 0]} width={7} height={6} intensity={1.15} color="#ffffff" />
+      {/* Neutral procedural HDR environment map: large softbox reflections on all four sides. */}
+      <Environment resolution={256} environmentIntensity={0.48} environmentRotation={[0, 0, 0]}>
+        <Lightformer form="rect" intensity={2.6} position={[5, 4, 5]} rotation={[0, Math.PI / 4, 0]} scale={[5, 8, 1]} />
+        <Lightformer form="rect" intensity={1.9} position={[-5, 4, 5]} rotation={[0, -Math.PI / 4, 0]} scale={[4, 7, 1]} />
+        <Lightformer form="rect" intensity={2.4} position={[-5, 4, -5]} rotation={[0, -3 * Math.PI / 4, 0]} scale={[5, 8, 1]} />
+        <Lightformer form="rect" intensity={2.0} position={[5, 4, -5]} rotation={[0, 3 * Math.PI / 4, 0]} scale={[4, 7, 1]} />
+        <Lightformer form="rect" intensity={1.25} position={[0, 7, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[7, 7, 1]} />
+      </Environment>
+      <ContactShadows position={[0, s.groundY + 0.003, 0]} opacity={0.13} blur={3.4} scale={12} far={8} frames={1} />
+      <mesh position={[0, s.groundY, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[20, 20]} />
+        <shadowMaterial transparent opacity={0.5} depthWrite={false} />
+      </mesh>
+    </>
+  )
 
   return (
     <>
