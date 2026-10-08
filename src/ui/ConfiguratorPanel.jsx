@@ -27,6 +27,7 @@ export default function ConfiguratorPanel() {
   const initializeDynamicGroups = useConfiguratorStore((state) => state.initializeDynamicGroups)
   const selectedMaterials = useConfiguratorStore((state) => state.selectedMaterials)
   const setMaterial = useConfiguratorStore((state) => state.setMaterial)
+  const setAnimationProgress = useConfiguratorStore((state) => state.setAnimationProgress)
   const selectedModules = useConfiguratorStore((state) => state.selectedModules)
   const toggleModule = useConfiguratorStore((state) => state.toggleModule)
   const publishedGroups = Array.isArray(publishedConfig?.materialGroups) ? publishedConfig.materialGroups : []
@@ -143,7 +144,10 @@ export default function ConfiguratorPanel() {
               <button
                 className="panel__section"
                 type="button"
-                onClick={() => setOpenSection(isOpen ? null : section.id)}
+                onClick={() => {
+                  if (!isOpen && /façade|facade/i.test(section.label)) setAnimationProgress(0)
+                  setOpenSection(isOpen ? null : section.id)
+                }}
               >
                 <span>{section.label}</span>
                 <span className="panel__value">{
