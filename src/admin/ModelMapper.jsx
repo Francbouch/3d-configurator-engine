@@ -11,6 +11,7 @@ import { resolveAssetUrl } from '../engine/assets/resolveAssetUrl'
 import { clearAdminDraft, loadAdminDraft, saveAdminDraft } from './AdminDraftStore'
 import { loadAdminSession, SUPABASE_PROJECT_URL, supabaseHeaders } from './AdminAuth'
 import ConfiguratorScene from '../engine/scene/ConfiguratorScene'
+import { useConfiguratorStore } from '../configurator/state/configuratorStore'
 import { DEFAULT_SCENE_SETTINGS } from '../engine/lighting/StudioLighting'
 
 const MODEL_URL = resolveAssetUrl(product.model?.url)
@@ -46,6 +47,8 @@ export default function ModelMapper({ onSignOut }) {
   const [sceneSelection, setSceneSelection] = useState({ type: 'light', id: 'shadow' })
   const [sceneTransformMode, setSceneTransformMode] = useState('translate')
   const [currentCameraView, setCurrentCameraView] = useState(null)
+  const bedAnimationProgress = useConfiguratorStore((state) => state.animationProgress)
+  const setBedAnimationProgress = useConfiguratorStore((state) => state.setAnimationProgress)
   const captureCameraView = useCallback((view) => setCurrentCameraView(view), [])
   useEffect(() => {
     if (activeSection !== 'rules' || ruleBlocks.length === 0) return undefined
@@ -1401,6 +1404,11 @@ export default function ModelMapper({ onSignOut }) {
               materialsOverride={materials}
               onCameraViewChange={captureCameraView}
             />
+            <button type="button" className="admin__bed-toggle"
+              onClick={() => setBedAnimationProgress(bedAnimationProgress >= 0.5 ? 0 : 1)}
+              aria-label={bedAnimationProgress >= 0.5 ? 'Fermer le lit' : 'Ouvrir le lit'}>
+              {bedAnimationProgress >= 0.5 ? 'Fermer le lit' : 'Ouvrir le lit'}
+            </button>
           </div>
           <div className="admin__scene-modules">
           <div className="admin__card">
