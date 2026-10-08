@@ -1325,7 +1325,7 @@ export default function ModelMapper({ onSignOut }) {
                 <div className="admin__relation-field">
                   <span>Groupes</span>
                   <div className="admin__relation-groups">
-                    {materialGroups.map((group) => {
+                    {materialGroups.filter((group) => group.role === 'modifiable').map((group) => {
                       const selected = (block.groupIds ?? []).includes(group.id)
                       return (
                         <label className={selected ? 'is-selected' : ''} key={group.id}>
