@@ -148,7 +148,7 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null,
         antialias: true,
         alpha: false,
         toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.0
+        toneMappingExposure: 0.78
       }}
     >
       <color attach="background" args={[sceneSettings.background]} />
