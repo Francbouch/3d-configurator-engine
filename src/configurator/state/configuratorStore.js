@@ -56,7 +56,7 @@ function repairDownstreamSelections(selected, changedGroupId, materials = []) {
 export const useConfiguratorStore = create((set) => ({
   productId: product.id,
   selectedMaterials: initialMaterials,
-  animationProgress: 0,
+  animationProgress: 1,
   selectedModules: {},
   materialCatalog: [],
 
