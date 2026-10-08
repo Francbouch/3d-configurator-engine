@@ -19,10 +19,9 @@ export default function App() {
         <span className="configurator__catalog-label">COLLECTION</span>
         <div className="configurator__catalog-tabs">
           <span className="configurator__catalog-tab is-active" aria-current="page">Lit Cabinet</span>
-          <span className="configurator__catalog-tab is-coming" title="À venir">Bibliothèque</span>
-          <span className="configurator__catalog-tab is-coming" title="À venir">Console</span>
-          <span className="configurator__catalog-tab is-coming" title="À venir">Bureau</span>
-          <span className="configurator__catalog-tab is-coming" title="À venir">Rangement</span>
+          <span className="configurator__catalog-tab is-coming" title="À venir">Lit condo</span>
+          <span className="configurator__catalog-tab is-coming" title="À venir">Designer</span>
+          <span className="configurator__catalog-tab is-coming" title="À venir">Lifestyle</span>
         </div>
       </nav>
       <section className="configurator__viewer" aria-label="Aperçu 3D">
