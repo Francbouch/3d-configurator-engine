@@ -130,7 +130,7 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null,
       <Suspense fallback={null}>
         <SceneCalibration settings={sceneSettings} />
         <StudioLighting settings={sceneSettings} premium={!editor} />
-        <ProductModel url={modelUrl} rotationY={editor ? 0 : 0} onReady={() => setModelReady(true)} />
+        <ProductModel url={modelUrl} rotationY={editor ? 0 : 0} roughness={sceneSettings.materialRoughness ?? 0.48} onReady={() => setModelReady(true)} />
         {editor && <EditorGizmo editor={editor} settings={sceneSettings} />}
       </Suspense>
       <ProductCamera initialView={sceneSettings.cameraView ?? null} onViewChange={onCameraViewChange} preserveRawFraming={matchPublishedView} />
