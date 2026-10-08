@@ -1,15 +1,18 @@
 import { ContactShadows, Environment, Lightformer } from '@react-three/drei'
 import { useEffect, useRef } from 'react'
+import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js'
+
+RectAreaLightUniformsLib.init()
 
 export const DEFAULT_SCENE_SETTINGS = Object.freeze({
   background: '#f7f7f5',
   exposure: 1,
-  environmentIntensity: 0.72,
-  hemisphereIntensity: 0.28,
-  keyIntensity: 5.2,
-  fillIntensity: 3.2,
-  rimIntensity: 3.6,
-  topIntensity: 2.1,
+  environmentIntensity: 0.65,
+  hemisphereIntensity: 0.85,
+  keyIntensity: 4.0,
+  fillIntensity: 2.6,
+  rimIntensity: 3.0,
+  topIntensity: 1.5,
   shadowOpacity: 0.24,
   shadowBlur: 3.2,
   shadowRadius: 5,
@@ -40,40 +43,42 @@ export default function StudioLighting({ settings = {}, externalShadowLight = fa
 
   return (
     <>
-      <hemisphereLight args={['#ffffff', '#d8d8d5', s.hemisphereIntensity]} />
-      {/* RectAreaLight gives the broad studio reflection; a dedicated directional light controls only the projected shadow. */}
-      <rectAreaLight position={s.keyPosition} rotation={[-0.72, 2.5916, -0.38]} width={5.5} height={7} intensity={s.keyIntensity} color="#fffdf8" />
+      {/* Fixed, balanced softboxes: camera orbit does not move the lighting. */}
+      <hemisphereLight args={['#ffffff', '#c4c8ce', s.hemisphereIntensity]} />
+      <ambientLight intensity={0.12} color="#ffffff" />
       <object3D ref={shadowTargetRef} position={[0, 0.8, 0]} />
       {!externalShadowLight && (
-        <>
-          <directionalLight
-            ref={shadowLightRef}
-            position={s.shadowPosition}
-            intensity={Math.max(0.35, s.keyIntensity * 0.22)}
-            color="#fffdf8"
-            castShadow
-            shadow-mapSize-width={2048}
-            shadow-mapSize-height={2048}
-            shadow-camera-left={-4}
-            shadow-camera-right={4}
-            shadow-camera-top={5}
-            shadow-camera-bottom={-3}
-            shadow-camera-near={0.1}
-            shadow-camera-far={30}
-            shadow-bias={s.shadowBias}
-            shadow-normalBias={s.shadowNormalBias}
-            shadow-radius={s.shadowRadius}
-          />
-        </>
+        <directionalLight
+          ref={shadowLightRef}
+          position={[4.8, 7, 5.5]}
+          intensity={1.65}
+          color="#fffdf8"
+          castShadow
+          shadow-mapSize-width={2048}
+          shadow-mapSize-height={2048}
+          shadow-camera-left={-4}
+          shadow-camera-right={4}
+          shadow-camera-top={6}
+          shadow-camera-bottom={-4}
+          shadow-camera-near={0.1}
+          shadow-camera-far={35}
+          shadow-bias={s.shadowBias}
+          shadow-normalBias={s.shadowNormalBias}
+          shadow-radius={s.shadowRadius}
+        />
       )}
-      <rectAreaLight position={s.fillPosition} rotation={[-0.25, -2.3216, 0.2]} width={4} height={6} intensity={s.fillIntensity} color="#f7faff" />
-      <rectAreaLight position={s.rimPosition} rotation={[0.1, 2.9916, 0]} width={3} height={5.5} intensity={s.rimIntensity} color="#ffffff" />
-      <rectAreaLight position={s.topPosition} rotation={[-Math.PI / 2, 0, 0]} width={5} height={4} intensity={s.topIntensity} color="#ffffff" />
-      <Environment resolution={512} environmentIntensity={s.environmentIntensity}>
-        <Lightformer form="rect" intensity={4.2} position={[5, 3.5, -4]} rotation={[0, -2.3216, 0]} scale={[5, 8, 1]} />
-        <Lightformer form="rect" intensity={2.8} position={[-5, 3, -3]} rotation={[0, 2.2616, 0]} scale={[4, 7, 1]} />
-        <Lightformer form="rect" intensity={3.4} position={[3, 3, 5]} rotation={[0, 2.9916, 0]} scale={[3, 6, 1]} />
-        <Lightformer form="rect" intensity={1.7} position={[-2, 6, -1]} rotation={[Math.PI / 2, 0, 0]} scale={[6, 4, 1]} />
+      <rectAreaLight position={[5, 4.5, 5]} rotation={[-0.35, 0.75, 0]} width={5} height={7} intensity={s.keyIntensity} color="#fffaf3" />
+      <rectAreaLight position={[-5, 3.8, 4]} rotation={[-0.25, -0.8, 0]} width={4} height={7} intensity={s.fillIntensity} color="#f3f7ff" />
+      <rectAreaLight position={[4.5, 3.5, -5]} rotation={[-0.2, 2.35, 0]} width={4} height={6} intensity={s.rimIntensity} color="#ffffff" />
+      <rectAreaLight position={[-5, 3.5, -4]} rotation={[-0.2, -2.35, 0]} width={4} height={6} intensity={s.fillIntensity * 0.7} color="#ffffff" />
+      <rectAreaLight position={[0, 7, 0]} rotation={[-Math.PI / 2, 0, 0]} width={6} height={5} intensity={s.topIntensity} color="#ffffff" />
+      {/* Procedural HDR environment: broad studio reflections from every side, without an external HDR file. */}
+      <Environment resolution={256} environmentIntensity={s.environmentIntensity}>
+        <Lightformer form="rect" intensity={2.5} position={[5, 4, 5]} rotation={[0, Math.PI / 4, 0]} scale={[5, 7, 1]} />
+        <Lightformer form="rect" intensity={2} position={[-5, 4, 4]} rotation={[0, -Math.PI / 4, 0]} scale={[4, 7, 1]} />
+        <Lightformer form="rect" intensity={2.5} position={[5, 4, -5]} rotation={[0, 3 * Math.PI / 4, 0]} scale={[4, 7, 1]} />
+        <Lightformer form="rect" intensity={1.8} position={[-5, 4, -5]} rotation={[0, -3 * Math.PI / 4, 0]} scale={[4, 7, 1]} />
+        <Lightformer form="rect" intensity={1.1} position={[0, 7, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[7, 6, 1]} />
       </Environment>
       {/* Contact controls behave like a simplified DCC shadow catcher. */}
       {s.shadowOpacity > 0 && (
