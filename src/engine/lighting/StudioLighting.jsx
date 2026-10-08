@@ -48,6 +48,7 @@ export default function StudioLighting({ settings = {}, externalShadowLight = fa
       <ambientLight intensity={0.16} color="#ffffff" />
       <object3D ref={shadowTargetRef} position={[0, 0.8, 0]} />
       {/* Mirror the fixed studio key/fill rig across world X; model stays untouched. */}
+      <group rotation={[0, Math.PI, 0]}>
       <group scale={[-1, 1, 1]}>
       <directionalLight
         ref={shadowLightRef}
@@ -73,8 +74,9 @@ export default function StudioLighting({ settings = {}, externalShadowLight = fa
       <rectAreaLight position={[5, 3.8, -5]} rotation={[-0.25, 2.35, 0]} width={4} height={7} intensity={1.75} color="#ffffff" />
       <rectAreaLight position={[0, 7, 0]} rotation={[-Math.PI / 2, 0, 0]} width={7} height={6} intensity={1.15} color="#ffffff" />
       </group>
+      </group>
       {/* Neutral procedural HDR environment map: large softbox reflections on all four sides. */}
-      <Environment resolution={256} environmentIntensity={0.48} environmentRotation={[0, 0, 0]}>
+      <Environment resolution={256} environmentIntensity={0.48} environmentRotation={[0, Math.PI, 0]}>
         <group scale={[-1, 1, 1]}>
         <Lightformer form="rect" intensity={2.6} position={[5, 4, 5]} rotation={[0, Math.PI / 4, 0]} scale={[5, 8, 1]} />
         <Lightformer form="rect" intensity={1.9} position={[-5, 4, 5]} rotation={[0, -Math.PI / 4, 0]} scale={[4, 7, 1]} />
