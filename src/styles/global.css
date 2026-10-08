@@ -337,6 +337,7 @@ body:has(.admin) { overflow: hidden; }
 .admin__texture-drop>span{color:#777;font-size:12px;flex:1;min-width:260px}
 .admin__source-image{display:flex;align-items:center;gap:8px;min-width:0;cursor:pointer}
 .admin__source-image img{width:42px;height:42px;border-radius:8px;object-fit:cover;border:1px solid #e2e2de}
+.admin__source-image .admin__material-color-preview{display:block;flex:0 0 42px;width:42px;height:42px;border-radius:8px;border:1px solid #e2e2de}
 .admin__source-image>span{font-size:11px;color:#999}
 .admin__source-image input{display:none}
 .admin__source-image small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#666}
