@@ -84,6 +84,7 @@ function EditorGizmo({ editor, settings }) {
 export default function ConfiguratorScene({ sceneOverride = null, editor = null, onCameraViewChange = null, matchPublishedView = false, liveEditorPreview = false }) {
   const [modelUrl, setModelUrl] = useState(FALLBACK_MODEL_URL)
   const [publishedScene, setPublishedScene] = useState(null)
+  const [modelReady, setModelReady] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -95,6 +96,7 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null,
         const path = rows?.[0]?.model_path
         if (!cancelled) setPublishedScene(rows?.[0]?.configuration?.scene ?? null)
         if (!cancelled && path) {
+          setModelReady(false)
           setModelUrl(`${SUPABASE_URL}/storage/v1/object/public/models/${path.split('/').map(encodeURIComponent).join('/')}`)
         }
       })
@@ -140,6 +142,8 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null,
   }
 
   return (
+    <>
+    {!editor && !modelReady && <div className="configurator__loading-cover" aria-label="Chargement du meuble" />}
     <Canvas
       shadows={{ type: THREE.PCFSoftShadowMap }}
       dpr={[1, 2]}
@@ -155,10 +159,11 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null,
       <Suspense fallback={null}>
         <SceneCalibration settings={sceneSettings} />
         <StudioLighting settings={sceneSettings} />
-        <ProductModel url={modelUrl} />
+        <ProductModel url={modelUrl} onReady={() => setModelReady(true)} />
         {editor && <EditorGizmo editor={editor} settings={sceneSettings} />}
       </Suspense>
       <ProductCamera initialView={sceneSettings.cameraView ?? null} onViewChange={onCameraViewChange} preserveRawFraming={matchPublishedView} />
     </Canvas>
+    </>
   )
 }
