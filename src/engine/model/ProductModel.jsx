@@ -202,7 +202,7 @@ function LoadedProduct({ url, onReady, rotationY = 0, roughness = 0.48, material
   )
 }
 
-export default function ProductModel({ url, onReady, rotationY = 0, roughness = 0.48 }) {
+export default function ProductModel({ url, onReady, rotationY = 0, roughness = 0.48, materialsOverride = null }) {
   if (!url) return null
   return <LoadedProduct url={url} onReady={onReady} rotationY={rotationY} roughness={roughness} materialsOverride={materialsOverride} />
 }
