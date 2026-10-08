@@ -7,7 +7,7 @@ import product from '../../data/products/product.example.json'
 import { applyMaterialToParts } from '../materials/MaterialEngine'
 import { SUPABASE_PROJECT_URL, supabaseHeaders } from '../../admin/AdminAuth'
 
-function LoadedProduct({ url, onReady }) {
+function LoadedProduct({ url, onReady, rotationY = 0 }) {
   const productGltf = useGLTF(url)
    const selectedMaterials = useConfiguratorStore((state) => state.selectedMaterials)
   const animationProgress = useConfiguratorStore((state) => state.animationProgress)
@@ -171,13 +171,15 @@ function LoadedProduct({ url, onReady }) {
   return (
     <Bounds fit clip observe margin={1.18}>
       <Center bottom>
-        <primitive object={model} />
+        <group rotation={[0, rotationY, 0]}>
+          <primitive object={model} />
+        </group>
       </Center>
     </Bounds>
   )
 }
 
-export default function ProductModel({ url, onReady }) {
+export default function ProductModel({ url, onReady, rotationY = 0 }) {
   if (!url) return null
-  return <LoadedProduct url={url} onReady={onReady} />
+  return <LoadedProduct url={url} onReady={onReady} rotationY={rotationY} />
 }
