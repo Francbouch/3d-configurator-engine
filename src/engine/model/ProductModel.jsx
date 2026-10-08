@@ -7,7 +7,7 @@ import product from '../../data/products/product.example.json'
 import { applyMaterialToParts } from '../materials/MaterialEngine'
 import { SUPABASE_PROJECT_URL, supabaseHeaders } from '../../admin/AdminAuth'
 
-function LoadedProduct({ url, previewMaterials = null }) {
+function LoadedProduct({ url }) {
   const productGltf = useGLTF(url)
    const selectedMaterials = useConfiguratorStore((state) => state.selectedMaterials)
   const animationProgress = useConfiguratorStore((state) => state.animationProgress)
@@ -42,42 +42,37 @@ function LoadedProduct({ url, previewMaterials = null }) {
   }, [])
 
   const configuredMaterials = useMemo(() => {
-    const records = Array.isArray(previewMaterials) ? previewMaterials : (Array.isArray(publishedConfig?.materials) ? publishedConfig.materials : [])
+    const records = Array.isArray(publishedConfig?.materials) ? publishedConfig.materials : []
     const library = new Map()
     const textureLoader = new THREE.TextureLoader()
 
     records.forEach((record) => {
       let material
-      const loadMap = (url, color = false) => {
-        if (!url) return null
-        const texture = textureLoader.load(url)
-        if (color) texture.colorSpace = THREE.SRGBColorSpace
+      if (record?.source?.imageUrl) {
+        const texture = textureLoader.load(record.source.imageUrl)
+        texture.colorSpace = THREE.SRGBColorSpace
         texture.flipY = false
         texture.wrapS = THREE.RepeatWrapping
         texture.wrapT = THREE.RepeatWrapping
         texture.needsUpdate = true
-        return texture
+        material = new THREE.MeshStandardMaterial({
+          map: texture,
+          color: 0xffffff,
+          roughness: 0.8,
+          metalness: 0,
+        })
+      } else {
+        material = new THREE.MeshStandardMaterial({
+          color: new THREE.Color(record?.color || '#000000'),
+          roughness: 0.8,
+          metalness: 0,
+        })
       }
-      const map = loadMap(record?.source?.imageUrl, true)
-      const normalMap = loadMap(record?.pbr?.normalUrl)
-      const roughnessMap = loadMap(record?.pbr?.roughnessUrl)
-      const bumpMap = loadMap(record?.pbr?.bumpUrl)
-      material = new THREE.MeshStandardMaterial({
-        map,
-        color: map ? 0xffffff : new THREE.Color(record?.color || '#000000'),
-        roughness: Math.max(0, Math.min(1, 1 - (1 - Number(record?.pbr?.roughness ?? 0.55)) * Number(record?.pbr?.roughnessIntensity ?? 1))),
-        metalness: Number(record?.pbr?.metalness ?? 0),
-        normalMap,
-        normalScale: new THREE.Vector2(Number(record?.pbr?.normalIntensity ?? 1), Number(record?.pbr?.normalIntensity ?? 1)),
-        roughnessMap,
-        bumpMap,
-        bumpScale: Number(record?.pbr?.bumpScale ?? 0.035),
-      })
       material.name = record.id
       library.set(record.id, material)
     })
     return library
-  }, [publishedConfig, previewMaterials])
+  }, [publishedConfig])
 
   useEffect(() => {
     const parts = publishedConfig?.parts ?? []
@@ -151,7 +146,7 @@ function LoadedProduct({ url, previewMaterials = null }) {
   )
 }
 
-export default function ProductModel({ url, previewMaterials = null }) {
+export default function ProductModel({ url }) {
   if (!url) return null
-  return <LoadedProduct url={url} previewMaterials={previewMaterials} />
+  return <LoadedProduct url={url} />
 }
