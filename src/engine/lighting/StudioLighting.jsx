@@ -78,11 +78,6 @@ export default function StudioLighting({ settings = {}, externalShadowLight = fa
         <Lightformer form="rect" intensity={2.0} position={[5, 4, -5]} rotation={[0, 3 * Math.PI / 4, 0]} scale={[4, 7, 1]} />
         <Lightformer form="rect" intensity={1.25} position={[0, 7, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[7, 7, 1]} />
       </Environment>
-      <ContactShadows position={[0, s.groundY + 0.003, 0]} opacity={0.13} blur={3.4} scale={12} far={8} frames={1} />
-      <mesh position={[0, s.groundY, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[20, 20]} />
-        <shadowMaterial transparent opacity={0.5} depthWrite={false} />
-      </mesh>
     </>
   )
 
