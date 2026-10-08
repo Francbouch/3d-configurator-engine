@@ -81,37 +81,49 @@ export function getRuleGraphAllowedMaterials({
   if (!blocks.length || !connections.length) return materials
 
   const blockById = new Map(blocks.map((block) => [block.id, block]))
-  const activeAllowedIds = new Set()
-  let hasActiveRestriction = false
+  const causesByEffect = new Map()
 
+  // Gather every Cause connected to each Effect targeting this group.
   connections.forEach((connection) => {
     const cause = blockById.get(connection.causeId)
     const effect = blockById.get(connection.effectId)
     if (!cause || !effect || cause.type !== 'cause' || effect.type !== 'effect') return
     if (!(effect.groupIds ?? []).includes(groupId)) return
 
-    // Cause blocks intentionally use one group. Reading the first item also
-    // keeps older saved graphs compatible if they still contain several.
     const causeGroupId = (cause.groupIds ?? [])[0]
-    if (!causeGroupId || causeGroupId !== activeCauseGroupId) return
+    if (!causeGroupId) return
+    if (!causesByEffect.has(effect.id)) causesByEffect.set(effect.id, { effect, causes: [] })
+    causesByEffect.get(effect.id).causes.push({ cause, causeGroupId })
+  })
 
-    const selectedCauseMaterial = selected[causeGroupId]
-    const triggerIds = blockMaterialIds(cause)
-    if (!selectedCauseMaterial || !triggerIds.includes(selectedCauseMaterial)) return
+  const activeAllowedIds = new Set()
+  let hasActiveRestriction = false
+
+  causesByEffect.forEach(({ effect, causes }) => {
+    // All connected Causes must match (AND). Material choices inside a
+    // single Cause remain alternatives (OR).
+    if (!causes.some(({ causeGroupId }) => causeGroupId === activeCauseGroupId)) return
+    if (!causes.every(({ cause, causeGroupId }) => {
+      const chosenMaterial = selected[causeGroupId]
+      return Boolean(chosenMaterial) && blockMaterialIds(cause).includes(chosenMaterial)
+    })) return
 
     hasActiveRestriction = true
     blockMaterialIds(effect).forEach((materialId) => {
       if (materialId === '__cause_material__') {
-        activeAllowedIds.add(selectedCauseMaterial)
+        causes.forEach(({ causeGroupId }) => {
+          const chosenMaterial = selected[causeGroupId]
+          if (chosenMaterial) activeAllowedIds.add(chosenMaterial)
+        })
       } else {
         activeAllowedIds.add(materialId)
       }
     })
   })
 
-  // No connected Cause is currently active: do not restrict the group at all.
+  // No fully matched set of Causes: leave materials unrestricted.
   if (!hasActiveRestriction) return materials
 
-  // Several active Causes use UNION semantics.
+  // Keep existing UNION behavior between distinct active Effect blocks.
   return materials.filter((material) => activeAllowedIds.has(material.id))
 }
