@@ -809,3 +809,8 @@ body:has(.admin) { overflow: hidden; }
 .admin__material-finish-control>span{min-width:106px;display:flex;flex-direction:column;gap:2px}
 .admin__material-finish-control small{font-size:10px;color:#888}
 .admin__material-finish-control input[type="range"]{width:100%;min-width:65px;accent-color:#222}
+
+/* Back-office bed control floats above the 3D canvas without changing its position. */
+.admin__bed-toggle{position:absolute;z-index:5;right:18px;bottom:18px;padding:11px 17px;border:1px solid rgba(255,255,255,.15);border-radius:12px;background:#171717;color:#fff;font:inherit;font-size:12px;font-weight:650;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.12)}
+.admin__bed-toggle:hover{background:#303030}
+.admin__bed-toggle:focus-visible{outline:3px solid #4c8cff;outline-offset:3px}
