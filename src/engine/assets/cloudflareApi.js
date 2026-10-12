@@ -2,14 +2,25 @@
 export const CLOUDFLARE_API = 'https://configurator-api.francbouch.workers.dev'
 export const CABINET_MODEL_URL = `${CLOUDFLARE_API}/v1/models/lit-cabinet.glb`
 
-export async function fetchCloudflarePublication(productId) {
-  const response = await fetch(`${CLOUDFLARE_API}/v1/publications/${encodeURIComponent(productId)}`)
-  if (!response.ok) {
-    throw new Error(`Cloudflare publication unavailable (HTTP ${response.status})`)
-  }
-  return response.json()
+// Share publication requests across scene, model and panel. Refresh after 60 seconds.
+const publicationCache = new Map()
+const PUBLICATION_TTL_MS = 60_000
+
+export function fetchCloudflarePublication(productId) {
+  const cached = publicationCache.get(productId)
+  if (cached && Date.now() - cached.createdAt < PUBLICATION_TTL_MS) return cached.promise
+
+  const promise = fetch(`${CLOUDFLARE_API}/v1/publications/${encodeURIComponent(productId)}`)
+    .then((response) => {
+      if (!response.ok) throw new Error(`Cloudflare publication unavailable (HTTP ${response.status})`)
+      return response.json()
+    })
+    .catch((error) => {
+      if (publicationCache.get(productId)?.promise === promise) publicationCache.delete(productId)
+      throw error
+    })
+  publicationCache.set(productId, { createdAt: Date.now(), promise })
+  return promise
 }
 
-// The current admin still requires Supabase Auth and its write APIs.
-// Do not switch it to Cloudflare until authenticated uploads and publishing
-// are implemented, tested, and the source assets have been migrated.
+// Staging Cloudflare admin uses the separate authenticated Worker API.\n
