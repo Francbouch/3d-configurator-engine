@@ -479,9 +479,11 @@ export default function ModelMapper({ onSignOut }) {
       const local = loadAdminDraft(product.id) ?? buildDraftPayload()
       saveAdminDraft(product.id, { ...local, materials: next })
       persistConfigurationPatch({ materials: next })
+        .then(() => setSaveStatus('Matériau enregistré dans R2 ✓'))
+        .catch((error) => setSaveStatus(error instanceof Error ? error.message : 'Sauvegarde impossible'))
       return next
     })
-    setSaveStatus('')
+    setSaveStatus('Enregistrement du matériau…')
   }
 
   function removeMaterial(index) {
@@ -821,38 +823,38 @@ export default function ModelMapper({ onSignOut }) {
 
   async function persistConfigurationPatch(patch) {
     const session = loadAdminSession()
-    if (!session?.access_token) return
-    try {
-      const response = await adminFetch(
-        `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=model_path,model_name,configuration&limit=1`,
-        { headers: supabaseHeaders(session.access_token) },
-      )
-      if (!response.ok) return
-      const rows = await response.json()
-      const current = rows?.[0]
-      if (!current?.model_path) return
-      const configuration = { ...(current.configuration ?? {}), ...patch }
-      await adminFetch(
-        `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?on_conflict=product_id`,
-        {
-          method: 'POST',
-          headers: { ...supabaseHeaders(session.access_token), Prefer: 'resolution=merge-duplicates,return=minimal' },
-          body: JSON.stringify({
-            product_id: product.id,
-            model_path: current.model_path,
-            model_name: current.model_name ?? modelName.trim(),
-            configuration,
-            updated_at: new Date().toISOString(),
-            updated_by: session.user?.id ?? null,
-          }),
-        },
-      )
-      if (!saveResponse.ok) throw new Error('Impossible d’enregistrer la configuration publiée.')
-      return configuration
-    } catch (error) {
-      console.warn('Unable to persist back-office change', error)
-      throw error
+    if (!session?.access_token) throw new Error('Session expirée. Reconnecte-toi au back-office.')
+
+    const response = await adminFetch(
+      `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=model_path,model_name,configuration&limit=1`,
+      { headers: supabaseHeaders(session.access_token) },
+    )
+    if (!response.ok) throw new Error(`Impossible de lire la configuration publiée (HTTP ${response.status}).`)
+    const rows = await response.json()
+    const current = rows?.[0]
+    if (!current?.model_path) throw new Error('Aucune publication R2 trouvée. Modification non enregistrée.')
+
+    const configuration = { ...(current.configuration ?? {}), ...patch }
+    const saveResponse = await adminFetch(
+      `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?on_conflict=product_id`,
+      {
+        method: 'POST',
+        headers: { ...supabaseHeaders(session.access_token), Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({
+          product_id: product.id,
+          model_path: current.model_path,
+          model_name: current.model_name ?? modelName.trim(),
+          configuration,
+          updated_at: new Date().toISOString(),
+          updated_by: session.user?.id ?? null,
+        }),
+      },
+    )
+    if (!saveResponse.ok) {
+      const detail = await saveResponse.text().catch(() => '')
+      throw new Error(`Impossible d’enregistrer la configuration (HTTP ${saveResponse.status}). ${detail.slice(0, 160)}`)
     }
+    return configuration
   }
 
   function addGroup() {
