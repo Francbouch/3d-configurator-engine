@@ -474,16 +474,15 @@ export default function ModelMapper({ onSignOut }) {
   }
 
   function updateMaterial(index, patch) {
-    setMaterials((current) => {
-      const next = current.map((material, i) => (i === index ? { ...material, ...patch } : material))
-      const local = loadAdminDraft(product.id) ?? buildDraftPayload()
-      saveAdminDraft(product.id, { ...local, materials: next })
-      persistConfigurationPatch({ materials: next })
-        .then(() => setSaveStatus('Matériau enregistré dans R2 ✓'))
-        .catch((error) => setSaveStatus(error instanceof Error ? error.message : 'Sauvegarde impossible'))
-      return next
-    })
+    // Keep network side effects outside React's state updater.
+    const next = materials.map((material, i) => (i === index ? { ...material, ...patch } : material))
+    setMaterials(next)
+    const local = loadAdminDraft(product.id) ?? buildDraftPayload()
+    saveAdminDraft(product.id, { ...local, materials: next })
     setSaveStatus('Enregistrement du matériau…')
+    persistConfigurationPatch({ materials: next })
+      .then(() => setSaveStatus('Matériau enregistré dans R2 ✓'))
+      .catch((error) => setSaveStatus(error instanceof Error ? error.message : 'Sauvegarde impossible'))
   }
 
   function removeMaterial(index) {
@@ -1161,6 +1160,7 @@ export default function ModelMapper({ onSignOut }) {
             Les changements restent séparés du configurateur publié jusqu’à la future étape Publier.
           </small>
           {saveStatus && <span className="admin__save-status">{saveStatus}</span>}
+          {cloudflareAdmin && <small>État R2 : {saveStatus || 'Aucune modification en cours'}</small>}
         </div>
         <div className="admin__draft-actions">
           <button type="button" className="admin__secondary" onClick={resetDraft}>
