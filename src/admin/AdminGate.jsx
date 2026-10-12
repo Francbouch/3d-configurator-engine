@@ -8,6 +8,8 @@ import {
   signUpAdmin,
 } from './AdminAuth'
 
+const cloudflareAdmin = window.location.hostname.endsWith('.workers.dev')
+
 export default function AdminGate({ children }) {
   const [session, setSession] = useState(() => consumeAdminSessionFromUrl() || loadAdminSession())
   const [mode, setMode] = useState('login')
@@ -99,7 +101,7 @@ export default function AdminGate({ children }) {
         <p>
           {isSignup
             ? 'Crée ton compte avec ton courriel et ton mot de passe. Tu confirmeras ensuite ton adresse par courriel.'
-            : 'Connecte-toi avec ton courriel et ton mot de passe.'}
+            : cloudflareAdmin ? 'Entre le mot de passe administrateur Cloudflare. Le courriel est facultatif pour cette connexion.' : 'Connecte-toi avec ton courriel et ton mot de passe.'}
         </p>
 
         <form onSubmit={submit}>
@@ -108,7 +110,7 @@ export default function AdminGate({ children }) {
             <input
               type="email"
               autoComplete="username"
-              required
+              required={!cloudflareAdmin}
               value={email}
               onChange={(event) => setEmail(event.target.value)}
             />
@@ -158,14 +160,14 @@ export default function AdminGate({ children }) {
           </button>
         )}
 
-        <button
+        {!cloudflareAdmin && <button
           className="admin-login__switch"
           type="button"
           disabled={busy}
           onClick={() => switchMode(isSignup ? 'login' : 'signup')}
         >
           {isSignup ? 'J’ai déjà un compte' : 'Créer mon compte administrateur'}
-        </button>
+        </button>}
       </section>
     </main>
   )
