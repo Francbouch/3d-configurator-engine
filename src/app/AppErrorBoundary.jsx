@@ -22,6 +22,11 @@ export default class AppErrorBoundary extends Component {
             <div className="admin__eyebrow">Configurateur 3D</div>
             <h1>Une erreur est survenue</h1>
             <p>L’interface n’a pas pu se charger correctement.</p>
+            {new URLSearchParams(window.location.search).get('assetSource') === 'cloudflare' && (
+              <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', textAlign: 'left', fontSize: '0.85rem' }}>
+                {String(this.state.error?.message || this.state.error)}
+              </pre>
+            )}
             <button type="button" onClick={() => window.location.reload()}>
               Réessayer
             </button>
