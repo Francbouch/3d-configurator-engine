@@ -480,9 +480,13 @@ export default function ModelMapper({ onSignOut }) {
     const local = loadAdminDraft(product.id) ?? buildDraftPayload()
     saveAdminDraft(product.id, { ...local, materials: next })
     setSaveStatus('Enregistrement du matériau…')
-    persistConfigurationPatch({ materials: next })
-      .then(() => setSaveStatus('Matériau enregistré dans R2 ✓'))
-      .catch((error) => setSaveStatus(error instanceof Error ? error.message : 'Sauvegarde impossible'))
+    if (cloudflareAdmin) {
+      setSaveStatus('Modification locale prête. Clique sur Enregistrer pour sauvegarder dans R2.')
+    } else {
+      persistConfigurationPatch({ materials: next })
+        .then(() => setSaveStatus('Matériau enregistré dans R2 ✓'))
+        .catch((error) => setSaveStatus(error instanceof Error ? error.message : 'Sauvegarde impossible'))
+    }
   }
 
   function removeMaterial(index) {
@@ -1023,24 +1027,20 @@ export default function ModelMapper({ onSignOut }) {
     }
   }
 
-  function saveDraft() {
-    const ok = saveAdminDraft(product.id, {
-      parts: toProductParts({ parts }),
-      materialGroups,
-      name: modelName.trim(),
-      materials,
-      modules,
-      rules,
-      pricing: {
-        currency: product.pricing?.currency ?? 'CAD',
-        basePrice,
-        discount,
-        adjustments,
-        displayPrice,
-      },
-    })
-
-    setSaveStatus(ok ? 'Brouillon enregistré sur cet appareil' : 'Échec de l’enregistrement')
+  async function saveDraft() {
+    const payload = buildDraftPayload()
+    const ok = saveAdminDraft(product.id, payload)
+    if (!cloudflareAdmin) {
+      setSaveStatus(ok ? 'Brouillon enregistré sur cet appareil' : 'Échec de l’enregistrement')
+      return
+    }
+    setSaveStatus('Enregistrement dans R2…')
+    try {
+      await persistConfigurationPatch(payload)
+      setSaveStatus('Configuration enregistrée dans R2 ✓')
+    } catch (error) {
+      setSaveStatus(`Sauvegarde R2 échouée : ${error instanceof Error ? error.message : String(error)}`)
+    }
   }
 
   function resetDraft() {
