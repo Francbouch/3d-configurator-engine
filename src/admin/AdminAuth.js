@@ -2,7 +2,7 @@ import { CLOUDFLARE_API } from '../engine/assets/cloudflareApi'
 const cloudflareAdmin = typeof window !== 'undefined' && window.location.hostname.endsWith('.workers.dev')
 const SUPABASE_URL = 'https://vnaoawlrotdogslykbmm.supabase.co'
 const SUPABASE_KEY = 'sb_publishable_AvnQSWs0wrO4QHhMMKCMKw_Depqj2Fk'
-const SESSION_KEY = 'configurator-admin-session'
+const SESSION_KEY = cloudflareAdmin ? 'configurator-cloudflare-admin-session' : 'configurator-admin-session'
 
 function headers(token) {
   return {
