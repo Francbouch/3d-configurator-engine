@@ -20,6 +20,10 @@ jobs:
       - run: npm install
       - run: npm run validate-config
       - run: npm run build
+      - name: Copy legacy fallback models into preview bundle
+        run: |
+          cp "CABINET TEST.glb" dist/
+          cp "CUBES TEXTURES TEST.glb" dist/
       - name: Check live Cloudflare staging assets
         run: node scripts/smoke-cloudflare.mjs
       - name: Upload staging preview bundle
