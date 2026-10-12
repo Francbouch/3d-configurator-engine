@@ -1075,7 +1075,7 @@ export default function ModelMapper({ onSignOut }) {
           <div className="admin__eyebrow">Back-office · Modèle 3D</div>
           <h1>Le modèle ne s’est pas chargé</h1>
           <p>{loadError}</p>
-          <a className="admin__link" href="./">Retour au configurateur</a>
+          <a className="admin__link" href={cloudflareAdmin ? "/?assetSource=cloudflare" : "./"}>Retour au configurateur</a>
         </div>
       </main>
     )
@@ -1101,7 +1101,7 @@ export default function ModelMapper({ onSignOut }) {
           <h1>{product.name}</h1>
           <p>{draft.scan.partCount ?? draft.scan.meshCount} pièces détectées automatiquement.</p>
         </div>
-        <div className="admin__header-actions"><a className="admin__link" href="./">Retour au configurateur</a><button type="button" className="admin__signout" onClick={onSignOut}>Déconnexion</button></div>
+        <div className="admin__header-actions"><a className="admin__link" href={cloudflareAdmin ? "/?assetSource=cloudflare" : "./"}>Retour au configurateur</a><button type="button" className="admin__signout" onClick={onSignOut}>Déconnexion</button></div>
       </header>
 
       <nav className="admin__tabs" aria-label="Sections du back-office">
