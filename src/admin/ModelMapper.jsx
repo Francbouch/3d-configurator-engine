@@ -176,7 +176,23 @@ export default function ModelMapper({ onSignOut }) {
           modelUrl: cloudflareAdmin ? (publication?.modelUrl || publishedModelUrl(modelPath)) : (modelPath ? publishedModelUrl(modelPath) : MODEL_URL),
           configuration: publication?.configuration ?? null,
         }
-      } catch {
+      } catch (error) {
+        // Public publication is read-only and remains available even if an admin
+        // token expired. Never silently replace durable R2 materials with [].
+        if (cloudflareAdmin) {
+          try {
+            const response = await fetch(`${CLOUDFLARE_API}/v1/publications/${encodeURIComponent(product.id)}`)
+            if (!response.ok) throw new Error(`HTTP ${response.status}`)
+            const publication = await response.json()
+            return {
+              modelUrl: publication.modelUrl || MODEL_URL,
+              configuration: publication.configuration ?? null,
+            }
+          } catch (publicError) {
+            console.error('Unable to restore Cloudflare publication', error, publicError)
+            setSaveStatus('Impossible de charger les matériaux depuis R2. Ne publie pas avant de résoudre cette erreur.')
+          }
+        }
         return { modelUrl: MODEL_URL, configuration: null }
       }
     }
