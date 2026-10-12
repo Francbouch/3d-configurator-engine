@@ -30,7 +30,17 @@ function findByPath(root, path) {
 function resolvePart(root, part) {
   if (typeof part === 'string') return root.getObjectByName(part)
   if (!part) return null
-  return findByPath(root, part.meshPath ?? part.nodePath) ?? root.getObjectByName(part.node)
+
+  // Published mappings can include a scene-root segment that differs between
+  // Blender exports and GLTFLoader's cloned scene. Resolve the exact path first,
+  // then match the trailing mesh/node name without modifying stored mappings.
+  const path = part.meshPath ?? part.nodePath
+  const exact = findByPath(root, path)
+  if (exact) return exact
+  const trailingName = typeof path === 'string' ? path.split('/').filter(Boolean).pop() : null
+  return (part.node && root.getObjectByName(part.node))
+    || (trailingName && root.getObjectByName(trailingName))
+    || null
 }
 
 function assignMaterial(mesh, part, material) {
