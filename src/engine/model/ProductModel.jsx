@@ -1,3 +1,4 @@
+import { fetchCloudflarePublication } from '../assets/cloudflareApi'
 import { Bounds, Center, useGLTF } from '@react-three/drei'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
@@ -37,10 +38,17 @@ function LoadedProduct({ url, onReady, rotationY = 0, roughness = 0.48, material
 
   useEffect(() => {
     let cancelled = false
-    fetch(`${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=configuration&limit=1`, { headers: supabaseHeaders() })
-      .then((response) => response.ok ? response.json() : [])
-      .then((rows) => { if (!cancelled) setPublishedConfig(rows?.[0]?.configuration ?? null) })
-      .catch((error) => { console.warn('Unable to load published part mapping', error); if (!cancelled) setPublishedConfig({}) })
+    if (new URLSearchParams(window.location.search).get('assetSource') === 'cloudflare') {
+      fetchCloudflarePublication(product.id)
+        .then((publication) => { if (!cancelled) setPublishedConfig(publication.configuration ?? null) })
+        .catch((error) => { console.warn('Cloudflare staging configuration unavailable', error); if (!cancelled) setPublishedConfig({}) })
+    } else {
+      fetch(`${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=configuration&limit=1`, { headers: supabaseHeaders() })
+        .then((response) => response.ok ? response.json() : [])
+        .then((rows) => { if (!cancelled) setPublishedConfig(rows?.[0]?.configuration ?? null) })
+        .catch((error) => { console.warn('Unable to load published part mapping', error); if (!cancelled) setPublishedConfig({}) })
+  
+    }
     return () => { cancelled = true }
   }, [])
 
