@@ -8,6 +8,7 @@ import { calculatePrice } from '../configurator/pricing/PriceEngine'
 import { formatPrice } from '../configurator/pricing/PricingUtils'
 import MaterialPreview from './MaterialPreview'
 import { MASTER_MATERIAL_LIBRARY_URL, materialRecordsFromScene } from '../engine/materials/MasterMaterialLibrary'
+import { CABINET_MODEL_URL } from '../engine/assets/cloudflareApi'
 import { SUPABASE_PROJECT_URL, supabaseHeaders } from '../admin/AdminAuth'
 
 const CONFIGURATOR_DRAFT_KEY = `configurator-admin-draft:${product.id}`
@@ -18,7 +19,9 @@ export default function ConfiguratorPanel() {
   const [localGroups, setLocalGroups] = useState([])
   const [manualGroupId, setManualGroupId] = useState(null)
   const [hasManualMaterialSelection, setHasManualMaterialSelection] = useState(false)
-  const materialGltf = useGLTF(MASTER_MATERIAL_LIBRARY_URL)
+  // The staging site uses R2's published model rather than a legacy local GLB.
+  const cloudflarePreview = new URLSearchParams(window.location.search).get('assetSource') === 'cloudflare'
+  const materialGltf = useGLTF(cloudflarePreview ? CABINET_MODEL_URL : MASTER_MATERIAL_LIBRARY_URL)
   const legacyMaterials = useMemo(() => materialRecordsFromScene(materialGltf.scene), [materialGltf.scene])
   const materials = useMemo(() => {
     const source = Array.isArray(publishedConfig?.materials) ? publishedConfig.materials : legacyMaterials
