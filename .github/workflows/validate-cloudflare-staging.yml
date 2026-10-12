@@ -20,3 +20,11 @@ jobs:
       - run: npm install
       - run: npm run validate-config
       - run: npm run build
+      - name: Check live Cloudflare staging assets
+        run: node scripts/smoke-cloudflare.mjs
+      - name: Upload staging preview bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloudflare-staging-preview
+          path: dist/
+          retention-days: 7
