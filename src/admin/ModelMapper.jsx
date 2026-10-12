@@ -23,7 +23,9 @@ const adminFetch = (url, options = {}) => {
   let endpoint
   if (raw.includes('/rest/v1/configurator_publications')) {
     const query = new URL(raw).searchParams
-    endpoint = `${CLOUDFLARE_API}/v1/admin/publication${options.method === 'POST' ? '' : `?product_id=${encodeURIComponent((query.get('product_id') || '').replace(/^eq\\./, ''))}`}`
+    const rawId = query.get('product_id') || ''
+    const productId = rawId.startsWith('eq.') ? rawId.slice(3) : rawId
+    endpoint = `${CLOUDFLARE_API}/v1/admin/publication${options.method === 'POST' ? '' : `?product_id=${encodeURIComponent(productId)}`}`
   } else if (raw.includes('/storage/v1/object/models/')) {
     const name = decodeURIComponent(raw.split('/storage/v1/object/models/')[1]).split('/').pop()
     const type = name.toLowerCase().endsWith('.glb') ? 'model' : 'material'
