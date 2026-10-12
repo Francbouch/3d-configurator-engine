@@ -1545,7 +1545,13 @@ export default function ModelMapper({ onSignOut }) {
                 const nextScene = { ...(sceneSettings ?? {}), cameraView }
                 setSceneSettings(nextScene)
                 persistConfigurationPatch({ scene: nextScene })
-                  .then(() => setSaveStatus('Vue initiale du configurateur enregistrée ✓ — recharge le configurateur'))
+                  .then(() => {
+                    // Keep the saved camera view in the local draft too, so an
+                    // admin refresh never restores an older scene from this browser.
+                    const local = loadAdminDraft(product.id) ?? buildDraftPayload()
+                    saveAdminDraft(product.id, { ...local, scene: nextScene })
+                    setSaveStatus('Vue initiale enregistrée ✓ — elle reste la vue par défaut jusqu’au prochain enregistrement')
+                  })
                   .catch((error) => setSaveStatus(error instanceof Error ? error.message : 'Enregistrement impossible.'))
               }}>Enregistrer la vue</button>
             </div>
