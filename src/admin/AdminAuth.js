@@ -1,3 +1,5 @@
+import { CLOUDFLARE_API } from '../engine/assets/cloudflareApi'
+const cloudflareAdmin = typeof window !== 'undefined' && window.location.hostname.endsWith('.workers.dev')
 const SUPABASE_URL = 'https://vnaoawlrotdogslykbmm.supabase.co'
 const SUPABASE_KEY = 'sb_publishable_AvnQSWs0wrO4QHhMMKCMKw_Depqj2Fk'
 const SESSION_KEY = 'configurator-admin-session'
@@ -88,9 +90,9 @@ export function consumeAdminSessionFromUrl() {
 }
 
 export async function signInAdmin(email, password) {
-  const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+  const response = await fetch(cloudflareAdmin ? `${CLOUDFLARE_API}/v1/admin/login` : `${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
     method: 'POST',
-    headers: headers(),
+    headers: cloudflareAdmin ? { 'Content-Type': 'application/json' } : headers(),
     body: JSON.stringify({ email, password }),
   })
   const data = await response.json()
@@ -99,6 +101,7 @@ export async function signInAdmin(email, password) {
 }
 
 export async function signUpAdmin(email, password) {
+  if (cloudflareAdmin) throw new Error('Compte Cloudflare privé : connecte-toi avec le mot de passe administrateur configuré dans le Worker.')
   const redirectTo = encodeURIComponent(adminRedirectUrl())
   const response = await fetch(`${SUPABASE_URL}/auth/v1/signup?redirect_to=${redirectTo}`, {
     method: 'POST',
@@ -112,6 +115,7 @@ export async function signUpAdmin(email, password) {
 }
 
 export async function resendSignupConfirmation(email) {
+  if (cloudflareAdmin) throw new Error('La confirmation par courriel ne concerne que Supabase.')
   const redirectTo = encodeURIComponent(adminRedirectUrl())
   const response = await fetch(`${SUPABASE_URL}/auth/v1/resend?redirect_to=${redirectTo}`, {
     method: 'POST',
@@ -128,6 +132,7 @@ export const SUPABASE_PROJECT_URL = SUPABASE_URL
 export const SUPABASE_PUBLIC_KEY = SUPABASE_KEY
 
 export function supabaseHeaders(token, contentType = 'application/json') {
+  if (cloudflareAdmin) return { ...(contentType ? { 'Content-Type': contentType } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) }
   return {
     apikey: SUPABASE_KEY,
     ...(contentType ? { 'Content-Type': contentType } : {}),
