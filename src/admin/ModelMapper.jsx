@@ -13,8 +13,32 @@ import { loadAdminSession, SUPABASE_PROJECT_URL, supabaseHeaders } from './Admin
 import ConfiguratorScene from '../engine/scene/ConfiguratorScene'
 import { useConfiguratorStore } from '../configurator/state/configuratorStore'
 import { DEFAULT_SCENE_SETTINGS } from '../engine/lighting/StudioLighting'
+import { CLOUDFLARE_API, CABINET_MODEL_URL } from '../engine/assets/cloudflareApi'
 
-const MODEL_URL = resolveAssetUrl(product.model?.url)
+const cloudflareAdmin = window.location.hostname.endsWith('.workers.dev')
+const MODEL_URL = cloudflareAdmin ? CABINET_MODEL_URL : resolveAssetUrl(product.model?.url)
+const adminFetch = (url, options = {}) => {
+  if (!cloudflareAdmin) return fetch(url, options)
+  const raw = String(url)
+  let endpoint
+  if (raw.includes('/rest/v1/configurator_publications')) {
+    const query = new URL(raw).searchParams
+    endpoint = `${CLOUDFLARE_API}/v1/admin/publication${options.method === 'POST' ? '' : `?product_id=${encodeURIComponent((query.get('product_id') || '').replace(/^eq\\./, ''))}`}`
+  } else if (raw.includes('/storage/v1/object/models/')) {
+    const name = decodeURIComponent(raw.split('/storage/v1/object/models/')[1]).split('/').pop()
+    const type = name.toLowerCase().endsWith('.glb') ? 'model' : 'material'
+    endpoint = `${CLOUDFLARE_API}/v1/admin/upload?type=${type}&name=${encodeURIComponent(name)}`
+  } else if (raw.includes('/auth/v1/user')) {
+    endpoint = `${CLOUDFLARE_API}/v1/admin/me`
+  } else return fetch(url, options)
+  return fetch(endpoint, options)
+}
+const publishedModelUrl = (modelPath) => cloudflareAdmin
+  ? (modelPath?.startsWith('uploads/models/') ? `${CLOUDFLARE_API}/v1/models/uploaded/${modelPath.split('/').pop()}` : CABINET_MODEL_URL)
+  : `${SUPABASE_PROJECT_URL}/storage/v1/object/public/models/${encodeURI(modelPath)}`
+const publishedImageUrl = (path) => cloudflareAdmin
+  ? `${CLOUDFLARE_API}/v1/materials/${path.split('/').pop()}`
+  : `${SUPABASE_PROJECT_URL}/storage/v1/object/public/models/${path.split('/').map(encodeURIComponent).join('/')}`
 
 export default function ModelMapper({ onSignOut }) {
   const [draft, setDraft] = useState(null)
@@ -138,7 +162,7 @@ export default function ModelMapper({ onSignOut }) {
 
     async function loadPublishedPublication() {
       try {
-        const response = await fetch(
+        const response = await adminFetch(
           `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=model_path,configuration&limit=1`,
           { headers: supabaseHeaders(loadAdminSession()?.access_token) },
         )
@@ -284,7 +308,7 @@ export default function ModelMapper({ onSignOut }) {
     const session = loadAdminSession()
     if (!session?.access_token) throw new Error('Session expirée. Reconnecte-toi au back-office.')
 
-    const existingResponse = await fetch(
+    const existingResponse = await adminFetch(
       `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=model_path,model_name,configuration&limit=1`,
       { headers: supabaseHeaders(session.access_token) },
     )
@@ -303,7 +327,7 @@ export default function ModelMapper({ onSignOut }) {
       const extension = imageFile.name.toLowerCase().endsWith('.png') ? 'png' : 'jpg'
       const safeId = material.id.replace(/[^a-zA-Z0-9._-]+/g, '-')
       const imagePath = `${product.id}/materials/${safeId}-${Date.now()}.${extension}`
-      const upload = await fetch(
+      const upload = await adminFetch(
         `${SUPABASE_PROJECT_URL}/storage/v1/object/models/${encodeURI(imagePath)}`,
         {
           method: 'POST',
@@ -321,13 +345,13 @@ export default function ModelMapper({ onSignOut }) {
           type: 'image',
           fileName: imageFile.name,
           imagePath,
-          imageUrl: `${SUPABASE_PROJECT_URL}/storage/v1/object/public/models/${imagePath.split('/').map(encodeURIComponent).join('/')}`,
+          imageUrl: publishedImageUrl(imagePath),
         },
       })
     }
 
     const configuration = { ...(current.configuration ?? {}), materials: storedMaterials }
-    const response = await fetch(
+    const response = await adminFetch(
       `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?on_conflict=product_id`,
       {
         method: 'POST',
@@ -740,7 +764,7 @@ export default function ModelMapper({ onSignOut }) {
     const session = loadAdminSession()
     if (!session?.access_token) throw new Error('Session administrateur expirée.')
     try {
-      const existing = await fetch(
+      const existing = await adminFetch(
         `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=model_path,model_name,configuration&limit=1`,
         { headers: supabaseHeaders(session.access_token) },
       )
@@ -749,7 +773,7 @@ export default function ModelMapper({ onSignOut }) {
       const current = rows?.[0]
       if (!current?.model_path) throw new Error('Aucun modèle publié à mettre à jour.')
       const configuration = { ...(current.configuration ?? {}), materialGroups: nextGroups }
-      const saveResponse = await fetch(
+      const saveResponse = await adminFetch(
         `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?on_conflict=product_id`,
         {
           method: 'POST',
@@ -783,7 +807,7 @@ export default function ModelMapper({ onSignOut }) {
     const session = loadAdminSession()
     if (!session?.access_token) return
     try {
-      const response = await fetch(
+      const response = await adminFetch(
         `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=model_path,model_name,configuration&limit=1`,
         { headers: supabaseHeaders(session.access_token) },
       )
@@ -792,7 +816,7 @@ export default function ModelMapper({ onSignOut }) {
       const current = rows?.[0]
       if (!current?.model_path) return
       const configuration = { ...(current.configuration ?? {}), ...patch }
-      await fetch(
+      await adminFetch(
         `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?on_conflict=product_id`,
         {
           method: 'POST',
@@ -868,7 +892,7 @@ export default function ModelMapper({ onSignOut }) {
       if (uploadedModelFile) {
         const safeName = uploadedModelFile.name.replace(/[^a-zA-Z0-9._-]+/g, '-')
         modelPath = `${product.id}/current-${Date.now()}-${safeName}`
-        const upload = await fetch(
+        const upload = await adminFetch(
           `${SUPABASE_PROJECT_URL}/storage/v1/object/models/${encodeURI(modelPath)}`,
           {
             method: 'POST',
@@ -884,7 +908,7 @@ export default function ModelMapper({ onSignOut }) {
           throw new Error(`Upload GLB impossible: ${detail}`)
         }
       } else {
-        const existing = await fetch(
+        const existing = await adminFetch(
           `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=model_path&limit=1`,
           { headers: supabaseHeaders(session.access_token) },
         )
@@ -903,7 +927,7 @@ export default function ModelMapper({ onSignOut }) {
         const extension = imageFile.name.toLowerCase().endsWith('.png') ? 'png' : 'jpg'
         const safeId = material.id.replace(/[^a-zA-Z0-9._-]+/g, '-')
         const imagePath = `${product.id}/materials/${safeId}-${Date.now()}.${extension}`
-        const uploadImage = await fetch(
+        const uploadImage = await adminFetch(
           `${SUPABASE_PROJECT_URL}/storage/v1/object/models/${encodeURI(imagePath)}`,
           {
             method: 'POST',
@@ -931,22 +955,23 @@ export default function ModelMapper({ onSignOut }) {
             type: 'image',
             fileName: material.source?.fileName ?? '',
             imagePath,
-            imageUrl: `${SUPABASE_PROJECT_URL}/storage/v1/object/public/models/${imagePath.split('/').map(encodeURIComponent).join('/')}`,
+            imageUrl: publishedImageUrl(imagePath),
           },
         }
       })
       payload.animations = product.animations
       const publication = {
         product_id: product.id,
-        model_path: modelPath,
+        model_path: cloudflareAdmin && uploadedModelFile ? `uploads/models/${modelPath.split('/').pop()}` : modelPath,
+        modelUrl: cloudflareAdmin ? publishedModelUrl(uploadedModelFile ? `uploads/models/${modelPath.split('/').pop()}` : modelPath) : undefined,
         model_name: uploadedModelName || modelName.trim(),
         configuration: payload,
         updated_at: new Date().toISOString(),
         updated_by: session.user?.id ?? null,
       }
 
-      if (!publication.updated_by) {
-        const userResponse = await fetch(`${SUPABASE_PROJECT_URL}/auth/v1/user`, {
+      if (!publication.updated_by && !cloudflareAdmin) {
+        const userResponse = await adminFetch(`${SUPABASE_PROJECT_URL}/auth/v1/user`, {
           headers: supabaseHeaders(session.access_token),
         })
         if (!userResponse.ok) throw new Error('Impossible d’identifier le compte administrateur.')
@@ -954,7 +979,7 @@ export default function ModelMapper({ onSignOut }) {
         publication.updated_by = user.id
       }
 
-      const response = await fetch(
+      const response = await adminFetch(
         `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?on_conflict=product_id`,
         {
           method: 'POST',
