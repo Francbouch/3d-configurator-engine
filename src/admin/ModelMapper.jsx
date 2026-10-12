@@ -1181,13 +1181,10 @@ export default function ModelMapper({ onSignOut }) {
         </div>
       </section>
 
-      {(adminErrors.length > 0 || validation.warnings.length > 0) && (
+      {adminErrors.length > 0 && (
         <section className="admin__validation">
           {adminErrors.map((message) => (
             <p className="is-error" key={message}>{message}</p>
-          ))}
-          {validation.warnings.map((message) => (
-            <p key={message}>{message}</p>
           ))}
         </section>
       )}
