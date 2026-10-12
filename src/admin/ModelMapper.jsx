@@ -171,9 +171,7 @@ export default function ModelMapper({ onSignOut }) {
         const publication = rows?.[0]
         const modelPath = publication?.model_path
         return {
-          modelUrl: modelPath
-            ? `${SUPABASE_PROJECT_URL}/storage/v1/object/public/models/${encodeURI(modelPath)}`
-            : MODEL_URL,
+          modelUrl: cloudflareAdmin ? (publication?.modelUrl || publishedModelUrl(modelPath)) : (modelPath ? publishedModelUrl(modelPath) : MODEL_URL),
           configuration: publication?.configuration ?? null,
         }
       } catch {
