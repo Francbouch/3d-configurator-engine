@@ -220,9 +220,13 @@ export default function ModelMapper({ onSignOut }) {
           : (saved ?? {})
 
         setDraft(nextDraft)
-        const restoredDraft = Array.isArray(saved?.parts)
-          ? buildProductMappingDraft(gltf.scene, saved.parts)
-          : nextDraft
+        // In Cloudflare staging, prefer the persisted R2 mapping over a stale
+        // browser draft. Never replace a published mapping with unmapped scan
+        // results when opening the admin and saving unrelated settings.
+        const mappingParts = cloudflareAdmin && Array.isArray(publishedConfig?.parts)
+          ? publishedConfig.parts
+          : (Array.isArray(saved?.parts) ? saved.parts : product.model?.parts ?? [])
+        const restoredDraft = buildProductMappingDraft(gltf.scene, mappingParts)
         setParts(restoredDraft.parts)
         setBasePrice(
           Number.isFinite(baseline?.pricing?.basePrice)
