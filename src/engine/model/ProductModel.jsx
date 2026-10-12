@@ -1,4 +1,4 @@
-import { fetchCloudflarePublication } from '../assets/cloudflareApi'
+import { CLOUDFLARE_API, fetchCloudflarePublication } from '../assets/cloudflareApi'
 import { Bounds, Center, useGLTF } from '@react-three/drei'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
@@ -67,6 +67,17 @@ function LoadedProduct({ url, onReady, rotationY = 0, roughness = 0.48, material
     return () => { cancelled = true }
   }, [publishedConfig, onReady])
 
+  // R2 uses a flat materials/ prefix. Older publication records can still
+  // contain Supabase URLs or nested imagePath values from the back office.
+  const resolveTextureUrl = (record) => {
+    const source = record?.source ?? {}
+    if (new URLSearchParams(window.location.search).get('assetSource') !== 'cloudflare') return source.imageUrl
+    const path = source.imagePath || source.imageUrl
+    if (!path || String(path).startsWith('blob:')) return null
+    const filename = String(path).split('?')[0].split('/').pop()
+    return filename ? `${CLOUDFLARE_API}/v1/materials/${encodeURIComponent(filename)}` : null
+  }
+
   const configuredMaterials = useMemo(() => {
     const records = Array.isArray(materialsOverride) ? materialsOverride : (Array.isArray(publishedConfig?.materials) ? publishedConfig.materials : [])
     const library = new Map()
@@ -74,8 +85,10 @@ function LoadedProduct({ url, onReady, rotationY = 0, roughness = 0.48, material
 
     records.forEach((record) => {
       let material
-      if (record?.source?.imageUrl) {
-        const texture = textureLoader.load(record.source.imageUrl)
+      if (resolveTextureUrl(record)) {
+        const texture = textureLoader.load(resolveTextureUrl(record), undefined, undefined, (error) => {
+          console.warn('[Cloudflare materials] Texture unavailable:', record.id, resolveTextureUrl(record), error)
+        })
         texture.colorSpace = THREE.SRGBColorSpace
         texture.flipY = false
         texture.wrapS = THREE.RepeatWrapping
