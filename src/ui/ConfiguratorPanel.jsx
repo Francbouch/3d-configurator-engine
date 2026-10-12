@@ -1,3 +1,4 @@
+import { fetchCloudflarePublication } from '../engine/assets/cloudflareApi'
 import { useEffect, useMemo, useState } from 'react'
 import { useGLTF } from '@react-three/drei'
 import product from '../data/products/product.example.json'
@@ -55,13 +56,20 @@ export default function ConfiguratorPanel() {
 
   useEffect(() => {
     let cancelled = false
-    fetch(
-      `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=configuration&limit=1`,
-      { headers: supabaseHeaders() },
-    )
-      .then((response) => response.ok ? response.json() : [])
-      .then((rows) => { if (!cancelled) setPublishedConfig(rows?.[0]?.configuration ?? null) })
-      .catch((error) => console.warn('Unable to load published configuration', error))
+    if (new URLSearchParams(window.location.search).get('assetSource') === 'cloudflare') {
+      fetchCloudflarePublication(product.id)
+        .then((publication) => { if (!cancelled) setPublishedConfig(publication.configuration ?? null) })
+        .catch((error) => { console.warn('Cloudflare staging configuration unavailable', error); if (!cancelled) setPublishedConfig({}) })
+    } else {
+      fetch(
+        `${SUPABASE_PROJECT_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=configuration&limit=1`,
+        { headers: supabaseHeaders() },
+      )
+        .then((response) => response.ok ? response.json() : [])
+        .then((rows) => { if (!cancelled) setPublishedConfig(rows?.[0]?.configuration ?? null) })
+        .catch((error) => console.warn('Unable to load published configuration', error))
+  
+    }
     return () => { cancelled = true }
   }, [])
 
