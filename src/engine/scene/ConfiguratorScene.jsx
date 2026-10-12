@@ -7,6 +7,7 @@ import StudioLighting, { DEFAULT_SCENE_SETTINGS } from '../lighting/StudioLighti
 import ProductModel from '../model/ProductModel'
 import product from '../../data/products/product.example.json'
 import { resolveAssetUrl } from '../assets/resolveAssetUrl'
+import { CABINET_MODEL_URL, fetchCloudflarePublication } from '../assets/cloudflareApi'
 
 const FALLBACK_MODEL_URL = resolveAssetUrl(product.model?.url)
 const SUPABASE_URL = 'https://vnaoawlrotdogslykbmm.supabase.co'
@@ -88,6 +89,17 @@ export default function ConfiguratorScene({ sceneOverride = null, editor = null,
 
   useEffect(() => {
     let cancelled = false
+    if (new URLSearchParams(window.location.search).get('assetSource') === 'cloudflare') {
+      fetchCloudflarePublication('lit-cabinet-development')
+        .then((publication) => {
+          if (cancelled) return
+          setPublishedScene(publication.configuration?.scene ?? null)
+          setModelReady(false)
+          setModelUrl(publication.modelUrl || CABINET_MODEL_URL)
+        })
+        .catch((error) => console.warn('Cloudflare staging preview unavailable', error))
+      return () => { cancelled = true }
+    }
     fetch(`${SUPABASE_URL}/rest/v1/configurator_publications?product_id=eq.${encodeURIComponent(product.id)}&select=model_path,configuration&limit=1`, {
       headers: { apikey: SUPABASE_KEY },
     })
