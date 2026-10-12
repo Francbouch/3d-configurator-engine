@@ -129,7 +129,29 @@ function LoadedProduct({ url, onReady, rotationY = 0, roughness = 0.48, material
       const materialId = selectedMaterials[group.id] || group.materialId
       const material = configuredMaterials.get(materialId)
       const mappedParts = parts.filter((part) => part.group === group.id)
-      if (material && mappedParts.length) applyMaterialToParts(model, mappedParts, material)
+      if (!material || !mappedParts.length) {
+        if (new URLSearchParams(window.location.search).get('assetSource') === 'cloudflare') {
+          console.warn('[Cloudflare mapping] No applicable material or mapped parts', {
+            group: group.id,
+            selectedMaterial: materialId,
+            materialFound: Boolean(material),
+            mappedPartCount: mappedParts.length,
+          })
+        }
+        return
+      }
+      const applied = applyMaterialToParts(model, mappedParts, material)
+      if (!applied && new URLSearchParams(window.location.search).get('assetSource') === 'cloudflare') {
+        console.warn('[Cloudflare mapping] Parts not found in loaded GLB', {
+          group: group.id,
+          selectedMaterial: materialId,
+          mappedParts: mappedParts.map((part) => ({
+            node: part.node,
+            nodePath: part.nodePath,
+            meshPath: part.meshPath,
+          })),
+        })
+      }
     })
   }, [configuredMaterials, model, publishedConfig, selectedMaterials])
 
